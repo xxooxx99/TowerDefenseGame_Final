@@ -1,0 +1,12 @@
+{
+  "name": "last-game",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/xxooxx99/TowerDefenseGame_Final.git",
+  "author": "wjdrbsgkrry <wjdrbsgkrry@naver.com>",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
