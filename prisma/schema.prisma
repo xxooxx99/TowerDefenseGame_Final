@@ -23,4 +23,4 @@ model UserInfo {
     user            User        @relation(fields: [userId], references: [userId])
 
     @@map("UserInfo")
-}
+} 
