@@ -12,7 +12,15 @@ export const registerHandler = router.post('/register', async (req, res) => {
   const { number, username, password, userPhoneNumber } = req.body;
 
   try {
-    if (number !== messageGet(userPhoneNumber).message) {
+    const data = messageGet(userPhoneNumber);
+
+    if (!data) {
+      return res
+        .status(400)
+        .json({ status: 'fail', message: 'Failed. Or, authentication time has expired.' });
+    }
+
+    if (number !== data.message) {
       return res
         .status(400)
         .json({ status: 'fail', message: 'The authentication number is incorrect.' });
