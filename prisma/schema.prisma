@@ -1,0 +1,26 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+    userId          String      @id
+    userPassword    String      @map("password")
+    UserInfo        UserInfo?
+
+    @@map("user")
+}
+
+model UserInfo {
+    userId          String      @id
+    highScore       Int         @default(0)
+    win             Int
+    lose            Int
+    user            User        @relation(fields: [userId], references: [userId])
+
+    @@map("UserInfo")
+} 
