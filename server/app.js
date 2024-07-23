@@ -35,17 +35,12 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-
 app.use(express.static(path.join(__dirname, '../client')));
+app.use('/', [registerHandler, loginHandler]); // /라는 경로를 통해 들어온 데이터는 해당 배열의 핸들러가 순차적으로 진행.
 
 app.get('/', (req, res) => {
   res.sendFile('index.html', { root: path.join(__dirname, '../client') });
 });
-
-app.use(cookieParser()); //쿠키 파서 미들웨어 추가 -> 클라이언트가 보낸 쿠키 내용 접근 가능
-app.use(express.json()); //json 형식의 요청을 객체로 파싱해 더욱 쉽게 다루기 가능
-app.use(express.urlencoded({ extended: false })); // URL-encoded 형식의 본문을 파싱 false값은 데이터가 단순한 객체 형태로 저장됨.
-app.use('/', [registerHandler, loginHandler]); // /라는 경로를 통해 들어온 데이터는 해당 배열의 핸들러가 순차적으로 진행.
 
 server.listen(PORT, async () => {
   const address = server.address();
