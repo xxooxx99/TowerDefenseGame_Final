@@ -1,16 +1,46 @@
 import express from 'express';
 import { createServer } from 'http';
-import initSocket from './init/socket.js';
+import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import { registerHandler } from './handler/account/register.handler.js';
-import { loginHandler } from './handler/account/login.handler.js';
+import { fileURLToPath } from 'url';
+import path from 'path';
+import bcrypt from 'bcrypt';
+import { prisma } from './utils/prisma/index.js';
+import jwt from 'jsonwebtoken';
+import initSocket from './init/socket.js';
+import { registerHandler } from './handlers/account/register.handler.js';
+import { loginHandler } from './handlers/account/login.handler.js';
 import { config } from 'dotenv';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express(); // express 모듈을 사용해 express 인스턴스 생성 -> 이로 인해 express 문법 사용이 가능
 const server = createServer(app); // 인스턴스를 넣어주므로써 express 어플로 들어오는 요청을 처리할 수 있게 된다.
-const PORT = 5555 || config.server.port; //예시
+
+const PORT = 8080;
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
 const io = initSocket(server); // 웹소켓
+
+export const activeSessions = {};
+
+const corsOptions = {
+  origin: '*',
+  allowedHeaders: ['Content-type', 'Authorization'],
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+
+app.use(express.static(path.join(__dirname, '../client')));
+
+app.get('/', (req, res) => {
+  res.sendFile('index.html', { root: path.join(__dirname, '../client') });
+});
 
 app.use(cookieParser()); //쿠키 파서 미들웨어 추가 -> 클라이언트가 보낸 쿠키 내용 접근 가능
 app.use(express.json()); //json 형식의 요청을 객체로 파싱해 더욱 쉽게 다루기 가능
@@ -18,5 +48,8 @@ app.use(express.urlencoded({ extended: false })); // URL-encoded 형식의 본�
 app.use('/', [registerHandler, loginHandler]); // /라는 경로를 통해 들어온 데이터는 해당 배열의 핸들러가 순차적으로 진행.
 
 server.listen(PORT, async () => {
-  console.log(`서버가 실행되었습니다: PORT: ${PORT}`);
+  const address = server.address();
+  const host = address.address === '::' ? 'localhost' : address.address;
+  const port = address.port;
+  console.log(`Server가 http://${host}:${port} 에서 열렸습니다.`);
 });
