@@ -1,11 +1,9 @@
 import express from 'express';
+import { activeSessions } from '../../app.js';
 
 const router = express.Router();
 
-export const loginHandler = router.post('/login', async (req, res) => {});
-
-// 로그인(기본)
-router.post('/api/login', async (req, res) => {
+export const loginHandler = router.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
   try {
@@ -16,20 +14,20 @@ router.post('/api/login', async (req, res) => {
     });
 
     if (!user) {
-      return res.status(400).json({ message: 'User not found' });
+      return res.status(400).json({ status: 'fail', message: 'User not found' });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.userPassword);
 
     if (!isPasswordValid) {
-      return res.status(400).json({ message: 'Invalid password' });
+      return res.status(400).json({ status: 'fail', message: 'Invalid password' });
     }
     // 중복 로그인 방지
     if (activeSessions[user.userId]) {
-      return res.status(400).json({ message: 'User already logged in' });
+      return res.status(400).json({ status: 'fail', message: 'User already logged in' });
     }
 
-    const token = jwt.sign({ id: user.userId }, JWT_SECRET, {
+    const token = jwt.sign({ id: user.userId }, process.env.JWT_SECRET, {
       expiresIn: '1h',
     });
 

@@ -10,6 +10,7 @@ import jwt from 'jsonwebtoken';
 import initSocket from './init/socket.js';
 import { registerHandler } from './handlers/account/register.handler.js';
 import { loginHandler } from './handlers/account/login.handler.js';
+import { messageSendHandler } from './handlers/account/messageAuth.handler.js';
 import { config } from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -17,9 +18,6 @@ const __dirname = path.dirname(__filename);
 
 const app = express(); // express 모듈을 사용해 express 인스턴스 생성 -> 이로 인해 express 문법 사용이 가능
 const server = createServer(app); // 인스턴스를 넣어주므로써 express 어플로 들어오는 요청을 처리할 수 있게 된다.
-
-const PORT = 8080;
-const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
 const io = initSocket(server); // 웹소켓
 
@@ -36,13 +34,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, '../client')));
-app.use('/', [registerHandler, loginHandler]); // /라는 경로를 통해 들어온 데이터는 해당 배열의 핸들러가 순차적으로 진행.
+app.use('/api', [messageSendHandler, registerHandler, loginHandler]); // /라는 경로를 통해 들어온 데이터는 해당 배열의 핸들러가 순차적으로 진행.
 
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
   res.sendFile('index.html', { root: path.join(__dirname, '../client') });
 });
 
-server.listen(PORT, async () => {
+server.listen(process.env.PORT, async () => {
   const address = server.address();
   const host = address.address === '::' ? 'localhost' : address.address;
   const port = address.port;
