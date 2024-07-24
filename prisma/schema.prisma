@@ -10,7 +10,7 @@ generator client {
 model User {
     userId          String      @id
     userPassword    String      @map("password")
-    UserInfo        UserInfo?
+    userInfo        UserInfo?
 
     @@map("user")
 }
@@ -18,8 +18,8 @@ model User {
 model UserInfo {
     userId          String      @id
     highScore       Int         @default(0)
-    win             Int
-    lose            Int
+    win             Int         @default(0)
+    lose            Int         @default(0)
     user            User        @relation(fields: [userId], references: [userId])
 
     @@map("UserInfo")

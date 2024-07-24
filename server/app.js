@@ -58,13 +58,20 @@ app.post('/api/register', async (req, res) => {
       data: {
         userId: username,
         userPassword: hashedPassword,
+        userInfo: {
+          create: {
+            highScore: 0,
+            win: 0,
+            lose: 0,
+          },
+        },
       },
     });
 
     const token = jwt.sign({ id: newUser.userId }, JWT_SECRET, {
       expiresIn: '1h',
     });
-    res.status(201).json({ token });
+    res.status(201).json({ token, userId: newUser.userId });
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: 'Internal server error' });
@@ -102,7 +109,7 @@ app.post('/api/login', async (req, res) => {
 
     activeSessions[user.userId] = token;
 
-    res.status(200).json({ token });
+    res.status(200).json({ token, userId: user.userId });
   } catch (e) {
     console.error(e);
     res.status(500).json({ message: 'Internal server error' });

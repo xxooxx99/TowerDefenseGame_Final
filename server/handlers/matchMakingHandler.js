@@ -1,69 +1,82 @@
+import { PacketType } from '../constants.js';
 import { prisma } from '../utils/prisma/index.js';
+import { getPlayData } from '../models/playData.model.js';
 
-let matchQ = [];
+// 매칭 대기열
+let queue = [];
+// 사용자 ID를 키, 소켓 객체를 값으로 저장하는 곳
 let CLIENTS = {};
 
-async function getUserWinRate(userId) {
-  const userInfo = await prisma.userInfo.findUnique({
-    where: { userId: userId },
-  });
+// async function getUserWinRate(userId) {
+//   const userInfo = await prisma.userInfo.findUnique({
+//     where: { userId: userId },
+//   });
 
-  if (!userInfo) {
-    throw new Error(`User info not found for userId: ${userId}`);
-  }
-  const winRate = userInfo.win / (userInfo.win + userInfo.lose);
-  return winRate;
-}
+//   if (!userInfo) {
+//     throw new Error(`User info not found for userId: ${userId}`);
+//   }
+//   const winRate = userInfo.win / (userInfo.win + userInfo.lose);
+//   return winRate;
+// }
 
 async function handleMatchRequest(socket, data) {
   const { userId } = data;
   console.log(`매치 요청을 보낸 유저 ID: ${userId}`);
 
-  const winRate = await getUserWinRate(userId);
-  matchQ.push({ socket, userId, winRate });
-  console.log(`현재 대기열 상태: ${matchQ.map((user) => user.userId).join()}`);
-
-  if (matchQ.length >= 2) {
-    attemptMatch();
+  const existingUser = queue.find((user) => user.userId === userId);
+  if (existingUser) {
+    console.log(`유저 ID ${userId}는 이미 대기열에 있습니다.`);
+    socket.emit('error', { message: '이미 대기열에 있습니다.' });
+    return;
   }
+
+  // const winRate = await getUserWinRate(userId);
+  queue.push({ socket, userId });
+  console.log(`현재 대기열 상태: ${queue.map((user) => user.userId).join(`, `)}`);
+
+  socket.on('disconnect', () => {
+    queue = queue.filter((user) => user.userId !== userId);
+    console.log(
+      `유저 ${userId}가 연결 해제되었습니다. 현재 대기열 상태: ${queue.map((user) => user.userId).join(`, `)}`,
+    );
+  });
+
+  tryMatch();
 }
 
-function attemptMatch() {
-  let maxWinRateDifference = 0.1; // 초기 허용 승률
+function tryMatch() {
+  const now = Date.now();
 
-  let intervalId = setInterval(() => {
-    let matchedPlayers = new Set();
+  for (let i = 0; i < queue.length - 1; i++) {
+    for (let j = i + 1; j < queue.length; j++) {
+      const player1 = queue[i];
+      const player2 = queue[j];
 
-    for (let i = 0; i < matchQ.length - 1; i++) {
-      if (matchedPlayers.has(matchQ[i].userId)) continue;
-      for (let j = i + 1; j < matchQ.length; j++) {
-        if (matchedPlayers.has(matchQ[j].userId)) continue;
+      const elapsedSeconds = (now - player1.startTime) / 1000;
+      const winRateThreshold = 0.1 + Math.floor(elapsedSeconds / 10) * 0.1;
 
-        const player1 = matchQ[i];
-        const player2 = matchQ[j];
+      if (Math.abs(player1.winRate - player2.winRate) <= winRateThreshold) {
+        queue.splice(j, 1);
+        queue.splice(i, 1);
 
-        const winRateDifference = Math.abs(player1.winRate - player2.winRate);
+        CLIENTS[player1.userId] = player1.socket;
+        CLIENTS[player2.userId] = player2.socket;
 
-        if (winRateDifference <= maxWinRateDifference) {
-          console.log(`매칭 성공: ${player1.userId} vs ${player2.userId}`);
+        console.log(`매칭 성공: ${player1.userId} vs ${player2.userId}`);
 
-          CLIENTS[player1.userId] = player1.socket;
-          CLIENTS[player2.userId] = player2.socket;
+        const packet = {
+          packetType: PacketType.S2C_MATCH_FOUND_NOTIFICATION,
+          opponentId: player2.userId,
+        };
 
-          matchedPlayers.add(player1.userId);
-          matchedPlayers.add(player2.userId);
+        player1.socket.emit('event', packet, player1Payload);
+        player2.socket.emit('event', { ...packet, opponentId: player1.userId }, player2Payload);
 
-          break;
-        }
+        return;
       }
     }
-    matchQ = matchQ.filter((player) => !matchedPlayers.has(player.userId));
-
-    if (matchQ.length < 2) {
-      clearInterval(intervalId);
-    } else {
-      maxWinRateDifference += 0.1;
-      console.log(`다음 매치 시도까지 허용 승률 차이: ${maxWinRateDifference * 100}`);
-    }
-  }, 10000);
+  }
+  setTimeout(tryMatch, 10000);
 }
+
+export { handleMatchRequest, CLIENTS };

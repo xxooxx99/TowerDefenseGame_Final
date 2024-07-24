@@ -1,5 +1,7 @@
 import { Server as SocketIO } from 'socket.io';
 import { activeSessions } from '../app.js';
+import { PacketType } from '../constants.js';
+import { handleMatchRequest } from '../handlers/matchMakingHandler.js';
 
 const initSocket = (server) => {
   const io = new SocketIO(server);
@@ -15,18 +17,15 @@ const initSocket = (server) => {
       socket.userId = packet.userId;
 
       switch (packet.packetType) {
-        /**
-        여기에 패킷타입 추가 
         case PacketType.C2S_MATCH_REQUEST:
-        handleMatchRequest(socket, packet);
-        break;
-        */
+          handleMatchRequest(socket, packet);
+          break;
         default:
           console.log(`Unknown packet type: ${packet.packetType}`);
       }
     });
 
-    socket.in('disconnect', () => {
+    socket.on('disconnect', () => {
       console.log(`User disconnected: ${socket.id}`);
 
       if (socket.userId && activeSessions[socket.userId]) {
