@@ -1,25 +1,18 @@
-export const messages = [];
+export const messages = new Map();
 
 export const messageSet = (PhoneNumber, message) => {
   const messageData = {
-    PhoneNumber: PhoneNumber,
     message: message,
     time: Date.now(),
   };
 
-  messages.push(messageData);
+  messages.set(PhoneNumber, messageData);
 };
 
 export const messageGet = (PhoneNumber) => {
-  return messages.find((messageData) => {
-    return messageData.PhoneNumber === PhoneNumber;
-  });
+  return messages.get(PhoneNumber);
 };
 
 export const messageDelete = (PhoneNumber) => {
-  const index = messages.findIndex((messageData) => {
-    return messageData.PhoneNumber === PhoneNumber;
-  });
-
-  if (index !== -1) messages.splice(index, 1);
+  messages.delete(PhoneNumber);
 };
