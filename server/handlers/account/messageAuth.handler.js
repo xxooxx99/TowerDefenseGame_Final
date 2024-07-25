@@ -1,7 +1,7 @@
 import express from 'express';
 import coolsms from 'coolsms-node-sdk';
 import { prisma } from '../../utils/prisma/index.js';
-import { messageSet, messageDelete } from '../../session/messageSession/message.js';
+import { messageSet, messageDelete } from '../../models/message.js';
 
 const router = express.Router();
 
