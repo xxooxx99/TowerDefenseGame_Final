@@ -1,79 +1,131 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="author" content="Changmin Kang" />
-    <title>내일배움캠프 Node.js 트랙 타워 디펜스 게임 온라인</title>
-    <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
-    <style>
-      body {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        margin: 0;
-        background-color: #2d2d2d;
-        color: white;
-        font-family: Arial, sans-serif;
-      }
-      .form-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-      .form-container input {
-        margin: 10px;
-        padding: 10px;
-        font-size: 16px;
-      }
-      .form-container button {
-        padding: 10px 20px;
-        font-size: 16px;
-        cursor: pointer;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="form-container">
-      <img src="/images/logo.png" alt="logo" />
-      <h2>로그인</h2>
-      <input type="text" id="username" placeholder="아이디" />
-      <input type="password" id="password" placeholder="비밀번호" />
-      <button id="login">로그인</button>
-      <button id="back" style="margin-top: 50px">뒤로가기</button>
-    </div>
-    <script>
-      document.getElementById('login').addEventListener('click', () => {
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="author" content="Changmin Kang" />
+  <title>내일배움캠프 Node.js 트랙 타워 디펜스 게임 온라인</title>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #2d2d2d;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+    .form-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .form-container input {
+      margin: 10px;
+      padding: 10px;
+      font-size: 16px;
+    }
+    .form-container button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .logout-button {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      display: none;
+    }
+  </style>
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+</head>
+<body>
+  <div class="form-container" id="login-form">
+    <img src="/images/logo.png" alt="logo" />
+    <h2>로그인</h2>
+    <input type="text" id="username" placeholder="아이디" />
+    <input type="password" id="password" placeholder="비밀번호" />
+    <div class="g-recaptcha" data-sitekey="6LdDKBgqAAAAACcrxWrha-fwE5mXU6-XfJ8yuQJY"></div>
+    <button id="login">로그인</button>
+    <button id="back" style="margin-top: 50px">뒤로가기</button>
+  </div>
 
-        fetch('/api/login', {
+  <button class="logout-button" id="logout">로그아웃</button>
+  
+  <script>
+    document.getElementById('login').addEventListener('click', async (e) => {
+      e.preventDefault();
+      
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const recaptchaToken = document.querySelector('#g-recaptcha-response').value;
+
+      if (!recaptchaToken) {
+        alert('reCAPTCHA를 완료해주세요.');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/login', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ username, password }),
-        })
-          .then((response) => response.json())
-          .then((data) => {
-            if (data.token) {
-              // 토큰은 브라우저의 localStorage에 저장하고 있다가 필요할 때 사용합니다!
-              localStorage.setItem('token', data.token);
-              alert('로그인 성공');
-              window.location.href = 'index.html';
-            } else {
-              alert('로그인 실패');
-            }
-          })
-          .catch((error) => {
-            alert('로그인 실패');
-          });
-      });
+          body: JSON.stringify({ username, password, recaptchaToken }),
+        });
 
-      document.getElementById('back').addEventListener('click', () => {
-        window.location.href = 'index.html';
-      });
-    </script>
-  </body>
+        const data = await response.json();
+
+        if (response.ok) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('username', username);
+          alert('로그인 성공');
+          window.location.href = 'index.html';
+        } else {
+          alert('로그인 실패: ' + data.message);
+          grecaptcha.reset(); // reCAPTCHA를 재설정하여 새 토큰을 받도록 함
+        }
+      } catch (error) {
+        alert('로그인 실패');
+        grecaptcha.reset(); // reCAPTCHA를 재설정하여 새 토큰을 받도록 함
+      }
+    });
+
+    document.getElementById('logout').addEventListener('click', async () => {
+      const username = localStorage.getItem('username');
+
+      if (username) {
+        const response = await fetch('/api/logout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({ username }),
+        });
+
+        if (response.ok) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('username');
+          alert('로그아웃 성공');
+          document.getElementById('logout').style.display = 'none';
+          document.getElementById('login-form').style.display = 'flex';
+        } else {
+          alert('로그아웃 실패');
+        }
+      } else {
+        alert('로그인된 사용자가 없습니다.');
+      }
+    });
+
+    document.getElementById('back').addEventListener('click', () => {
+      window.location.href = 'index.html';
+    });
+  </script>
+</body>
 </html>
