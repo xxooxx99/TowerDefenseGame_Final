@@ -1,19 +1,23 @@
 import { Base } from './base.js';
 import { Monster } from './monster.js';
 import { Tower } from './tower.js';
+import { CLIENT_VERSION } from '../constants.js';
 
 if (!localStorage.getItem('token')) {
   alert('로그인이 필요합니다.');
   location.href = '/login';
 }
 
+const userId = localStorage.getItem('userId');
+if (!userId) {
+  alert('유저 아이디가 필요합니다.');
+  location.href = '/login';
+}
 let serverSocket;
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-
 const opponentCanvas = document.getElementById('opponentCanvas');
 const opponentCtx = opponentCanvas.getContext('2d');
-
 const progressBarContainer = document.getElementById('progressBarContainer');
 const progressBarMessage = document.getElementById('progressBarMessage');
 const progressBar = document.getElementById('progressBar');
@@ -50,16 +54,12 @@ let isInitGame = false;
 // 이미지 로딩 파트
 const backgroundImage = new Image();
 backgroundImage.src = 'images/bg.webp';
-
 const towerImage = new Image();
 towerImage.src = 'images/tower.png';
-
 const baseImage = new Image();
 baseImage.src = 'images/base.png';
-
 const pathImage = new Image();
 pathImage.src = 'images/path.png';
-
 const monsterImages = [];
 for (let i = 1; i <= NUM_OF_MONSTERS; i++) {
   const img = new Image();
@@ -174,7 +174,6 @@ function gameLoop() {
   // 렌더링 시에는 항상 배경 이미지부터 그려야 합니다! 그래야 다른 이미지들이 배경 이미지 위에 그려져요!
   ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height); // 배경 이미지 다시 그리기
   drawPath(monsterPath, ctx); // 경로 다시 그리기
-
   ctx.font = '25px Times New Roman';
   ctx.fillStyle = 'skyblue';
   ctx.fillText(`최고 기록: ${highScore}`, 100, 50); // 최고 기록 표시
@@ -275,35 +274,45 @@ Promise.all([
     }
   });
 
+  // 대결 신청
   serverSocket.on('connect', () => {
-    // TODO. 서버와 연결되면 대결 대기열 큐 진입
+    serverSocket.emit('event', {
+      packetType: 13,
+      userId: localStorage.getItem('userId'),
+    });
+    console.log('client checking: ', userId);
   });
 
-  serverSocket.on('matchFound', (data) => {
-    // 상대가 매치되면 3초 뒤 게임 시작
-    progressBarMessage.textContent = '게임이 3초 뒤에 시작됩니다.';
+  serverSocket.on('error', (data) => {
+    alert(data.message);
+    window.location.href = 'index.html';
+  });
 
-    let progressValue = 0;
-    const progressInterval = setInterval(() => {
-      progressValue += 10;
-      progressBar.value = progressValue;
-      progressBar.style.display = 'block';
-      loader.style.display = 'none';
+  serverSocket.on('event', (data, payload) => {
+    console.log(`서버로부터 이벤트 수신: ${JSON.stringify(data)}`);
 
-      if (progressValue >= 100) {
-        clearInterval(progressInterval);
-        progressBarContainer.style.display = 'none';
-        progressBar.style.display = 'none';
-        buyTowerButton.style.display = 'block';
-        canvas.style.display = 'block';
-        opponentCanvas.style.display = 'block';
-
-        // TODO. 유저 및 상대방 유저 데이터 초기화
-        if (!isInitGame) {
-          initGame();
+    if (data.PacketType === 14) {
+      progressBarMessage.textContent = '게임이 3초 뒤에 시작됩니다.';
+      let progressValue = 0;
+      const progressInterval = setInterval(() => {
+        progressValue += 10;
+        progressBar.value = progressValue;
+        progressBar.style.display = 'block';
+        loader.style.display = 'none';
+        if (progressValue >= 100) {
+          clearInterval(progressInterval);
+          progressBarContainer.style.display = 'none';
+          progressBar.style.display = 'none';
+          buyTowerButton.style.display = 'block';
+          canvas.style.display = 'block';
+          opponentCanvas.style.display = 'block';
+          // TODO. 유저 및 상대방 유저 데이터 초기화
+          if (!isInitGame) {
+            initGame(payload);
+          }
         }
-      }
-    }, 300);
+      }, 300);
+    }
   });
 
   serverSocket.on('gameOver', (data) => {
@@ -338,7 +347,15 @@ buyTowerButton.style.padding = '10px 20px';
 buyTowerButton.style.fontSize = '16px';
 buyTowerButton.style.cursor = 'pointer';
 buyTowerButton.style.display = 'none';
-
 buyTowerButton.addEventListener('click', placeNewTower);
-
 document.body.appendChild(buyTowerButton);
+
+function sendEvent(handlerId, payload) {
+  const decycledPayload = decycle(payload);
+  serverSocket.emit('event', {
+    userId,
+    clientVersion: CLIENT_VERSION,
+    PacketType: handlerId,
+    payload: decycledPayload,
+  });
+}
