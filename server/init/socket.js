@@ -1,7 +1,7 @@
 import { Server as SocketIO } from 'socket.io';
 import { activeSessions } from '../app.js';
 import { PacketType } from '../constants.js';
-import { handleMatchRequest } from '../handlers/matchMakingHandler.js';
+import { handleMatchRequest } from '../handlers/match/matchMakingHandler.js';
 
 const initSocket = (server) => {
   const io = new SocketIO(server);

@@ -1,6 +1,4 @@
-import { PacketType } from '../constants.js';
-import { prisma } from '../utils/prisma/index.js';
-import { getPlayData } from '../models/playData.model.js';
+import { PacketType } from '../../constants.js';
 
 // 매칭 대기열
 let queue = [];

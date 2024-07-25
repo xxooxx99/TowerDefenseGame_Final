@@ -40,6 +40,7 @@
       <h2>회원가입</h2>
       <input type="text" id="username" placeholder="아이디" />
       <input type="password" id="password" placeholder="비밀번호" />
+      <input type="userPhoneNumber" id="userPhoneNumber" placeholder="전화번호" />
       <button id="register">회원가입</button>
       <button id="back" style="margin-top: 50px">뒤로가기</button>
     </div>
@@ -47,20 +48,46 @@
       document.getElementById('register').addEventListener('click', () => {
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
+        const userPhoneNumber = document.getElementById('userPhoneNumber').value;
 
-        fetch('/api/register', {
+        let number;
+        fetch('api/messageAuth', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ username, password }),
+          body: JSON.stringify({ userPhoneNumber, username }),
         })
           .then((response) => {
             if (response.status === 201) {
-              alert('회원가입 성공');
-              window.location.href = 'index.html';
+              number = prompt('발송된 번호를 입력해주세요!', '');
+
+              fetch('/api/register', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ number, username, password, userPhoneNumber }),
+              })
+                .then((response) => {
+                  if (response.status === 201) {
+                    alert('회원가입 성공');
+                    window.location.href = 'index.html';
+                  } else {
+                    response.json().then((data) => {
+                      console.log(data.message);
+                      alert(`회원가입 실패:${data.message}`);
+                    });
+                  }
+                })
+                .catch((error) => {
+                  console.error('Error:', error);
+                });
             } else {
-              alert('회원가입 실패');
+              response.json().then((data) => {
+                console.log(data.message);
+                alert(`회원가입 실패:${data.message}`);
+              });
             }
           })
           .catch((error) => {
