@@ -38,7 +38,7 @@
     <div class="form-container">
       <img src="/images/logo.png" alt="logo" />
       <h2>회원가입</h2>
-      <input type="text" id="username" placeholder="아이디" />
+      <input type="text" id="userId" placeholder="아이디" />
       <input type="password" id="password" placeholder="비밀번호" />
       <input type="userPhoneNumber" id="userPhoneNumber" placeholder="전화번호" />
       <button id="register">회원가입</button>
@@ -46,7 +46,7 @@
     </div>
     <script>
       document.getElementById('register').addEventListener('click', () => {
-        const username = document.getElementById('username').value;
+        const userId = document.getElementById('userId').value;
         const password = document.getElementById('password').value;
         const userPhoneNumber = document.getElementById('userPhoneNumber').value;
 
@@ -56,7 +56,7 @@
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ userPhoneNumber, username }),
+          body: JSON.stringify({ userPhoneNumber, userId }),
         })
           .then((response) => {
             if (response.status === 201) {
@@ -67,7 +67,7 @@
                 headers: {
                   'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ number, username, password, userPhoneNumber }),
+                body: JSON.stringify({ number, userId, password, userPhoneNumber }),
               })
                 .then((response) => {
                   if (response.status === 201) {
