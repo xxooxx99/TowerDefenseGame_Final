@@ -1,7 +1,7 @@
 import express from 'express';
 import coolsms from 'coolsms-node-sdk';
 import { prisma } from '../../utils/prisma/index.js';
-import { messageSet, messageDelete } from '../../session/messageSession/message.js';
+import { messageSet, messageDelete } from '../../models/message.js';
 
 const router = express.Router();
 
@@ -45,7 +45,7 @@ export const messageSendHandler = router.post('/messageAuth', async (req, res) =
         }, 180000);
       });
 
-    // messageSet(userPhoneNumber, randomInt.toString()); 테스트시 해당 코드 활성화하고 위의 messageService 부분은 주석처리!!
+    // messageSet(userPhoneNumber, randomInt.toString()); //테스트시 해당 코드 활성화하고 위의 messageService 부분은 주석처리!!
 
     return res.status(201).json({ status: 'success' });
   } catch (e) {
