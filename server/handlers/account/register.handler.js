@@ -33,6 +33,9 @@ export const registerHandler = router.post('/register', async (req, res) => {
         userId: userId,
         userPassword: hashedPassword,
         userPhoneNumber: userPhoneNumber,
+        UserInfo: {
+          create: { highScore: 0, win: 0, lose: 0 },
+        },
       },
     });
 
