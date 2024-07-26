@@ -12,6 +12,7 @@ const regPhone = /^01([0|1|6|7|8|9])-?([0-9]{3,4})-?([0-9]){4}$/;
 
 export const messageSendHandler = router.post('/messageAuth', async (req, res) => {
   const { userPhoneNumber, userId } = req.body;
+  
   try {
     const isExistingUserId = await prisma.user.findFirst({
       where: {
