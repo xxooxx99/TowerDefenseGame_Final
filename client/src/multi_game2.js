@@ -22,12 +22,19 @@ const opponentCtx = opponentCanvas.getContext('2d');
 const progressBarContainer = document.getElementById('progressBarContainer');
 const progressBarMessage = document.getElementById('progressBarMessage');
 const progressBar = document.getElementById('progressBar');
+const matchAcceptButton = document.getElementById('matchAcceptButton');
 const loader = document.getElementsByClassName('loader')[0];
 
 const NUM_OF_MONSTERS = 5; // 몬스터 개수
 // 게임 데이터
 let towerCost = 0; // 타워 구입 비용
 let monsterSpawnInterval = 0; // 몬스터 생성 주기
+
+// 설정 데이터
+let acceptTime = 10000; // 수락 대기 시간
+
+// 인터벌 데이터
+let matchAcceptInterval;
 
 // 유저 데이터
 let userGold = 0; // 유저 골드
@@ -254,6 +261,67 @@ function initGame() {
   isInitGame = true;
 }
 
+function matchFind() {
+  progressBarMessage.textContent = '게임을 찾았습니다.';
+  matchAcceptButton.style.display = 'block';
+  let progressValue = 0;
+  progressBar.value = 0;
+  progressBar.style.display = 'block';
+  loader.style.display = 'none';
+  matchAcceptInterval = setInterval(() => {
+    progressValue += 10;
+    progressBar.value = progressValue;
+
+    // 일정 시간이 지나면 자동으로 거절을 하도록 한다
+    if (progressValue >= 100) {
+      clearInterval(matchAcceptInterval);
+      progressBarContainer.style.display = 'none';
+      progressBar.style.display = 'none';
+      matchAcceptButton.disabled = false;
+      serverSocket.emit('event', {
+        packetType: 17,
+        userId: localStorage.getItem('userId2'),
+      });
+      location.reload();
+    }
+  }, acceptTime / 10);
+
+  // 수락 버튼에 서버 소켓으로 보내는 함수 출력
+  matchAcceptButton.addEventListener('click', () => {
+    matchAcceptButton.disabled = true;
+    serverSocket.emit('event', {
+      packetType: 16,
+      userId: localStorage.getItem('userId2'),
+    });
+  });
+}
+
+function matchStart() {
+  clearInterval(matchAcceptInterval);
+  progressBarMessage.textContent = '게임이 5초 뒤에 시작됩니다.';
+  matchAcceptButton.style.display = 'none';
+  let progressValue = 0;
+  progressBar.value = 0;
+  const progressInterval = setInterval(() => {
+    progressValue += 10;
+    progressBar.value = progressValue;
+    progressBar.style.display = 'block';
+    loader.style.display = 'none';
+    if (progressValue >= 100) {
+      clearInterval(progressInterval);
+      progressBarContainer.style.display = 'none';
+      progressBar.style.display = 'none';
+      buyTowerButton.style.display = 'block';
+      canvas.style.display = 'block';
+      opponentCanvas.style.display = 'block';
+      // TODO. 유저 및 상대방 유저 데이터 초기화
+      if (!isInitGame) {
+        initGame();
+      }
+    }
+  }, 500);
+}
+
 // 이미지 로딩 완료 후 서버와 연결하고 게임 초기화
 Promise.all([
   new Promise((resolve) => (backgroundImage.onload = resolve)),
@@ -293,28 +361,9 @@ Promise.all([
     console.log(`서버로부터 이벤트 수신: ${JSON.stringify(data)}`);
 
     if (data.PacketType === 14) {
-      progressBarMessage.textContent = '게임이 3초 뒤에 시작됩니다.';
-
-      let progressValue = 0;
-      const progressInterval = setInterval(() => {
-        progressValue += 10;
-        progressBar.value = progressValue;
-        progressBar.style.display = 'block';
-        loader.style.display = 'none';
-        if (progressValue >= 100) {
-          clearInterval(progressInterval);
-          progressBarContainer.style.display = 'none';
-          progressBar.style.display = 'none';
-          buyTowerButton.style.display = 'block';
-          canvas.style.display = 'block';
-          opponentCanvas.style.display = 'block';
-
-          // TODO. 유저 및 상대방 유저 데이터 초기화
-          if (!isInitGame) {
-            initGame(payload);
-          }
-        }
-      }, 300);
+      matchFind();
+    } else if (data.PacketType === 18) {
+      matchStart();
     }
   });
 
