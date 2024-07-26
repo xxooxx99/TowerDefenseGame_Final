@@ -9,9 +9,9 @@ const router = express.Router();
 const sessionTimeout = 60 * 60 * 1000; // 1시간
 
 router.post('/login', async (req, res) => {
-  const { userId, password, recaptchaToken } = req.body;
+  const { username, password, recaptchaToken } = req.body;
 
-  console.log('Received login request:', { userId, password, recaptchaToken });
+  console.log('Received login request:', { username, password, recaptchaToken });
 
   try {
     if (!recaptchaToken) {
@@ -32,7 +32,7 @@ router.post('/login', async (req, res) => {
 
     // 사용자 인증
     const user = await prisma.user.findUnique({
-      where: { userId: userId },
+      where: { userId: username },
     });
 
     console.log('User found in database:', user);
@@ -70,9 +70,9 @@ router.post('/login', async (req, res) => {
 });
 
 router.post('/logout', async (req, res) => {
-  const { userId } = req.body;
-  delete activeSessions[userId];
-  console.log('User logged out successfully:', userId);
+  const { username } = req.body;
+  delete activeSessions[username];
+  console.log('User logged out successfully:', username);
   res.status(200).json({ message: 'Logout successful' });
 });
 
