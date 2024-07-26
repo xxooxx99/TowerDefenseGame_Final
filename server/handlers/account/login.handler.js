@@ -1,4 +1,5 @@
 import express from 'express';
+import { Prisma } from '@prisma/client';
 import { activeSessions } from '../../app.js';
 
 const router = express.Router();
