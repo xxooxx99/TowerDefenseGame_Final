@@ -68,6 +68,17 @@
           transform: rotate(360deg);
         }
       }
+      .logout-container {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        color: white;
+      }
+      .logout-container button {
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+      }
     </style>
   </head>
   <body>
@@ -79,6 +90,12 @@
       <button id="matchButton">다른 유저와 대결하기</button>
       <button id="matchButton2">다른 유저와 대결하기2 (로컬에서 2인 테스트 할 때 사용)</button>
     </div>
+
+    <div class="logout-container" id="logout-container" style="display: none">
+      <div id="current-user"></div>
+      <button id="logout">로그아웃</button>
+    </div>
+
     <div id="progressBarContainer">
       <h1 id="progressBarMessage" style="color: white">대결 상대를 탐색중입니다!</h1>
       <div class="loader"></div>
@@ -89,6 +106,18 @@
     <canvas id="opponentCanvas" width="1500" height="680"></canvas>
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
     <script type="module">
+      window.addEventListener('load', () => {
+        const token = localStorage.getItem('token');
+        const userId = localStorage.getItem('userId');
+        if (token && userId) {
+          document.getElementById('registerButton').style.display = 'none';
+          document.getElementById('loginButton').style.display = 'none';
+          document.getElementById('loginButton2').style.display = 'none';
+          document.getElementById('current-user').innerText = `현재 접속된 아이디: ${userId}`;
+          document.getElementById('logout-container').style.display = 'block';
+        }
+      });
+
       document.getElementById('registerButton').addEventListener('click', () => {
         window.location.href = 'register.html';
       });
@@ -111,8 +140,35 @@
       document.getElementById('matchButton2').addEventListener('click', () => {
         document.querySelector('.button-container').style.display = 'none';
         document.getElementById('progressBarContainer').style.display = 'block';
-        document.getElementById('matchAcceptButton').style.display = 'none';
         import('./src/multi_game2.js');
+      });
+
+      document.getElementById('logout').addEventListener('click', async () => {
+        const userId = localStorage.getItem('userId');
+        if (userId) {
+          const response = await fetch('/api/logout', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+            body: JSON.stringify({ userId }),
+          });
+
+          if (response.ok) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userId');
+            alert('로그아웃 성공');
+            document.getElementById('logout-container').style.display = 'none';
+            document.getElementById('registerButton').style.display = 'block';
+            document.getElementById('loginButton').style.display = 'block';
+            document.getElementById('loginButton2').style.display = 'block';
+          } else {
+            alert('로그아웃 실패');
+          }
+        } else {
+          alert('로그인된 사용자가 없습니다.');
+        }
       });
     </script>
   </body>

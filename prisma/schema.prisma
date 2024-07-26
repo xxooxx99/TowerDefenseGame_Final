@@ -10,7 +10,8 @@ generator client {
 model User {
     userId          String      @id
     userPassword    String      @map("password")
-    userInfo        UserInfo?
+    userPhoneNumber String      @unique @map("userPhoneNumber")
+    UserInfo        UserInfo?   
 
     @@map("user")
 }
