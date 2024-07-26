@@ -7,12 +7,11 @@ export const initTowerData = (userId) => {
 };
 
 export const towerSet = (userId, towerId, towerPos) => {
-  // user의 골드 검증은 일단 재쳐둔 상태
+  //user의 골드 검증은 일단 재쳐둔 상태
 
-  // x, y좌표를 이용해서 해당 타워가 건설될 수 있는 공간인지 확인 추가해야함.
+  //x, y좌표를 이용해서 해당 타워가 건설될 수 있는 공간인지 확인 추가해야함.
 
-  // 해당 코드는 배열이 아닌 객체로 어떠한 타워를 가르키는지 사용하기 위해 사용됩니다.
-  // (추후 지정 타워 업그레이드를 위해)
+  //해당 코드는 배열이 아닌 객체로 어떠한 타워를 가르키는지 사용하기 위해 사용됩니다.
   let count = userTower[userId].length + 1;
 
   let towerAsset = getGameAssets.towerData.data;
