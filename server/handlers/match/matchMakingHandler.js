@@ -1,9 +1,14 @@
 import { PacketType } from '../../constants.js';
+import { addAccept_queue } from './matchAcceptHandler.js';
 
 // 매칭 대기열
-let queue = [];
+let matching_queue = [];
+
 // 사용자 ID를 키, 소켓 객체를 값으로 저장하는 곳
 let CLIENTS = {};
+
+// 수락 대기열을 구별하기 위한 인덱스
+let index = 0;
 
 // async function getUserWinRate(userId) {
 //   const userInfo = await prisma.userInfo.findUnique({
@@ -21,7 +26,7 @@ async function handleMatchRequest(socket, data) {
   const { userId } = data;
   console.log(`매치 요청을 보낸 유저 ID: ${userId}`);
 
-  const existingUser = queue.find((user) => user.userId === userId);
+  const existingUser = matching_queue.find((user) => user.userId === userId);
   if (existingUser) {
     console.log(`유저 ID ${userId}는 이미 대기열에 있습니다.`);
     socket.emit('error', { message: '이미 대기열에 있습니다.' });
@@ -29,13 +34,13 @@ async function handleMatchRequest(socket, data) {
   }
 
   // const winRate = await getUserWinRate(userId);
-  queue.push({ socket, userId });
-  console.log(`현재 대기열 상태: ${queue.map((user) => user.userId).join(`, `)}`);
+  matching_queue.push({ socket, userId });
+  console.log(`현재 대기열 상태: ${matching_queue.map((user) => user.userId).join(`, `)}`);
 
   socket.on('disconnect', () => {
-    queue = queue.filter((user) => user.userId !== userId);
+    matching_queue = matching_queue.filter((user) => user.userId !== userId);
     console.log(
-      `유저 ${userId}가 연결 해제되었습니다. 현재 대기열 상태: ${queue.map((user) => user.userId).join(`, `)}`,
+      `유저 ${userId}가 연결 해제되었습니다. 현재 대기열 상태: ${matching_queue.map((user) => user.userId).join(`, `)}`,
     );
   });
 
@@ -45,17 +50,19 @@ async function handleMatchRequest(socket, data) {
 function tryMatch() {
   const now = Date.now();
 
-  for (let i = 0; i < queue.length - 1; i++) {
-    for (let j = i + 1; j < queue.length; j++) {
-      const player1 = queue[i];
-      const player2 = queue[j];
+  for (let i = 0; i < matching_queue.length - 1; i++) {
+    for (let j = i + 1; j < matching_queue.length; j++) {
+      const player1 = matching_queue[i];
+      const player2 = matching_queue[j];
 
       const elapsedSeconds = (now - player1.startTime) / 1000;
       const winRateThreshold = 0.1 + Math.floor(elapsedSeconds / 10) * 0.1;
 
-      if (Math.abs(player1.winRate - player2.winRate) <= winRateThreshold) {
-        queue.splice(j, 1);
-        queue.splice(i, 1);
+      // 매칭 성공 시
+      if (true) {
+        //if (Math.abs(player1.winRate - player2.winRate) <= winRateThreshold) {
+        matching_queue.splice(j, 1);
+        matching_queue.splice(i, 1);
 
         CLIENTS[player1.userId] = player1.socket;
         CLIENTS[player2.userId] = player2.socket;
@@ -63,13 +70,16 @@ function tryMatch() {
         console.log(`매칭 성공: ${player1.userId} vs ${player2.userId}`);
 
         const packet = {
-          packetType: PacketType.S2C_MATCH_FOUND_NOTIFICATION,
+          PacketType: PacketType.S2C_MATCH_FOUND_NOTIFICATION,
           opponentId: player2.userId,
+          index: index,
         };
 
-        player1.socket.emit('event', packet, player1Payload);
-        player2.socket.emit('event', { ...packet, opponentId: player1.userId }, player2Payload);
+        player1.socket.emit('event', packet);
+        player2.socket.emit('event', { ...packet, opponentId: player1.userId });
 
+        addAccept_queue(index, player1, player2);
+        index++;
         return;
       }
     }

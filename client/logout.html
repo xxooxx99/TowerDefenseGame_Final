@@ -1,38 +1,38 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Logout</title>
-</head>
-<body>
-  <button id="logoutButton">Logout</button>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Logout</title>
+  </head>
+  <body>
+    <button id="logoutButton">Logout</button>
 
-  <script>
-    document.getElementById('logoutButton').addEventListener('click', async () => {
-      const username = localStorage.getItem('username'); // 사용자 이름을 로컬 스토리지에서 가져옵니다.
+    <script>
+      document.getElementById('logoutButton').addEventListener('click', async () => {
+        const userId = localStorage.getItem('userId'); // 사용자 이름을 로컬 스토리지에서 가져옵니다.
 
-      if (username) {
-        const response = await fetch('/api/logout', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ username }),
-        });
+        if (userId) {
+          const response = await fetch('/api/logout', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ userId }),
+          });
 
-        if (response.ok) {
-          localStorage.removeItem('token'); // 토큰을 로컬 스토리지에서 제거합니다.
-          localStorage.removeItem('username'); // 사용자 이름을 로컬 스토리지에서 제거합니다.
-          alert('Logout successful');
-          window.location.href = '/login.html'; // 로그인 페이지로 리다이렉트합니다.
+          if (response.ok) {
+            localStorage.removeItem('token'); // 토큰을 로컬 스토리지에서 제거합니다.
+            localStorage.removeItem('userId'); // 사용자 이름을 로컬 스토리지에서 제거합니다.
+            alert('Logout successful');
+            window.location.href = '/login.html'; // 로그인 페이지로 리다이렉트합니다.
+          } else {
+            alert('Logout failed');
+          }
         } else {
-          alert('Logout failed');
+          alert('No user is logged in');
         }
-      } else {
-        alert('No user is logged in');
-      }
-    });
-  </script>
-</body>
+      });
+    </script>
+  </body>
 </html>

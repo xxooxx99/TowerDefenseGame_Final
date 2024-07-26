@@ -48,7 +48,7 @@
     <div class="form-container" id="login-form">
       <img src="/images/logo.png" alt="logo" />
       <h2>로그인</h2>
-      <input type="text" id="username" placeholder="아이디" />
+      <input type="text" id="userId" placeholder="아이디" />
       <input type="password" id="password" placeholder="비밀번호" />
       <div class="g-recaptcha" data-sitekey="6LdDKBgqAAAAACcrxWrha-fwE5mXU6-XfJ8yuQJY"></div>
       <button id="login">로그인</button>
@@ -61,7 +61,7 @@
       document.getElementById('login').addEventListener('click', async (e) => {
         e.preventDefault();
 
-        const username = document.getElementById('username').value;
+        const userId = document.getElementById('userId').value;
         const password = document.getElementById('password').value;
         const recaptchaToken = document.querySelector('#g-recaptcha-response').value;
 
@@ -76,14 +76,14 @@
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ username, password, recaptchaToken }),
+            body: JSON.stringify({ userId, password, recaptchaToken }),
           });
 
           const data = await response.json();
 
           if (response.ok) {
             localStorage.setItem('token', data.token);
-            localStorage.setItem('username', username);
+            localStorage.setItem('userId', userId);
             alert('로그인 성공');
             window.location.href = 'index.html';
           } else {
@@ -97,21 +97,21 @@
       });
 
       document.getElementById('logout').addEventListener('click', async () => {
-        const username = localStorage.getItem('username');
+        const userId = localStorage.getItem('userId');
 
-        if (username) {
+        if (userId) {
           const response = await fetch('/api/logout', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${localStorage.getItem('token')}`,
             },
-            body: JSON.stringify({ username }),
+            body: JSON.stringify({ userId }),
           });
 
           if (response.ok) {
             localStorage.removeItem('token');
-            localStorage.removeItem('username');
+            localStorage.removeItem('userId');
             alert('로그아웃 성공');
             document.getElementById('logout').style.display = 'none';
             document.getElementById('login-form').style.display = 'flex';
