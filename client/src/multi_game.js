@@ -331,7 +331,7 @@ Promise.all([
   new Promise((resolve) => (pathImage.onload = resolve)),
   ...monsterImages.map((img) => new Promise((resolve) => (img.onload = resolve))),
 ]).then(() => {
-  serverSocket = io('http://localhost:8080', {
+  serverSocket = io('http://localhost:5555', {
     auth: {
       token: localStorage.getItem('token'),
     },

@@ -1,6 +1,4 @@
-import { PacketType } from '../constants.js';
-import { prisma } from '../utils/prisma/index.js';
-import { getPlayData } from '../models/playData.model.js';
+import { PacketType } from '../../constants.js';
 import { addAccept_queue } from './matchAcceptHandler.js';
 
 // 매칭 대기열

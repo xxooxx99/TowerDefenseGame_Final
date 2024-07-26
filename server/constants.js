@@ -6,4 +6,5 @@ export const PacketType = {
   S2C_MATCH_ACCEPT_REQUEST: 15,
   C2S_MATCH_ACCEPT: 16,
   C2S_MATCH_DENIED: 17,
+  S2C_MATCH_START: 18,
 };
