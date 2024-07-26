@@ -2,6 +2,10 @@ import { Server as SocketIO } from 'socket.io';
 import { activeSessions } from '../app.js';
 import { PacketType } from '../constants.js';
 import { handleMatchRequest } from '../handlers/matchMakingHandler.js';
+import {
+  handlerMatchAcceptRequest,
+  handlerMatchDeniedRequest,
+} from '../handlers/matchAcceptHandler.js';
 
 const initSocket = (server) => {
   const io = new SocketIO(server);
@@ -19,6 +23,12 @@ const initSocket = (server) => {
       switch (packet.packetType) {
         case PacketType.C2S_MATCH_REQUEST:
           handleMatchRequest(socket, packet);
+          break;
+        case PacketType.C2S_MATCH_ACCEPT:
+          handlerMatchAcceptRequest(socket, packet);
+          break;
+        case PacketType.C2S_MATCH_DENIED:
+          handlerMatchDeniedRequest(socket, packet);
           break;
         default:
           console.log(`Unknown packet type: ${packet.packetType}`);
