@@ -9,7 +9,7 @@ const salt = await bcrypt.genSalt(parseInt(process.env.SALT));
 const router = express.Router();
 
 export const registerHandler = router.post('/register', async (req, res) => {
-  const { number, username, password, userPhoneNumber } = req.body;
+  const { number, userId, password, userPhoneNumber } = req.body;
 
   try {
     const data = messageGet(userPhoneNumber);
@@ -30,7 +30,7 @@ export const registerHandler = router.post('/register', async (req, res) => {
 
     const newUser = await prisma.user.create({
       data: {
-        userId: username,
+        userId: userId,
         userPassword: hashedPassword,
         userPhoneNumber: userPhoneNumber,
       },

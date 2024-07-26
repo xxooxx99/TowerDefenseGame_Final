@@ -120,12 +120,12 @@
   <script type="module">
     window.addEventListener('load', () => {
       const token = localStorage.getItem('token');
-      const username = localStorage.getItem('username');
-      if (token && username) {
+      const userId = localStorage.getItem('userId');
+      if (token && userId) {
         document.getElementById('registerButton').style.display = 'none';
         document.getElementById('loginButton').style.display = 'none';
         document.getElementById('loginButton2').style.display = 'none';
-        document.getElementById('current-user').innerText = `현재 접속된 아이디: ${username}`;
+        document.getElementById('current-user').innerText = `현재 접속된 아이디: ${userId}`;
         document.getElementById('logout-container').style.display = 'block';
       }
     });
@@ -155,20 +155,20 @@
     });
 
     document.getElementById('logout').addEventListener('click', async () => {
-      const username = localStorage.getItem('username');
-      if (username) {
+      const userId = localStorage.getItem('userId');
+      if (userId) {
         const response = await fetch('/api/logout', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
           },
-          body: JSON.stringify({ username }),
+          body: JSON.stringify({ userId }),
         });
 
         if (response.ok) {
           localStorage.removeItem('token');
-          localStorage.removeItem('username');
+          localStorage.removeItem('userId');
           alert('로그아웃 성공');
           document.getElementById('logout-container').style.display = 'none';
           document.getElementById('registerButton').style.display = 'block';
