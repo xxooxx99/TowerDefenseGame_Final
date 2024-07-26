@@ -2,8 +2,8 @@ import express from 'express';
 import { prisma } from '../../utils/prisma/index.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { messageGet } from '../../session/messageSession/message.js';
-import { messageDelete, messages } from '../../session/messageSession/message.js';
+import { messageGet } from '../../models/message.js';
+import { messageDelete, messages } from '../../models/message.js';
 
 const salt = await bcrypt.genSalt(parseInt(process.env.SALT));
 const router = express.Router();

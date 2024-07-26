@@ -15,7 +15,7 @@
     "prettier": "^3.3.2"
   },
   "dependencies": {
-    "@prisma/client": "^5.16.2",
+    "@prisma/client": "^5.17.0",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.6",
     "coolsms-node-sdk": "^2.1.0",
