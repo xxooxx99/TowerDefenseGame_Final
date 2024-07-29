@@ -80,7 +80,7 @@ let bgm;
 function initMap() {
   ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height); // 배경 이미지 그리기
   drawPath(monsterPath, ctx);
-  drawPath(opponentMonsterPath, opponentCtx);
+  drawPath(monsterPath, opponentCtx);
   placeInitialTowers(initialTowerCoords, towers, ctx); // 초기 타워 배치
   placeInitialTowers(opponentInitialTowerCoords, opponentTowers, opponentCtx); // 상대방 초기 타워 배치
   placeBase(basePosition, true);
@@ -138,6 +138,35 @@ function getRandomPositionNearPath(maxDistance) {
     x: posX + offsetX,
     y: posY + offsetY,
   };
+}
+
+function generateRandomMonsterPath() {
+  const path = [];
+  let currentX = 0;
+  let currentY = Math.floor(Math.random() * 21) + 500; // 500 ~ 520 범위의 y 시작 (캔버스 y축 중간쯤에서 시작할 수 있도록 유도)
+
+  path.push({ x: currentX, y: currentY });
+
+  while (currentX < canvas.width - 50) {
+    currentX += Math.floor(Math.random() * 100) + 50; // 50 ~ 150 범위의 x 증가
+    // x 좌표에 대한 clamp 처리
+    if (currentX > canvas.width - 50) {
+      currentX = canvas.width - 50;
+    }
+
+    currentY += Math.floor(Math.random() * 200) - 100; // -100 ~ 100 범위의 y 변경
+    // y 좌표에 대한 clamp 처리
+    if (currentY < 50) {
+      currentY = 50;
+    }
+    if (currentY > canvas.height - 50) {
+      currentY = canvas.height - 50;
+    }
+
+    path.push({ x: currentX, y: currentY });
+  }
+
+  return path;
 }
 
 function placeInitialTowers(initialTowerCoords, initialTowers, context) {
@@ -297,6 +326,7 @@ function matchFind() {
 }
 
 function matchStart() {
+  sendEvent;
   console.log('매치 스타트');
   clearInterval(matchAcceptInterval);
   progressBarMessage.textContent = '게임이 5초 뒤에 시작됩니다.';
@@ -317,6 +347,7 @@ function matchStart() {
       opponentCanvas.style.display = 'block';
       // TODO. 유저 및 상대방 유저 데이터 초기화
       if (!isInitGame) {
+        console.log(serverSocket);
         initGame();
       }
     }
@@ -345,7 +376,10 @@ Promise.all([
   });
 
   // 대결 신청
-  serverSocket.on('connect', () => {
+  serverSocket.on('connection', () => {
+    if (!monsterPath) {
+      monsterPath = generateRandomMonsterPath();
+    }
     serverSocket.emit('event', {
       packetType: 13,
       userId: localStorage.getItem('userId'),
@@ -405,12 +439,11 @@ buyTowerButton.style.display = 'none';
 buyTowerButton.addEventListener('click', placeNewTower);
 document.body.appendChild(buyTowerButton);
 
-function sendEvent(handlerId, payload) {
-  const decycledPayload = decycle(payload);
+export const sendEvent = (handlerId, payload) => {
   serverSocket.emit('event', {
     userId,
     clientVersion: CLIENT_VERSION,
     PacketType: handlerId,
-    payload: decycledPayload,
+    payload,
   });
-}
+};

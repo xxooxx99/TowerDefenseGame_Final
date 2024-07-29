@@ -8,10 +8,12 @@ import {
 } from '../handlers/match/matchAcceptHandler.js';
 
 const initSocket = (server) => {
-  const io = new SocketIO(server);
+  const io = new SocketIO();
+  io.attach(server);
 
   io.on('connection', (socket) => {
     console.log(`New user connected: ${socket.id}`);
+    socket.emit('connection', { status: 'success', message: '연결 완료' });
 
     socket.on('event', (packet) => {
       console.log(

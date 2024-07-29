@@ -1,6 +1,7 @@
 import { PacketType } from '../../constants.js';
 import { prisma } from '../../utils/prisma/index.js';
 import { getPlayData } from '../../models/playData.model.js';
+import { createPlayData } from '../../models/playData.model.js';
 
 // 수락 대기열
 let accept_queue = [];
