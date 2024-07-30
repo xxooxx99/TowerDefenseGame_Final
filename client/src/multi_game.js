@@ -1,7 +1,7 @@
 import { Base } from './base.js';
 import { Monster } from './monster.js';
 import { Tower } from './tower.js';
-import { CLIENT_VERSION } from '../constants.js';
+import { CLIENT_VERSION, PacketType } from '../constants.js';
 
 if (!localStorage.getItem('token')) {
   alert('로그인이 필요합니다.');
@@ -25,9 +25,13 @@ const progressBar = document.getElementById('progressBar');
 const matchAcceptButton = document.getElementById('matchAcceptButton');
 const loader = document.getElementsByClassName('loader')[0];
 
+let towerBuilder = { id: null };
+let posX = 0;
+let posY = 0;
+
 const NUM_OF_MONSTERS = 5; // 몬스터 개수
 // 게임 데이터
-let towerCost = 0; // 타워 구입 비용
+let towerCost; // 타워 구입 비용
 let monsterSpawnInterval = 0; // 몬스터 생성 주기
 
 // 설정 데이터
@@ -81,8 +85,10 @@ function initMap() {
   ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height); // 배경 이미지 그리기
   drawPath(monsterPath, ctx);
   drawPath(monsterPath, opponentCtx);
-  placeInitialTowers(initialTowerCoords, towers, ctx); // 초기 타워 배치
-  placeInitialTowers(opponentInitialTowerCoords, opponentTowers, opponentCtx); // 상대방 초기 타워 배치
+  // placeInitialTowers(initialTowerCoords, towers, ctx); // 초기 타워 배치
+  // placeInitialTowers(opponentInitialTowerCoords, opponentTowers, opponentCtx); // 상대방 초기 타워 배치
+  basePosition = monsterPath[monsterPath.length - 1];
+  opponentBasePosition = monsterPath[monsterPath.length - 1];
   placeBase(basePosition, true);
   placeBase(opponentBasePosition, false);
 }
@@ -177,17 +183,21 @@ function placeInitialTowers(initialTowerCoords, initialTowers, context) {
   });
 }
 
-function placeNewTower() {
+//건물 건설 활성화 및 비활성화 버튼
+function towerBuilderCheck(towerType) {
+  if (!towerBuilder.id) towerBuilder.id = towerType;
+  else if (towerBuilder.id === towerType) towerBuilder.id = null;
+  else console.log('build를 취소해주세요!');
+}
+
+function towerRequest() {
   // 타워를 구입할 수 있는 자원이 있을 때 타워 구입 후 랜덤 배치
-  if (userGold < towerCost) {
-    alert('골드가 부족합니다.');
+  if (userGold < towerCost[towerBuilder.id]) {
+    console.log('골드가 부족합니다');
     return;
   }
 
-  const { x, y } = getRandomPositionNearPath(200);
-  const tower = new Tower(x, y);
-  towers.push(tower);
-  tower.draw(ctx, towerImage);
+  sendEvent(PacketType.C2S_TOWER_CREATE, { userId, towerId: towerBuilder.id, posX, posY });
 }
 
 function placeBase(position, isPlayer) {
@@ -278,6 +288,7 @@ function initGame() {
   if (isInitGame) {
     return;
   }
+  sendEvent(PacketType.S2C_USER_GOLD_INIT, { userId });
   bgm = new Audio('sounds/bgm.mp3');
   bgm.loop = true;
   bgm.volume = 0.2;
@@ -326,7 +337,6 @@ function matchFind() {
 }
 
 function matchStart() {
-  sendEvent;
   console.log('매치 스타트');
   clearInterval(matchAcceptInterval);
   progressBarMessage.textContent = '게임이 5초 뒤에 시작됩니다.';
@@ -347,7 +357,6 @@ function matchStart() {
       opponentCanvas.style.display = 'block';
       // TODO. 유저 및 상대방 유저 데이터 초기화
       if (!isInitGame) {
-        console.log(serverSocket);
         initGame();
       }
     }
@@ -404,6 +413,30 @@ Promise.all([
     }
   });
 
+  serverSocket.on('userGoldInit', (data) => {
+    userGold = data.value;
+  });
+
+  serverSocket.on('towerCostInit', (data) => {
+    towerCost = data;
+  });
+
+  serverSocket.on('userTowerCreate', (data) => {
+    try {
+      //const { x, y } = getRandomPositionNearPath(200);
+      const { posX, posY } = data;
+      const { power } = data.towerData;
+
+      const tower = new Tower(power, posX, posY);
+      towers.push(tower);
+      tower.draw(ctx, towerImage);
+
+      userGold -= towerCost;
+    } catch (e) {
+      return;
+    }
+  });
+
   serverSocket.on('gameOver', (data) => {
     bgm.pause();
     const { isWin } = data;
@@ -436,8 +469,20 @@ buyTowerButton.style.padding = '10px 20px';
 buyTowerButton.style.fontSize = '16px';
 buyTowerButton.style.cursor = 'pointer';
 buyTowerButton.style.display = 'none';
-buyTowerButton.addEventListener('click', placeNewTower);
+buyTowerButton.addEventListener('click', (event) => {
+  towerBuilderCheck(101); //일단 테스트
+  event.stopPropagation();
+});
 document.body.appendChild(buyTowerButton);
+
+const mousePos = (event) => {
+  if (!towerBuilder.Id) return;
+
+  posX = event.clientX;
+  posY = event.clientY;
+  towerRequest();
+};
+document.addEventListener('click', mousePos);
 
 export const sendEvent = (handlerId, payload) => {
   serverSocket.emit('event', {

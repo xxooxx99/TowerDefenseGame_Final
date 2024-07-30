@@ -2,30 +2,26 @@ import { getGameAssets } from '../init/assets.js';
 
 const userTower = {};
 
+//게임 시작시 유저가 가지고 있는 타워 초기화
 export const initTowerData = (userId) => {
+  let towersCost = {};
+  let towerAsset = getGameAssets().towerData.data;
   userTower[userId] = { length: 0 };
-};
-
-export const towerSet = (userId, towerId, towerPos) => {
-  //user의 골드 검증은 일단 재쳐둔 상태
-
-  //x, y좌표를 이용해서 해당 타워가 건설될 수 있는 공간인지 확인 추가해야함.
-
-  //해당 코드는 배열이 아닌 객체로 어떠한 타워를 가르키는지 사용하기 위해 사용됩니다.
-  let count = userTower[userId].length + 1;
-
-  let towerAsset = getGameAssets.towerData.data;
   for (let i = 0; i < towerAsset.length; i++) {
-    //해당 타워 코드가 존재하는 것인지 확인.
-    if (towerAsset[i].id === towerId) {
-      userTower[userId][count] = towerId; // ex) 1: 101
-      userTower[userId].length++;
-      return count;
-    }
+    const towerId = towerAsset[i].id;
+    userTower[userId][towerId] = [];
+
+    const towerCost = towerAsset[i].cost;
+    towersCost[towerId] = towerCost;
   }
 
-  //존재하지 않는다면 undefined를 반환한다.
-  return undefined;
+  return towersCost;
+};
+
+//타워 추가시 사용하는 함수
+export const towerSet = (userId, towerId, newUserTowerData) => {
+  userTower[userId].length++;
+  userTower[userId][towerId].push(newUserTowerData);
 };
 
 export const towersGet = (userId) => {

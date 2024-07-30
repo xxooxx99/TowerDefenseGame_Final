@@ -6,10 +6,14 @@ import {
   handlerMatchAcceptRequest,
   handlerMatchDeniedRequest,
 } from '../handlers/match/matchAcceptHandler.js';
+import connectHandler from '../handlers/index.js';
 
 const initSocket = (server) => {
   const io = new SocketIO();
   io.attach(server);
+  connectHandler(io);
+
+  return;
 
   io.on('connection', (socket) => {
     console.log(`New user connected: ${socket.id}`);
