@@ -1,7 +1,7 @@
 import { Base } from './base.js';
 import { Monster } from './monster.js';
 import { Tower } from './tower.js';
-import { CLIENT_VERSION } from '../constants.js';
+import { CLIENT_VERSION, INITIAL_TOWER_NUMBER, PacketType } from '../constants.js';
 
 if (!localStorage.getItem('token')) {
   alert('로그인이 필요합니다.');
@@ -26,18 +26,18 @@ const matchAcceptButton = document.getElementById('matchAcceptButton');
 const loader = document.getElementsByClassName('loader')[0];
 
 const NUM_OF_MONSTERS = 5; // 몬스터 개수
+let intervalId = null;
 // 게임 데이터
 let towerCost = 0; // 타워 구입 비용
-let monsterSpawnInterval = 0; // 몬스터 생성 주기
-
+let monsterSpawnInterval = 3000; // 몬스터 생성 주기
+let towerIndex = 1;
+let monsterIndex = 1;
 // 설정 데이터
 let acceptTime = 10000; // 수락 대기 시간
-
 // 인터벌 데이터
 let matchAcceptInterval;
-
 // 유저 데이터
-let userGold = 0; // 유저 골드
+let userGold = 1000; // 유저 골드
 let base; // 기지 객체
 let baseHp = 0; // 기지 체력
 let monsterLevel = 0; // 몬스터 레벨
@@ -48,20 +48,20 @@ const monsters = []; // 유저 몬스터 목록
 const towers = []; // 유저 타워 목록
 let score = 0; // 게임 점수
 let highScore = 0; // 기존 최고 점수
-
 // 상대 데이터
 let opponentBase; // 상대방 기지 객체
+let opponentBaseHp = 0;
 let opponentMonsterPath; // 상대방 몬스터 경로
 let opponentInitialTowerCoords; // 상대방 초기 타워 좌표
 let opponentBasePosition; // 상대방 기지 좌표
 const opponentMonsters = []; // 상대방 몬스터 목록
 const opponentTowers = []; // 상대방 타워 목록
-
 let isInitGame = false;
-
 // 이미지 로딩 파트
 const backgroundImage = new Image();
 backgroundImage.src = 'images/bg.webp';
+const opponentBackgroundImage = new Image();
+opponentBackgroundImage.src = 'images/bg.webp';
 const towerImage = new Image();
 towerImage.src = 'images/tower.png';
 const baseImage = new Image();
@@ -74,6 +74,13 @@ for (let i = 1; i <= NUM_OF_MONSTERS; i++) {
   img.src = `images/monster${i}.png`;
   monsterImages.push(img);
 }
+monsterPath = monsterPath || [];
+initialTowerCoords = initialTowerCoords || [];
+basePosition = basePosition || { x: 0, y: 0 };
+
+opponentMonsterPath = opponentMonsterPath || [];
+opponentInitialTowerCoords = opponentInitialTowerCoords || [];
+opponentBasePosition = opponentBasePosition || { x: 0, y: 0 };
 
 let bgm;
 
@@ -83,27 +90,29 @@ function initMap() {
   drawPath(opponentMonsterPath, opponentCtx);
   placeInitialTowers(initialTowerCoords, towers, ctx); // 초기 타워 배치
   placeInitialTowers(opponentInitialTowerCoords, opponentTowers, opponentCtx); // 상대방 초기 타워 배치
-  placeBase(basePosition, true);
-  placeBase(opponentBasePosition, false);
+  if (!base) placeBase(basePosition, true);
+  if (!opponentBase) placeBase(opponentBasePosition, false);
+  towerIndex += INITIAL_TOWER_NUMBER;
 }
 
 function drawPath(path, context) {
+  if (!path || path.length === 0) {
+    console.error('Path is not defined or empty');
+    return;
+  }
   const segmentLength = 10; // 몬스터 경로 세그먼트 길이
   const imageWidth = 30; // 몬스터 경로 이미지 너비
   const imageHeight = 30; // 몬스터 경로 이미지 높이
   const gap = 3; // 몬스터 경로 이미지 겹침 방지를 위한 간격
-
-  for (let i = 0; i < path.length - 1; i++) {
+  for (let i = 0; path && i < path.length - 1; i++) {
     const startX = path[i].x;
     const startY = path[i].y;
     const endX = path[i + 1].x;
     const endY = path[i + 1].y;
-
     const deltaX = endX - startX;
     const deltaY = endY - startY;
     const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY); // 피타고라스 정리로 두 점 사이의 거리를 구함 (유클리드 거리)
     const angle = Math.atan2(deltaY, deltaX); // 두 점 사이의 각도를 tan-1(y/x)로 구해야 함 (자세한 것은 역삼각함수 참고): 삼각함수는 변의 비율! 역삼각함수는 각도를 구하는 것!
-
     for (let j = gap; j < distance - gap; j += segmentLength) {
       const x = startX + Math.cos(angle) * j; // 다음 이미지 x좌표 계산(각도의 코사인 값은 x축 방향의 단위 벡터 * j를 곱하여 경로를 따라 이동한 x축 좌표를 구함)
       const y = startY + Math.sin(angle) * j; // 다음 이미지 y좌표 계산(각도의 사인 값은 y축 방향의 단위 벡터 * j를 곱하여 경로를 따라 이동한 y축 좌표를 구함)
@@ -126,14 +135,11 @@ function getRandomPositionNearPath(maxDistance) {
   const startY = monsterPath[segmentIndex].y;
   const endX = monsterPath[segmentIndex + 1].x;
   const endY = monsterPath[segmentIndex + 1].y;
-
   const t = Math.random();
   const posX = startX + t * (endX - startX);
   const posY = startY + t * (endY - startY);
-
   const offsetX = (Math.random() - 0.5) * 2 * maxDistance;
   const offsetY = (Math.random() - 0.5) * 2 * maxDistance;
-
   return {
     x: posX + offsetX,
     y: posY + offsetY,
@@ -172,11 +178,24 @@ function placeBase(position, isPlayer) {
 }
 
 function spawnMonster() {
-  const newMonster = new Monster(monsterPath, monsterImages, monsterLevel);
-  monsters.push(newMonster);
+  const monster = new Monster(monsterPath, monsterImages, monsterLevel);
+  monster.setMonsterIndex(monsterIndex);
+  monsters.push(monster);
+
+  sendEvent(PacketType.C2S_SPAWN_MONSTER, { hp: monster.getMaxHp(), monsterIndex, monsterLevel });
+  monsterIndex++;
 
   // TODO. 서버로 몬스터 생성 이벤트 전송
 }
+/* function spawnOpoonentMonster(value) {
+  const newMonster = new Monster(
+    opponentMonsterPath,
+    monsterImages,
+    value[value.length - 1].monsterLevel,
+  );
+  newMonster.setMonsterIndex(value[value.length - 1].monsterIndex);
+  opponentMonsters.push(newMonster);
+} */
 
 function gameLoop() {
   // 렌더링 시에는 항상 배경 이미지부터 그려야 합니다! 그래야 다른 이미지들이 배경 이미지 위에 그려져요!
@@ -227,9 +246,8 @@ function gameLoop() {
   }
 
   // 상대방 게임 화면 업데이트
-  opponentCtx.drawImage(backgroundImage, 0, 0, opponentCanvas.width, opponentCanvas.height);
+  opponentCtx.drawImage(opponentBackgroundImage, 0, 0, opponentCanvas.width, opponentCanvas.height);
   drawPath(opponentMonsterPath, opponentCtx); // 상대방 경로 다시 그리기
-
   opponentTowers.forEach((tower) => {
     tower.draw(opponentCtx, towerImage);
     tower.updateCooldown(); // 적 타워의 쿨다운 업데이트
@@ -244,19 +262,45 @@ function gameLoop() {
 
   requestAnimationFrame(gameLoop); // 지속적으로 다음 프레임에 gameLoop 함수 호출할 수 있도록 함
 }
+function startSpawning() {
+  if (intervalId !== null) {
+    clearInterval(intervalId);
+  }
+  intervalId = setInterval(spawnMonster, monsterSpawnInterval);
+}
 
-function initGame() {
+function opponentBaseAttacked(value) {
+  opponentBaseHp = value;
+  opponentBase.updateHp(opponentBaseHp);
+}
+function initGame(payload) {
+  if (!payload) {
+    console.log('Received payload:', payload);
+    return;
+  }
   if (isInitGame) {
     return;
   }
+
+  userGold = payload.userGold;
+  baseHp = payload.baseHp;
+  monsterPath = payload.monsterPath;
+  initialTowerCoords = payload.initialTowerCoords;
+  basePosition = payload.basePosition;
+  opponentMonsterPath = payload.opponentMonsterPath;
+  opponentInitialTowerCoords = payload.opponentInitialTowerCoords;
+  opponentBasePosition = payload.opponentBasePosition;
+  opponentBaseHp = payload.opponentBaseHp;
+  opponentBase = new Base(opponentBasePosition.x, opponentBasePosition.y, baseHp);
+  opponentBase.draw(opponentCtx, baseImage, true);
+  opponentBaseHp = payload.baseHp;
+
   bgm = new Audio('sounds/bgm.mp3');
   bgm.loop = true;
   bgm.volume = 0.2;
   bgm.play();
-
   initMap(); // 맵 초기화 (배경, 몬스터 경로 그리기)
-
-  setInterval(spawnMonster, monsterSpawnInterval); // 설정된 몬스터 생성 주기마다 몬스터 생성
+  startSpawning();
   gameLoop(); // 게임 루프 최초 실행
   isInitGame = true;
 }
@@ -271,7 +315,6 @@ function matchFind() {
   matchAcceptInterval = setInterval(() => {
     progressValue += 10;
     progressBar.value = progressValue;
-
     // 일정 시간이 지나면 자동으로 거절을 하도록 한다
     if (progressValue >= 100) {
       clearInterval(matchAcceptInterval);
@@ -316,22 +359,20 @@ function matchStart() {
       canvas.style.display = 'block';
       opponentCanvas.style.display = 'block';
       // TODO. 유저 및 상대방 유저 데이터 초기화
-      if (!isInitGame) {
-        initGame();
-      }
     }
   }, 500);
 }
 
 // 이미지 로딩 완료 후 서버와 연결하고 게임 초기화
 Promise.all([
+  new Promise((resolve) => (opponentBackgroundImage.onload = resolve)),
   new Promise((resolve) => (backgroundImage.onload = resolve)),
   new Promise((resolve) => (towerImage.onload = resolve)),
   new Promise((resolve) => (baseImage.onload = resolve)),
   new Promise((resolve) => (pathImage.onload = resolve)),
   ...monsterImages.map((img) => new Promise((resolve) => (img.onload = resolve))),
 ]).then(() => {
-  serverSocket = io('http://localhost:5555', {
+  serverSocket = io('http://localhost:8080', {
     auth: {
       token: localStorage.getItem('token'),
     },
@@ -367,6 +408,9 @@ Promise.all([
     if (data.PacketType === 18) {
       console.log('매치 스타트');
       matchStart();
+    }
+    if (!isInitGame) {
+      initGame(payload);
     }
   });
 
@@ -404,6 +448,27 @@ buyTowerButton.style.cursor = 'pointer';
 buyTowerButton.style.display = 'none';
 buyTowerButton.addEventListener('click', placeNewTower);
 document.body.appendChild(buyTowerButton);
+
+function decycle(obj, stack = []) {
+  if (!obj || typeof obj !== 'object') {
+    return obj;
+  }
+
+  if (stack.includes(obj)) {
+    return null;
+  }
+
+  const newStack = stack.concat([obj]);
+
+  if (Array.isArray(obj)) {
+    return obj.map((item) => decycle(item, newStack));
+  }
+
+  return Object.keys(obj).reduce((acc, key) => {
+    acc[key] = decycle(obj[key], newStack);
+    return acc;
+  }, {});
+}
 
 function sendEvent(handlerId, payload) {
   const decycledPayload = decycle(payload);

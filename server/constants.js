@@ -1,4 +1,7 @@
 export const CLIENT_VERSION = ['1.0.0', '1.0.1', '1.1.0'];
+export const RESOLUTION_HEIGHT = 1000;
+export const RESOLUTION_WIDTH = 1500;
+export const INITIAL_TOWER_NUMBER = 3;
 
 export const PacketType = {
   C2S_MATCH_REQUEST: 13,
@@ -7,4 +10,9 @@ export const PacketType = {
   C2S_MATCH_ACCEPT: 16,
   C2S_MATCH_DENIED: 17,
   S2C_MATCH_START: 18,
+  C2S_SPAWN_MONSTER: 21,
+  S2C_ENEMY_SPAWN_MONSTER: 22,
+  C2S_DIE_MONSTER: 23,
+  S2C_ENEMY_DIE_MONSTER: 24,
+  S2C_GAMESYNC: 99,
 };
