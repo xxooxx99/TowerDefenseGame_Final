@@ -79,6 +79,11 @@
         font-size: 16px;
         cursor: pointer;
       }
+      .user-info {
+        position: absolute;
+        top: 200px;
+        left: 40px;
+      }
     </style>
   </head>
   <body>
@@ -94,6 +99,11 @@
     <div class="logout-container" id="logout-container" style="display: none">
       <div id="current-user"></div>
       <button id="logout">로그아웃</button>
+    </div>
+
+    <div class="user-info" id="user-info" style="display: none">
+      <h3 id="opponentUser-winRate" style="color: white">자신의 승률을 띄우는 글귀</h3>
+      <h3 id="ownUser-winRate" style="color: white">상대방의 승률을 띄우는 글귀</h3>
     </div>
 
     <div id="progressBarContainer">

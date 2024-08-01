@@ -1,7 +1,7 @@
 import { Base } from './base.js';
 import { Monster } from './monster.js';
 import { Tower } from './tower.js';
-import { CLIENT_VERSION } from '../constants.js';
+import { CLIENT_VERSION, PacketType } from '../constants.js';
 
 if (!localStorage.getItem('token')) {
   alert('로그인이 필요합니다.');
@@ -25,13 +25,17 @@ const progressBar = document.getElementById('progressBar');
 const matchAcceptButton = document.getElementById('matchAcceptButton');
 const loader = document.getElementsByClassName('loader')[0];
 
+const user_info = document.getElementById('user-info');
+const opponentUser_winRate = document.getElementById('opponentUser-winRate');
+const ownUser_winRate = document.getElementById('ownUser-winRate');
+
 const NUM_OF_MONSTERS = 5; // 몬스터 개수
 // 게임 데이터
 let towerCost = 0; // 타워 구입 비용
 let monsterSpawnInterval = 0; // 몬스터 생성 주기
 
 // 설정 데이터
-let acceptTime = 10000; // 수락 대기 시간
+let acceptTime = 1000000; // 수락 대기 시간
 
 // 인터벌 데이터
 let matchAcceptInterval;
@@ -261,9 +265,15 @@ function initGame() {
   isInitGame = true;
 }
 
-function matchFind() {
+function matchFind(ownUserData, opponentUserData) {
   progressBarMessage.textContent = '게임을 찾았습니다.';
   matchAcceptButton.style.display = 'block';
+  user_info.style.display = 'block';
+  let message = '상대방의 승률 : ' + calWinRate(opponentUserData) + '%';
+  opponentUser_winRate.textContent = message;
+  message = '나의 승률 : ' + calWinRate(ownUserData) + '%';
+  ownUser_winRate.textContent = message;
+
   let progressValue = 0;
   progressBar.value = 0;
   progressBar.style.display = 'block';
@@ -290,10 +300,18 @@ function matchFind() {
   matchAcceptButton.addEventListener('click', () => {
     matchAcceptButton.disabled = true;
     serverSocket.emit('event', {
-      packetType: 16,
+      packetType: PacketType.C2S_MATCH_ACCEPT,
       userId: localStorage.getItem('userId'),
     });
   });
+}
+
+function calWinRate(userData) {
+  if (userData.win + userData.lose === 0) {
+    return 0;
+  } else {
+    return Math.round(userData.win / (userData.win + userData.lose));
+  }
 }
 
 function matchStart() {
@@ -301,6 +319,7 @@ function matchStart() {
   clearInterval(matchAcceptInterval);
   progressBarMessage.textContent = '게임이 5초 뒤에 시작됩니다.';
   matchAcceptButton.style.display = 'none';
+  user_info.style.display = 'none';
   let progressValue = 0;
   progressBar.value = 0;
   const progressInterval = setInterval(() => {
@@ -362,7 +381,7 @@ Promise.all([
     console.log(`서버로부터 이벤트 수신: ${JSON.stringify(data)}`);
 
     if (data.PacketType === 14) {
-      matchFind();
+      matchFind(data.ownUserData, data.opponentUserData);
     }
     if (data.PacketType === 18) {
       console.log('매치 스타트');
