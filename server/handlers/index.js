@@ -18,22 +18,18 @@ const connectHandler = (io) => {
 
       switch (data.packetType) {
         case PacketType.C2S_MATCH_REQUEST:
-          console.log(1);
           handleMatchRequest(socket, data);
           break;
         case PacketType.C2S_MATCH_ACCEPT:
-          console.log(2);
           handlerMatchAcceptRequest(socket, data);
           break;
         case PacketType.C2S_MATCH_DENIED:
-          console.log(3);
           handlerMatchDeniedRequest(socket, data);
           break;
         default:
+          handlerEvent(io, socket, data);
         //console.log(`Unknown packet type: ${packet.packetType}`);
       }
-
-      handlerEvent(io, socket, data);
     });
 
     socket.on('disconnect', (socket) => {

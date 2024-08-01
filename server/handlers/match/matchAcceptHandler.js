@@ -2,6 +2,7 @@ import { PacketType } from '../../constants.js';
 import { prisma } from '../../utils/prisma/index.js';
 import { getPlayData } from '../../models/playData.model.js';
 import { createPlayData } from '../../models/playData.model.js';
+import { initData } from '../../init/init.js';
 
 // 수락 대기열
 let accept_queue = [];
@@ -16,7 +17,7 @@ async function handlerMatchAcceptRequest(socket, data) {
       room.user2.accept = true;
     }
   });
-  checkAcceptStatus();
+  checkAcceptStatus(socket);
 }
 
 // 클라로부터 packet 17 : C2S_MATCH_DENIED 를 받을 경우
@@ -46,6 +47,7 @@ async function checkAcceptStatus() {
       accept_queue[count].user2.socket.emit('event', {
         PacketType: 18,
       });
+      initData(accept_queue[count].user1, accept_queue[count].user2);
       start_index = count;
     }
   }

@@ -27,7 +27,7 @@ export const loadGameAssets = async () => {
       readFileAsync('tower.json'),
     ]);
 
-    gameAssets = { towerData };
+    gameAssets = { towerData: towerData };
     return gameAssets;
   } catch (e) {
     throw new Error('Failed to load game assets: ' + e.message);
