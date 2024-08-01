@@ -6,7 +6,7 @@ import {
   handlerMatchAcceptRequest,
   handlerMatchDeniedRequest,
 } from '../handlers/match/matchAcceptHandler.js';
-import { handleSpawnMonster } from '../handlers/monster/monster.handler.js';
+import { handleDieMonster, handleSpawnMonster } from '../handlers/monster/monster.handler.js';
 
 const initSocket = (server) => {
   const io = new SocketIO(server);
@@ -18,6 +18,11 @@ const initSocket = (server) => {
       console.log(
         `Received packet: ${JSON.stringify(`패킷 타입 : ${packet.packetType} 유저 아이디 : ${packet.userId}`)}`,
       );
+
+      if (!packet.userId) {
+        console.error('Received packet without userId:', packet);
+        return;
+      }
 
       socket.userId = packet.userId;
 
@@ -33,6 +38,9 @@ const initSocket = (server) => {
           break;
         case PacketType.C2S_SPAWN_MONSTER:
           handleSpawnMonster(socket, packet.userId, packet.payload);
+          break;
+        case PacketType.C2S_DIE_MONSTER:
+          handleDieMonster(socket, packet.userId, packet.payload);
           break;
         default:
           console.log(`Unknown packet type: ${packet.packetType}`);
