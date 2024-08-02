@@ -174,10 +174,6 @@ function placeNewTower() {
   tower.draw(ctx, towerImage);
 }
 function placeNewOpponentTower(value) {
-  if (!value || value.length === 0) {
-    console.error('Invalid value provided to placeNewOpponentTower:', value);
-    return;
-  }
   const newTowerCoords = value[value.length - 1];
   const newTower = new Tower(newTowerCoords.tower.X, newTowerCoords.tower.Y);
   newTower.setTowerIndex(newTowerCoords.towerIndex);
@@ -534,7 +530,7 @@ Promise.all([
         spawnOpponentMonster(packet.data.opponentMonsters);
         break;
       case PacketType.S2C_ENEMY_DIE_MONSTER:
-        destroyOpponentMonster(packet.data.destroyOpponentMonsterIndex);
+        destroyOpponentMonster(packet.data.destroyedOpponentMonsterIndex);
         break;
       case PacketType.S2C_UPDATE_BASE_HP:
         opponentBaseAttacked(packet.data.opponentBaseHp);

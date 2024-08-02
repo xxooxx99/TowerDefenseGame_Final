@@ -2,7 +2,7 @@ import { PacketType } from '../../constants.js';
 import { getMonsters, setDamagedMonsterHp } from '../../models/monster.model.js';
 import { getPlayData } from '../../models/playData.model.js';
 import { getTowers, setTower } from '../../models/tower.model.js';
-import { sendGameSync } from '../gameSyncHandler.js';
+import { sendGameSync } from '../game/gameSyncHandler.js';
 
 export const towerAddOnHandler = (socket, userId, payload) => {
   const { x, y, level, towerIndex, towerCost } = payload;

@@ -1,6 +1,6 @@
 export const CLIENT_VERSION = ['1.0.0', '1.0.1', '1.1.0'];
 export const RESOLUTION_HEIGHT = 1500;
-export const RESOLUTION_WIDTH = 1400;
+export const RESOLUTION_WIDTH = 1200;
 export const INITIAL_TOWER_NUMBER = 3;
 
 export const PacketType = {

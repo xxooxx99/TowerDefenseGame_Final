@@ -8,6 +8,7 @@ import {
 } from '../handlers/match/matchAcceptHandler.js';
 import { handleDieMonster, handleSpawnMonster } from '../handlers/monster/monster.handler.js';
 import { towerAddOnHandler, towerAttackHandler } from '../handlers/towers/tower.handler.js';
+import { handleMonsterBaseAttack } from '../handlers/game/gameHandler.js';
 
 const initSocket = (server) => {
   const io = new SocketIO(server);
@@ -48,6 +49,9 @@ const initSocket = (server) => {
           break;
         case PacketType.C2S_DIE_MONSTER:
           handleDieMonster(socket, packet.userId, packet.payload);
+          break;
+        case PacketType.C2S_MONSTER_ATTACK_BASE:
+          handleMonsterBaseAttack(socket, packet.userId, packet.payload);
           break;
         default:
           console.log(`Unknown packet type: ${packet.packetType}`);

@@ -1,7 +1,7 @@
 import { PacketType } from '../../constants.js';
 import { getMonsters, removeMonster, setMonster } from '../../models/monster.model.js';
 import { getPlayData } from '../../models/playData.model.js';
-import { sendGameSync } from '../gameSyncHandler.js';
+import { sendGameSync } from '../game/gameSyncHandler.js';
 
 // 몬스터 사망
 function handleDieMonster(socket, userId, payload) {
