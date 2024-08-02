@@ -5,7 +5,7 @@ import {
   RESOLUTION_WIDTH,
 } from '../../constants.js';
 import { createPlayData, GameData, getPlayData } from '../../models/playData.model.js';
-import { createTowers, setTower } from '../towers/tower.model.js';
+import { createTowers, setTower } from '../../models/tower.model.js';
 import { addAccept_queue } from './matchAcceptHandler.js';
 
 // 매칭 대기열

@@ -7,6 +7,7 @@ import {
   handlerMatchDeniedRequest,
 } from '../handlers/match/matchAcceptHandler.js';
 import { handleDieMonster, handleSpawnMonster } from '../handlers/monster/monster.handler.js';
+import { towerAddOnHandler, towerAttackHandler } from '../handlers/towers/tower.handler.js';
 
 const initSocket = (server) => {
   const io = new SocketIO(server);
@@ -32,6 +33,12 @@ const initSocket = (server) => {
           break;
         case PacketType.C2S_MATCH_ACCEPT:
           handlerMatchAcceptRequest(socket, packet);
+          break;
+        case PacketType.C2S_TOWER_BUY:
+          towerAddOnHandler(socket, packet.userId, packet.payload);
+          break;
+        case PacketType.C2S_TOWER_ATTACK:
+          towerAttackHandler(socket, packet.userId, packet.payload);
           break;
         case PacketType.C2S_MATCH_DENIED:
           handlerMatchDeniedRequest(socket, packet);

@@ -71,10 +71,8 @@ export class Monster {
 
   draw(ctx, isOpponent = false) {
     ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
-    if (!isOpponent) {
-      ctx.font = '12px Arial';
-      ctx.fillStyle = 'white';
-      ctx.fillText(`(레벨 ${this.level}) ${this.hp}/${this.maxHp}`, this.x, this.y - 5);
-    }
+    ctx.font = '12px Arial';
+    ctx.fillStyle = 'white';
+    ctx.fillText(`(레벨 ${this.level}) ${this.hp}/${this.maxHp}`, this.x, this.y - 5);
   }
 }

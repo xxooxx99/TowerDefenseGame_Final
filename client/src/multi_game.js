@@ -29,7 +29,7 @@ const NUM_OF_MONSTERS = 5; // 몬스터 개수
 let monsterintervalId = null;
 let killCount = 0;
 // 게임 데이터
-let towerCost = 0; // 타워 구입 비용
+let towerCost = 100; // 타워 구입 비용
 let monsterSpawnInterval = 3000; // 몬스터 생성 주기
 let towerIndex = 1;
 let monsterIndex = 1;
@@ -138,7 +138,7 @@ function getRandomPositionNearPath(maxDistance) {
   const endY = monsterPath[segmentIndex + 1].y;
   const t = Math.random();
   const posX = startX + t * (endX - startX);
-  const posY = startY + t * (endY - startY);
+  const posY = startY + t * (endY - endY);
   const offsetX = (Math.random() - 0.5) * 2 * maxDistance;
   const offsetY = (Math.random() - 0.5) * 2 * maxDistance;
   return {
@@ -148,9 +148,12 @@ function getRandomPositionNearPath(maxDistance) {
 }
 
 function placeInitialTowers(initialTowerCoords, initialTowers, context) {
+  let initTowerIndex = 1;
   initialTowerCoords.forEach((towerCoords) => {
     const tower = new Tower(towerCoords.x, towerCoords.y);
+    tower.setTowerIndex(initTowerIndex);
     initialTowers.push(tower);
+    initTowerIndex++;
     tower.draw(context, towerImage);
   });
 }
@@ -161,37 +164,57 @@ function placeNewTower() {
     alert('골드가 부족합니다.');
     return;
   }
-
   const { x, y } = getRandomPositionNearPath(200);
   const tower = new Tower(x, y);
+  tower.setTowerIndex(towerIndex);
   towers.push(tower);
+
+  sendEvent(PacketType.C2S_TOWER_BUY, { x, y, level: 1, towerIndex, towerCost });
+  towerIndex++;
   tower.draw(ctx, towerImage);
+}
+function placeNewOpponentTower(value) {
+  if (!value || value.length === 0) {
+    console.error('Invalid value provided to placeNewOpponentTower:', value);
+    return;
+  }
+  const newTowerCoords = value[value.length - 1];
+  const newTower = new Tower(newTowerCoords.tower.X, newTowerCoords.tower.Y);
+  newTower.setTowerIndex(newTowerCoords.towerIndex);
+  opponentTowers.push(newTower);
+}
+
+function opponentTowerAttack(monsterValue, towerValue) {
+  const attackedTower = opponentTowers.find((tower) => {
+    return tower.getTowerIndex() === towerValue.towerIndex;
+  });
+  const attackedMonster = opponentMonsters.find((monster) => {
+    return monster.getMonsterIndex() === monsterValue.monsterIndex;
+  });
+  attackedMonster.setHp(monsterValue.hp);
+  attackedTower.attack(attackedMonster);
 }
 
 function placeBase(position, isPlayer) {
   if (isPlayer) {
-    base = new Base(position.x, position.y, baseHp);
-    base.draw(ctx, baseImage);
+    if (!base) {
+      base = new Base(position.x, position.y, baseHp);
+      base.draw(ctx, baseImage);
+    }
   } else {
-    opponentBase = new Base(position.x, position.y, baseHp);
-    opponentBase.draw(opponentCtx, baseImage, true);
+    if (!opponentBase) {
+      opponentBase = new Base(position.x, position.y, baseHp);
+      opponentBase.draw(opponentCtx, baseImage, true);
+    }
   }
 }
 
-function spawnMonster(data, socket) {
+function spawnMonster() {
   const monster = new Monster(monsterPath, monsterImages, monsterLevel);
   monster.setMonsterIndex(monsterIndex);
   monsters.push(monster);
-  /* console.log(payload);
-  serverSocket.emit('event', {
-    packetType: 21,
-    userId: localStorage.getItem('userId'),
-  }); */
-
   sendEvent(PacketType.C2S_SPAWN_MONSTER, { hp: monster.getMaxHp(), monsterIndex, monsterLevel });
   monsterIndex++;
-
-  // TODO. 서버로 몬스터 생성 이벤트 전송
 }
 function spawnOpponentMonster(value) {
   const newMonster = new Monster(
@@ -284,11 +307,8 @@ function gameLoop() {
           monsterLevel: monster.level,
         });
         sendEvent(PacketType.C2S_MONSTER_ATTACK_BASE, { damage: monster.Damage() });
-        // TODO. 몬스터가 기지를 공격했을 때 서버로 이벤트 전송
       }
     } else {
-      console.log(`몬스터 ${monster.getMonsterIndex()} 사망`);
-      // TODO. 몬스터 사망 이벤트 전송
       monsters.splice(i, 1);
       sendEvent(PacketType.C2S_DIE_MONSTER, {
         monsterIndex: monster.getMonsterIndex(),
@@ -322,9 +342,9 @@ function gameLoop() {
   if (opponentBase) {
     opponentBase.draw(opponentCtx, baseImage, true);
   }
-
   requestAnimationFrame(gameLoop); // 지속적으로 다음 프레임에 gameLoop 함수 호출할 수 있도록 함
 }
+
 function startSpawning() {
   if (monsterintervalId !== null) {
     clearInterval(monsterintervalId);
@@ -504,11 +524,20 @@ Promise.all([
   });
   serverSocket.on('gameSync', (packet) => {
     switch (packet.packetType) {
+      case PacketType.S2C_ENEMY_TOWER_SPAWN:
+        placeNewOpponentTower(packet.data.opponentTowers);
+        break;
+      case PacketType.S2C_ENEMY_TOWER_ATTACK:
+        opponentTowerAttack(packet.data.attackedOpponentMonster, packet.data.attackedOpponentTower);
+        break;
       case PacketType.S2C_ENEMY_SPAWN_MONSTER:
         spawnOpponentMonster(packet.data.opponentMonsters);
         break;
       case PacketType.S2C_ENEMY_DIE_MONSTER:
         destroyOpponentMonster(packet.data.destroyOpponentMonsterIndex);
+        break;
+      case PacketType.S2C_UPDATE_BASE_HP:
+        opponentBaseAttacked(packet.data.opponentBaseHp);
         break;
       case PacketType.S2C_GAMESYNC:
         gameSync(packet.data);
