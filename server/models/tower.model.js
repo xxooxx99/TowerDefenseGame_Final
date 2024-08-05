@@ -19,7 +19,14 @@ export const userTowerDataInit = () => {
 };
 
 //타워 추가시 사용하는 함수
-export const towerSet = (userTower, towerType, towerId, newUserTowerData) => {
-  userTower.length++;
+export const towerSet = (userTower, towerType, towerId, newUserTowerData, upgrade = false) => {
+  if (!upgrade) userTower.length++;
   userTower[towerType][towerId].push(newUserTowerData);
+};
+
+export const towerDelete = (userTower, towerType, towerId, towerNumber) => {
+  for (let i = 0; i < userTower[towerType][towerId].length; i++) {
+    if (userTower[towerType][towerId][i].number == towerNumber)
+      return userTower[towerType][towerId].splice(i, 1);
+  }
 };

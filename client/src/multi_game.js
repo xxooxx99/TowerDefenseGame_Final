@@ -25,7 +25,7 @@ const progressBar = document.getElementById('progressBar');
 const matchAcceptButton = document.getElementById('matchAcceptButton');
 const loader = document.getElementsByClassName('loader')[0];
 
-let towerPromises = [];
+let towerUpgrade = null;
 let towerBuilderId = null;
 let towerBuilderType = null;
 let posX = 0;
@@ -83,6 +83,9 @@ for (let i = 0; i < 2; i++) {
     towerImages.push(image);
   }
 }
+const image = new Image();
+image.src = `images/tower${101}.png`;
+towerImages.push(image);
 
 // towerImage.src = 'images/tower.png';
 const baseImage = new Image();
@@ -199,16 +202,28 @@ function placeInitialTowers(initialTowerCoords, initialTowers, context) {
   }
 }
 
+function towerUpgradeCheck() {
+  if (towerBuilderId || towerBuilderType) return;
+  if (towerUpgrade) {
+    towerUpgrade = null;
+    upgradeTowerButton.style.backgroundColor = 'white';
+  } else {
+    towerUpgrade = 'ok';
+    upgradeTowerButton.style.backgroundColor = 'red';
+  }
+}
+
 //건물 건설 활성화 및 비활성화 버튼
 function towerBuilderCheck(towerType, button) {
+  if (towerUpgrade) return;
   if (!towerBuilderId) {
-    console.log(towerType);
     towerBuilderId = towerType;
     towerBuilderType = TOWER_TYPE[towerBuilderId / 100];
     button.style.backgroundColor = 'red';
   } else if (towerBuilderId === towerType) {
     button.style.backgroundColor = 'white';
     towerBuilderId = null;
+    towerBuilderType = null;
   } else console.log('build를 취소해주세요!');
 }
 
@@ -221,6 +236,29 @@ function towerRequest() {
     posX,
     posY,
   });
+}
+
+function towerUpgrades() {
+  let min = Infinity;
+  let selectTower = null;
+  towers.forEach((tower) => {
+    const length = Math.abs(posX - tower.x) + Math.abs(posY - tower.y);
+    if (min > length) {
+      min = length;
+      selectTower = tower;
+    }
+  });
+
+  console.log('거리는?:' + min, selectTower);
+  if (min < 50) {
+    console.log('업그레이드 요청!');
+    sendEvent2(PacketType.C2S_TOWER_UPGRADE, {
+      userId,
+      towerType: selectTower.towerType,
+      towerId: selectTower.towerId,
+      towerNumber: selectTower.towerNumber,
+    });
+  }
 }
 
 function placeBase(position, isPlayer) {
@@ -417,6 +455,7 @@ function matchStart() {
       progressBarContainer.style.display = 'none';
       progressBar.style.display = 'none';
       for (let i = 0; i < buttons.length; i++) buttons[i].style.display = 'block';
+      upgradeTowerButton.style.display = 'block';
       canvas.style.display = 'block';
       opponentCanvas.style.display = 'block';
       // TODO. 유저 및 상대방 유저 데이터 초기화
@@ -494,6 +533,31 @@ Promise.all([
     // if (!isInitGame) {
     //   initGame(payload);
     // }
+  });
+
+  serverSocket.on('userTowerUpgrade', (data) => {
+    const { towerType, towerId, towerCost, towerData } = data;
+
+    if (userId !== data.userId) {
+      for (let i = 0; i < opponentTowers.length; i++) {
+        if (opponentTowers[i].towerNumber == towerData.number) {
+          opponentTowers.splice(i, 1);
+          break;
+        }
+      }
+      const tower = new Tower(towerType, towerId, towerData.number, towerData.posX, towerData.posY);
+      opponentTowers.push(tower);
+    } else {
+      for (let i = 0; i < towers.length; i++) {
+        if (towers[i].towerNumber == towerData.number) {
+          towers.splice(i, 1);
+          break;
+        }
+      }
+      const tower = new Tower(towerType, towerId, towerData.number, towerData.posX, towerData.posY);
+      towers.push(tower);
+      userGold -= towerCost;
+    }
   });
 
   serverSocket.on('userTowerCreate', (data) => {
@@ -579,26 +643,29 @@ for (let i = 0; i < buttons.length; i++) {
   document.body.appendChild(buttons[i]);
 }
 
-// const buyTowerButton = document.createElement('button');
-// buyTowerButton.textContent = '타워 구입';
-// buyTowerButton.style.position = 'absolute';
-// buyTowerButton.style.top = '10px';
-// buyTowerButton.style.right = '10px';
-// buyTowerButton.style.padding = '10px 20px';
-// buyTowerButton.style.fontSize = '16px';
-// buyTowerButton.style.cursor = 'pointer';
-// buyTowerButton.style.display = 'none';
-// buyTowerButton.addEventListener('click', (event) => {
-//   towerBuilderCheck(100); //일단 테스트
-//   event.stopPropagation();
-// });
-// document.body.appendChild(buyTowerButton);
+const upgradeTowerButton = document.createElement('button');
+upgradeTowerButton.textContent = '타워 강화';
+upgradeTowerButton.style.position = 'absolute';
+upgradeTowerButton.style.backgroundColor = 'white';
+upgradeTowerButton.style.top = '1000px';
+upgradeTowerButton.style.right = '60px';
+upgradeTowerButton.style.padding = '20px 40px';
+upgradeTowerButton.style.fontSize = '20px';
+upgradeTowerButton.style.cursor = 'pointer';
+upgradeTowerButton.style.display = 'none';
+upgradeTowerButton.addEventListener('click', (event) => {
+  towerUpgradeCheck();
+  event.stopPropagation();
+});
+document.body.appendChild(upgradeTowerButton);
 
 const mousePos = (event) => {
-  if (!towerBuilderId) return;
   posX = event.offsetX;
   posY = event.offsetY;
-  towerRequest();
+  if (towerBuilderId) towerRequest();
+  if (towerUpgrade) {
+    towerUpgrades();
+  }
 };
 const gameCanvas = document.getElementById('gameCanvas');
 gameCanvas.addEventListener('click', mousePos);

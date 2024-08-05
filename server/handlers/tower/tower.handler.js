@@ -1,6 +1,6 @@
 import { PacketType } from '../../constants.js';
 import { getGameAssets } from '../../init/assets.js';
-import { towerSet } from '../../models/tower.model.js';
+import { towerSet, towerDelete } from '../../models/tower.model.js';
 import { getPlayData } from '../../models/playData.model.js';
 import { getOpponentInfo } from '../../models/playData.model.js';
 
@@ -15,6 +15,9 @@ export const towerAddHandler = (socket, data) => {
       const towerType = userData.towerInit[towerData];
       for (let towerId in towerType)
         for (let i = 0; i < towerType[towerId].length; i++) {
+          console.log(towerType[towerId][i]);
+          console.log(towerType[towerId][i].posX, posX); // towerType[towerId][i].posX undefined
+          console.log(towerType[towerId][i].posY - posY);
           const value =
             Math.abs(towerType[towerId][i].posX - posX) +
             Math.abs(towerType[towerId][i].posY - posY);
@@ -23,6 +26,7 @@ export const towerAddHandler = (socket, data) => {
     }
   }
 
+  console.log('min' + min);
   if (min < 80) return { status: 'fail', message: '타워간 거리가 너무 가깝습니다!' };
 
   min = Infinity;
@@ -67,7 +71,43 @@ export const towerAddHandler = (socket, data) => {
 };
 
 export const towerUpgrade = (socket, data) => {
-  const towerAsset = getGameAssets().towerData.towerType;
+  try {
+    const { userId, towerType, towerId, towerNumber } = data;
+    const towerAsset = getGameAssets().towerData.towerType;
+    const userData = getPlayData(userId);
+    const index = towerId % 100;
+    const gold = userData.getGold();
+
+    if (towerId % 100 >= 6)
+      return { status: 'fail', message: '모든 업그레이드가 진행된 타워입니다.' };
+
+    if (gold < towerAsset[towerType][index].cost)
+      return { status: 'fail', message: '타워를 업그레이드 비용이 부족합니다.' };
+
+    userData.spendGold(towerAsset[towerType][index].cost);
+
+    const newTower = towerDelete(userData.towerInit, towerType, towerId, towerNumber);
+    towerSet(userData.towerInit, towerType, towerId + 1, newTower[0], true);
+
+    //console.log(typeof newTower[0].number, typeof newTower[0].posX, typeof newTower[0].posY);
+    let packet = {
+      packetType: PacketType.S2C_TOWER_CREATE,
+      userId: userId,
+      towerType: towerType,
+      towerId: towerId + 1,
+      towerCost: towerAsset[towerType][index].cost,
+      towerData: newTower[0],
+    };
+
+    const opponentSocket = getOpponentInfo(userId);
+    socket.emit('userTowerUpgrade', packet);
+    opponentSocket.emit('userTowerUpgrade', packet);
+
+    return { status: 'success', message: '타워를 업그레이드 요청 완료' };
+  } catch (err) {
+    console.log(err);
+    return { status: 'fail', message: '타워를 업그레이드 요청에 실패하였습니다.' };
+  }
 };
 
 // ex
