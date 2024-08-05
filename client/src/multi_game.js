@@ -1,7 +1,7 @@
 import { Base } from './base.js';
 import { Monster } from './monster.js';
 import { Tower } from './tower.js';
-import { CLIENT_VERSION, INITIAL_TOWER_NUMBER, PacketType } from '../constants.js';
+import { CLIENT_VERSION, INITIAL_TOWER_NUMBER, PacketType, TOWER_TYPE } from '../constants.js';
 
 if (!localStorage.getItem('token')) {
   alert('로그인이 필요합니다.');
@@ -25,15 +25,16 @@ const progressBar = document.getElementById('progressBar');
 const matchAcceptButton = document.getElementById('matchAcceptButton');
 const loader = document.getElementsByClassName('loader')[0];
 
-let towerBuilder = null;
+let towerPromises = [];
+let towerBuilderId = null;
+let towerBuilderType = null;
 let posX = 0;
 let posY = 0;
 
 const NUM_OF_MONSTERS = 5; // 몬스터 개수
 let intervalId = null;
 // 게임 데이터
-let towerCost; // 타워 구입 비용
-let towerStatusData;
+export let towersData; // 타워 데이터
 let monsterSpawnInterval = 3000; // 몬스터 생성 주기
 let towerIndex = 1;
 let monsterIndex = 1;
@@ -67,8 +68,23 @@ const backgroundImage = new Image();
 backgroundImage.src = 'images/bg.webp';
 const opponentBackgroundImage = new Image();
 opponentBackgroundImage.src = 'images/bg.webp';
-const towerImage = new Image();
-towerImage.src = 'images/tower.png';
+export const towerImages = [];
+// for (let i = 0; i < 9; i++) {
+//   for (let k = 0; k <= 6; k++) {
+//     const image = new Image();
+//     image.src = `images/tower${100 * (i + 1) + k}.png`;
+//   }
+// }
+
+for (let i = 0; i < 2; i++) {
+  for (let k = 0; k < 1; k++) {
+    const image = new Image();
+    image.src = `images/tower${100 * (i + 1) + k}.png`;
+    towerImages.push(image);
+  }
+}
+
+// towerImage.src = 'images/tower.png';
 const baseImage = new Image();
 baseImage.src = 'images/base.png';
 const pathImage = new Image();
@@ -166,30 +182,45 @@ function generateRandomMonsterPath() {
 function placeInitialTowers(initialTowerCoords, initialTowers, context) {
   for (let towerCoords in initialTowerCoords) {
     if (towerCoords !== 'length') {
-      const towers = initialTowerCoords[towerCoords];
-      towers.forEach((towerCoords) => {
-        const tower = new Tower(
-          towerCoords.towerId,
-          towerCoords.number,
-          towerCoords.posX,
-          towerCoords.posY,
-        );
-        initialTowers.push(tower);
-        tower.draw(context, towerImage);
-      });
+      const towerType = initialTowerCoords[towerCoords];
+      for (let towerId in towerType) {
+        towerType[towerId].forEach((towerData) => {
+          const tower = new Tower(
+            towerCoords,
+            towerId,
+            towerData.number,
+            towerData.posX,
+            towerData.posY,
+          );
+          initialTowers.push(tower);
+        });
+      }
     }
   }
 }
 
 //건물 건설 활성화 및 비활성화 버튼
-function towerBuilderCheck(towerType) {
-  if (!towerBuilder) towerBuilder = towerType;
-  else if (towerBuilder === towerType) towerBuilder = null;
-  else console.log('build를 취소해주세요!');
+function towerBuilderCheck(towerType, button) {
+  if (!towerBuilderId) {
+    console.log(towerType);
+    towerBuilderId = towerType;
+    towerBuilderType = TOWER_TYPE[towerBuilderId / 100];
+    button.style.backgroundColor = 'red';
+  } else if (towerBuilderId === towerType) {
+    button.style.backgroundColor = 'white';
+    towerBuilderId = null;
+  } else console.log('build를 취소해주세요!');
 }
 
 function towerRequest() {
-  sendEvent2(PacketType.C2S_TOWER_CREATE, { userId, towerId: towerBuilder, posX, posY });
+  const towerType = TOWER_TYPE[towerBuilderId / 100 - 1];
+  sendEvent2(PacketType.C2S_TOWER_CREATE, {
+    userId,
+    towerType,
+    towerId: towerBuilderId,
+    posX,
+    posY,
+  });
 }
 
 function placeBase(position, isPlayer) {
@@ -238,7 +269,7 @@ function gameLoop() {
 
   // 타워 그리기 및 몬스터 공격 처리
   towers.forEach((tower) => {
-    tower.draw(ctx, towerImage);
+    tower.draw(ctx);
     tower.updateCooldown();
     monsters.forEach((monster) => {
       const distance = Math.sqrt(
@@ -279,7 +310,7 @@ function gameLoop() {
   opponentCtx.drawImage(opponentBackgroundImage, 0, 0, opponentCanvas.width, opponentCanvas.height);
   drawPath(opponentMonsterPath, opponentCtx); // 상대방 경로 다시 그리기
   opponentTowers.forEach((tower) => {
-    tower.draw(opponentCtx, towerImage);
+    tower.draw(opponentCtx);
     tower.updateCooldown(); // 적 타워의 쿨다운 업데이트
   });
 
@@ -385,7 +416,7 @@ function matchStart() {
       clearInterval(progressInterval);
       progressBarContainer.style.display = 'none';
       progressBar.style.display = 'none';
-      buyTowerButton.style.display = 'block';
+      for (let i = 0; i < buttons.length; i++) buttons[i].style.display = 'block';
       canvas.style.display = 'block';
       opponentCanvas.style.display = 'block';
       // TODO. 유저 및 상대방 유저 데이터 초기화
@@ -397,7 +428,7 @@ function matchStart() {
 Promise.all([
   new Promise((resolve) => (opponentBackgroundImage.onload = resolve)),
   new Promise((resolve) => (backgroundImage.onload = resolve)),
-  new Promise((resolve) => (towerImage.onload = resolve)),
+  ...towerImages.map((img) => new Promise((resolve) => (img.onload = resolve))),
   new Promise((resolve) => (baseImage.onload = resolve)),
   new Promise((resolve) => (pathImage.onload = resolve)),
   ...monsterImages.map((img) => new Promise((resolve) => (img.onload = resolve))),
@@ -416,10 +447,7 @@ Promise.all([
   });
 
   // 대결 신청
-  serverSocket.on('connection', () => {
-    if (!monsterPath) {
-      monsterPath = generateRandomMonsterPath();
-    }
+  serverSocket.on('connect', () => {
     serverSocket.emit('event', {
       packetType: 13,
       userId: localStorage.getItem('userId'),
@@ -428,7 +456,7 @@ Promise.all([
   });
 
   serverSocket.on('gameInit', (packetType, data) => {
-    towerCost = data.towersCost;
+    towersData = data.towersData;
     monsterPath = data.Payload.monsterPath;
     initialTowerCoords = data.Payload.towerInit;
     basePosition = data.Payload.basePos;
@@ -472,10 +500,10 @@ Promise.all([
     const { towerId, towerCost, number, posX, posY } = data;
 
     if (userId !== data.userId) {
-      const tower = new Tower(towerId, number, posX, posY);
+      const tower = new Tower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
       opponentTowers.push(tower);
     } else {
-      const tower = new Tower(towerId, number, posX, posY);
+      const tower = new Tower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
       towers.push(tower);
       userGold -= towerCost;
     }
@@ -504,23 +532,70 @@ Promise.all([
   });
 });
 
-const buyTowerButton = document.createElement('button');
-buyTowerButton.textContent = '타워 구입';
-buyTowerButton.style.position = 'absolute';
-buyTowerButton.style.top = '10px';
-buyTowerButton.style.right = '10px';
-buyTowerButton.style.padding = '10px 20px';
-buyTowerButton.style.fontSize = '16px';
-buyTowerButton.style.cursor = 'pointer';
-buyTowerButton.style.display = 'none';
-buyTowerButton.addEventListener('click', (event) => {
-  towerBuilderCheck(100); //일단 테스트
-  event.stopPropagation();
-});
-document.body.appendChild(buyTowerButton);
+const buyTowerButton1 = document.createElement('button');
+buyTowerButton1.textContent = '기본 타워';
+const buyTowerButton2 = document.createElement('button');
+buyTowerButton2.textContent = '공속 타워';
+const buyTowerButton3 = document.createElement('button');
+buyTowerButton3.textContent = '공속 지원 타워';
+const buyTowerButton4 = document.createElement('button');
+buyTowerButton4.textContent = '공격력 지원 타워';
+const buyTowerButton5 = document.createElement('button');
+buyTowerButton5.textContent = '치명타 타워';
+const buyTowerButton6 = document.createElement('button');
+buyTowerButton6.textContent = '스플래쉬 타워';
+const buyTowerButton7 = document.createElement('button');
+buyTowerButton7.textContent = '멀티샷 타워';
+const buyTowerButton8 = document.createElement('button');
+buyTowerButton8.textContent = '맹독 타워';
+const buyTowerButton9 = document.createElement('button');
+buyTowerButton9.textContent = '성장 타워';
+
+const buttons = [
+  buyTowerButton1,
+  buyTowerButton2,
+  buyTowerButton3,
+  buyTowerButton4,
+  buyTowerButton5,
+  buyTowerButton6,
+  buyTowerButton7,
+  buyTowerButton8,
+  buyTowerButton9,
+];
+
+for (let i = 0; i < buttons.length; i++) {
+  buttons[i].style.position = 'absolute';
+  buttons[i].style.backgroundColor = 'white';
+  buttons[i].style.top = ((i + 1) * 100).toString() + 'px'; // 100씩 증가
+  buttons[i].style.right = '60px'; //고정해야함
+  buttons[i].style.padding = '20px 40px';
+  buttons[i].style.fontSize = '20px';
+  buttons[i].style.cursor = 'pointer';
+  buttons[i].style.display = 'none';
+  buttons[i].addEventListener('click', (event) => {
+    towerBuilderCheck((i + 1) * 100, buttons[i]); //일단 테스트
+    event.stopPropagation();
+  });
+  document.body.appendChild(buttons[i]);
+}
+
+// const buyTowerButton = document.createElement('button');
+// buyTowerButton.textContent = '타워 구입';
+// buyTowerButton.style.position = 'absolute';
+// buyTowerButton.style.top = '10px';
+// buyTowerButton.style.right = '10px';
+// buyTowerButton.style.padding = '10px 20px';
+// buyTowerButton.style.fontSize = '16px';
+// buyTowerButton.style.cursor = 'pointer';
+// buyTowerButton.style.display = 'none';
+// buyTowerButton.addEventListener('click', (event) => {
+//   towerBuilderCheck(100); //일단 테스트
+//   event.stopPropagation();
+// });
+// document.body.appendChild(buyTowerButton);
 
 const mousePos = (event) => {
-  if (!towerBuilder) return;
+  if (!towerBuilderId) return;
   posX = event.offsetX;
   posY = event.offsetY;
   towerRequest();

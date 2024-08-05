@@ -8,13 +8,11 @@ const connectHandler = (io) => {
   io.on('connection', (socket) => {
     console.log(`New user connected: ${socket.id}`);
     socket.emit('connection', { status: 'success', message: '연결 완료' });
-    //socket.userId = packet.userId;
-    ///
 
     handleConnection(socket);
-
     socket.on('event', (data) => {
       socket.userId = data.userId;
+      console.log('2');
 
       switch (data.packetType) {
         case PacketType.C2S_MATCH_REQUEST:

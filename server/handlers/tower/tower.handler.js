@@ -5,22 +5,25 @@ import { getPlayData } from '../../models/playData.model.js';
 import { getOpponentInfo } from '../../models/playData.model.js';
 
 export const towerAddHandler = (socket, data) => {
-  const towerAsset = getGameAssets().towerData.data;
-  const { userId, towerId, posX, posY } = data;
+  const towerAsset = getGameAssets().towerData.towerType;
+  const { userId, towerType, towerId, posX, posY } = data;
   const userData = getPlayData(userId);
 
   let min = Infinity;
-  for (const towerId in userData.towerInit) {
-    if (towerId !== 'length') {
-      const towers = userData.towerInit[towerId];
-      for (const tower of towers) {
-        const value = Math.abs(tower.posX - posX) + Math.abs(tower.posY - posY);
-        min = Math.min(min, value);
-      }
+  for (const towerData in userData.towerInit) {
+    if (towerData !== 'length') {
+      const towerType = userData.towerInit[towerData];
+      for (let towerId in towerType)
+        for (let i = 0; i < towerType[towerId].length; i++) {
+          const value =
+            Math.abs(towerType[towerId][i].posX - posX) +
+            Math.abs(towerType[towerId][i].posY - posY);
+          min = Math.min(min, value);
+        }
     }
   }
 
-  if (min < 60) return { status: 'fail', message: '타워간 거리가 너무 가깝습니다!' };
+  if (min < 80) return { status: 'fail', message: '타워간 거리가 너무 가깝습니다!' };
 
   min = Infinity;
   for (const road of userData.monsterPath) {
@@ -30,40 +33,49 @@ export const towerAddHandler = (socket, data) => {
 
   if (min < 100) return { status: 'fail', message: '타워와 도로 간 거리가 너무 가깝습니다!' };
 
-  for (let i = 0; i < towerAsset.length; i++) {
-    if (towerAsset[i].id === towerId) {
-      const gold = userData.getGold();
-      if (gold < towerAsset[i].cost)
-        return { status: 'fail', message: '타워를 설치 비용이 부족합니다.' };
+  const index = towerId % 100;
+  if (!towerAsset[towerType][index]) return { status: 'fail', message: '잘못된 접근입니다!' };
 
-      userData.spendGold(towerAsset[i].cost);
-      const newNumber = userData.towerInit.length + 1;
-      towerSet(userData.towerInit, towerId, { number: newNumber, posX, posY });
+  try {
+    const gold = userData.getGold();
+    if (gold < towerAsset[towerType][index].cost)
+      return { status: 'fail', message: '타워를 설치 비용이 부족합니다.' };
 
-      let packet = {
-        packetType: PacketType.S2C_TOWER_CREATE,
-        userId: userId,
-        towerId: towerAsset[i].id,
-        towerCost: towerAsset[i].cost,
-        number: newNumber,
-        posX,
-        posY,
-      };
+    userData.spendGold(towerAsset[towerType][index].cost);
+    const newNumber = userData.towerInit.length + 1;
+    towerSet(userData.towerInit, towerType, towerId, { number: newNumber, posX, posY });
 
-      const opponentSocket = getOpponentInfo(userId);
-      socket.emit('userTowerCreate', packet);
-      opponentSocket.emit('userTowerCreate', packet);
-      return { status: 'success', message: '타워를 설치 요청 완료' };
-    }
+    let packet = {
+      packetType: PacketType.S2C_TOWER_CREATE,
+      userId: userId,
+      towerType: towerType,
+      towerId: towerId,
+      towerCost: towerAsset[towerType][index].cost,
+      number: newNumber,
+      posX,
+      posY,
+    };
+
+    const opponentSocket = getOpponentInfo(userId);
+    socket.emit('userTowerCreate', packet);
+    opponentSocket.emit('userTowerCreate', packet);
+    return { status: 'success', message: '타워를 설치 요청 완료' };
+  } catch (err) {
+    console.log(err);
+    return { status: 'fail', message: '타워를 설치 요청에 실패하였습니다.' };
   }
+};
 
-  return { status: 'fail', message: '타워를 설치 요청에 실패하였습니다.' };
+export const towerUpgrade = (socket, data) => {
+  const towerAsset = getGameAssets().towerData.towerType;
 };
 
 // ex
 // userTower = {
 //     length: 0,
-//     101 : [
-//       {towerNum ,x, y },
-//     ]
+//       towerType: {
+//          ID : [
+//           {towerNum ,x, y },
+//          ]
+//       }
 // }

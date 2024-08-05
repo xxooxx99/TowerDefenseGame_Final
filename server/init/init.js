@@ -1,7 +1,8 @@
 import { createPlayData } from '../models/playData.model.js';
-import { userTowerDataInit, towerCostInit } from '../models/tower.model.js';
+import { userTowerDataInit } from '../models/tower.model.js';
 import { towerSet } from '../models/tower.model.js';
 import { getPlayData } from '../models/playData.model.js';
+import { getGameAssets } from './assets.js';
 import {
   RESOLUTION_HEIGHT,
   RESOLUTION_WIDTH,
@@ -28,24 +29,19 @@ export const initData = (user1, user2) => {
   const opponentTowerInit = userTowerDataInit();
 
   //타워 비용 초기화
-  const towerCost = towerCostInit();
+  const towersData = getGameAssets().towerData.towerType;
 
   //유저 초기 타워 3개 배치
-  // let myInitialTowerCoords = [];
-  // let opponentInitialTowerCoords = [];
   for (let i = 0; i < INITIAL_TOWER_NUMBER; i++) {
     const towerCoords1 = getRandomPositionNearPath(100, myMonsterPath, i + 1);
     const towerCoords2 = getRandomPositionNearPath(100, opponentMonsterPath, i + 1);
 
-    // myInitialTowerCoords.push(towerCoords1);
-    // opponentInitialTowerCoords.push(towerCoords2);
-
-    towerSet(myTowerInit, 100, {
+    towerSet(myTowerInit, 'baseTower', 100, {
       posX: towerCoords1.x,
       posY: towerCoords1.y,
       number: i + 1,
     });
-    towerSet(opponentTowerInit, 100, {
+    towerSet(opponentTowerInit, 'baseTower', 100, {
       posX: towerCoords2.x,
       posY: towerCoords2.y,
       number: i + 1,
@@ -88,8 +84,8 @@ export const initData = (user1, user2) => {
     PacketType: PacketType.S2C_GAME_INIT_DATA,
   };
 
-  userSocket1.emit('gameInit', packet, { Payload: myPayload, towerCost });
-  userSocket2.emit('gameInit', packet, { Payload: opponentPayload, towerCost });
+  userSocket1.emit('gameInit', packet, { Payload: myPayload, towersData });
+  userSocket2.emit('gameInit', packet, { Payload: opponentPayload, towersData });
 };
 
 // 초기 몬스터 경로 설정에만 사용
@@ -133,8 +129,6 @@ const getRandomPositionNearPath = (maxDistance, monsterPath, number) => {
   const offsetY = (Math.random() - 0.5) * 2 * maxDistance;
 
   return {
-    towerId: 100,
-    number: number,
     x: posX + offsetX,
     y: posY + offsetY,
   };

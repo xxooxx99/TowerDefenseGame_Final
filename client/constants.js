@@ -16,3 +16,15 @@ export const PacketType = {
   S2C_ENEMY_DIE_MONSTER: 24,
   S2C_GAMESYNC: 99,
 };
+
+export const TOWER_TYPE = [
+  'baseTower',
+  'speedTower',
+  'attackSupportTower',
+  'powerSupportTower',
+  'strongTower',
+  'splashTower',
+  'multiShotTower',
+  'poisonTower',
+  'growthTower',
+];
