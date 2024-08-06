@@ -25,6 +25,10 @@ const progressBar = document.getElementById('progressBar');
 const matchAcceptButton = document.getElementById('matchAcceptButton');
 const loader = document.getElementsByClassName('loader')[0];
 
+const user_name = document.getElementById('user-name');
+const opponentUser_name = document.getElementById('opponentUser-name');
+const ownUser_name = document.getElementById('ownUser-name');
+
 const user_info = document.getElementById('user-info');
 const opponentUser_winRate = document.getElementById('opponentUser-winRate');
 const ownUser_winRate = document.getElementById('ownUser-winRate');
@@ -268,7 +272,12 @@ function initGame() {
 function matchFind(ownUserData, opponentUserData) {
   progressBarMessage.textContent = '게임을 찾았습니다.';
   matchAcceptButton.style.display = 'block';
+
+  // 자신과 상대방의 정보를 출력하는 구문
   user_info.style.display = 'block';
+
+  opponentUser_name.textContent = opponentUserData.userId;
+
   let message = '상대방의 승률 : ' + calWinRate(opponentUserData) + '%';
   opponentUser_winRate.textContent = message;
   message = '나의 승률 : ' + calWinRate(ownUserData) + '%';
@@ -310,7 +319,7 @@ function calWinRate(userData) {
   if (userData.win + userData.lose === 0) {
     return 0;
   } else {
-    return Math.round(userData.win / (userData.win + userData.lose));
+    return Math.round((userData.win / (userData.win + userData.lose)) * 100);
   }
 }
 
