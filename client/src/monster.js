@@ -1,28 +1,87 @@
 export class Monster {
   constructor(path, monsterImages, level, monsterNumber) {
-    // 생성자 안에서 몬스터의 속성을 정의한다고 생각하시면 됩니다!
     if (!path || path.length <= 0) {
       throw new Error('몬스터가 이동할 경로가 필요합니다.');
     }
 
-    this.monsterNumber = monsterNumber ?? Math.floor(Math.random() * monsterImages.length); // 몬스터 번호 (1 ~ 5. 몬스터를 추가해도 숫자가 자동으로 매겨집니다!)
-    this.path = path; // 몬스터가 이동할 경로
-    this.monsterIndex = 0;
-    this.currentIndex = 0; // 몬스터가 이동 중인 경로의 인덱스
-    this.x = path[0].x; // 몬스터의 x 좌표 (최초 위치는 경로의 첫 번째 지점)
-    this.y = path[0].y; // 몬스터의 y 좌표 (최초 위치는 경로의 첫 번째 지점)
-    this.width = 40; // 몬스터 이미지 가로 길이
-    this.height = 40; // 몬스터 이미지 세로 길이
-    this.speed = 2; // 몬스터의 이동 속도
-    this.image = monsterImages[this.monsterNumber]; // 몬스터 이미지
-    this.level = level; // 몬스터 레벨
+    this.path = path;
+    this.monsterImages = monsterImages;
+    this.level = level;
+    this.monsterNumber = monsterNumber;
+    this.type = this.getMonsterTypeByLevel(level);
+    this.currentIndex = 0;
+    this.x = path[0].x;
+    this.y = path[0].y;
+    this.width = 40;
+    this.height = 40;
+    this.image = this.getImageForLevel(level);
     this.init(level);
   }
 
+  getMonsterTypeByLevel(level) {
+    if (level !== 0 && level % 2 === 0 && level % 10 !== 0) {
+      return 'fast';
+    } else if (level !== 0 && level % 3 === 0 && level % 10 !== 0) {
+      return 'tank';
+    } else if (level !== 0 && level % 5 === 0) {
+      return 'defenseBoost';
+    } else {
+      return 'normal';
+    }
+  }
+
   init(level) {
-    this.maxHp = 100 + 10 * level; // 몬스터의 현재 HP
-    this.hp = this.maxHp; // 몬스터의 현재 HP
-    this.attackPower = 10 + 1 * level; // 몬스터의 공격력 (기지에 가해지는 데미지)
+    switch (this.type) {
+      case 'fast':
+        this.maxHp = 50 + 5 * level;
+        this.speed = 5;
+        this.attackPower = 5 + 1 * level;
+        break;
+      case 'tank':
+        this.maxHp = 200 + 50 * level;
+        this.speed = 1;
+        this.attackPower = 15 + 2 * level;
+        break;
+      case 'speedBoost':
+        this.maxHp = 100 + 10 * level;
+        this.speed = 2;
+        this.attackPower = 10 + 1 * level;
+        this.speedBoost = 1.5;
+        break;
+      case 'defenseBoost':
+        this.maxHp = 100 + 10 * level;
+        this.speed = 2;
+        this.attackPower = 10 + 1 * level;
+        this.defenseBoost = 1.5;
+        break;
+      default:
+        this.maxHp = 100 + 10 * level;
+        this.speed = 2;
+        this.attackPower = 10 + 1 * level;
+    }
+
+    this.hp = this.maxHp;
+  }
+
+  getImageForLevel(level) {
+    if (!Array.isArray(this.monsterImages) || this.monsterImages.length === 0) {
+      console.error('몬스터 이미지 배열이 정의되어 있지 않거나 비어 있습니다.');
+      return null;
+    }
+
+    let imageIndex = 0;
+
+    if (level !== 0 && level % 2 === 0 && level % 10 !== 0) {
+      imageIndex = 1;
+    } else if (level !== 0 && level % 3 === 0 && level % 10 !== 0) {
+      imageIndex = 2;
+    } else if (level !== 0 && level % 5 === 0) {
+      imageIndex = 3;
+    } else {
+      imageIndex = 0;
+    }
+
+    return this.monsterImages[imageIndex] || this.monsterImages[0];
   }
 
   move() {
@@ -30,20 +89,19 @@ export class Monster {
       const nextPoint = this.path[this.currentIndex + 1];
       const deltaX = nextPoint.x - this.x;
       const deltaY = nextPoint.y - this.y;
-      // 2차원 좌표계에서 두 점 사이의 거리를 구할 땐 피타고라스 정리를 활용하면 됩니다! a^2 = b^2 + c^2니까 루트를 씌워주면 되죠!
       const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
       if (distance < this.speed) {
-        // 거리가 속도보다 작으면 다음 지점으로 이동시켜주면 됩니다!
         this.currentIndex++;
+        if (this.currentIndex % 4 === 0) {
+        }
       } else {
-        // 거리가 속도보다 크면 일정한 비율로 이동하면 됩니다. 이 때, 단위 벡터와 속도를 곱해줘야 해요!
-        this.x += (deltaX / distance) * this.speed; // 단위 벡터: deltaX / distance
-        this.y += (deltaY / distance) * this.speed; // 단위 벡터: deltaY / distance
+        this.x += (deltaX / distance) * this.speed;
+        this.y += (deltaY / distance) * this.speed;
       }
       return false;
     } else {
-      this.hp = 0; // 몬스터는 이제 기지를 공격했으므로 자연스럽게 소멸해야 합니다.
+      this.hp = 0;
       return true;
     }
   }
@@ -59,20 +117,33 @@ export class Monster {
   getMaxHp() {
     return this.maxHp;
   }
+
   Damage() {
     return this.attackPower;
   }
+
   setHp(value) {
     this.hp = value;
   }
+
   getHp() {
     return this.hp;
   }
 
-  draw(ctx, isOpponent = false) {
-    ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
-    ctx.font = '12px Arial';
-    ctx.fillStyle = 'white';
-    ctx.fillText(`(레벨 ${this.level}) ${this.hp}/${this.maxHp}`, this.x, this.y - 5);
+  draw(ctx) {
+    if (this.image) {
+      ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+
+      ctx.save(); // 현재 상태 저장
+      // ctx.fillRect(this.x, this.y, this.width, this.height);
+      ctx.restore(); // 상태 복원
+
+      // 몬스터 상태 표시
+      ctx.font = '12px Arial';
+      ctx.fillStyle = 'white';
+      ctx.fillText(`(레벨 ${this.level}) ${this.hp}/${this.maxHp}`, this.x, this.y - 5);
+    } else {
+      console.error('몬스터 이미지를 찾을 수 없습니다.');
+    }
   }
 }

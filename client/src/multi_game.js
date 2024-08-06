@@ -25,9 +25,9 @@ const progressBar = document.getElementById('progressBar');
 const matchAcceptButton = document.getElementById('matchAcceptButton');
 const loader = document.getElementsByClassName('loader')[0];
 
-const NUM_OF_MONSTERS = 5; // 몬스터 개수
 let monsterintervalId = null;
-let killCount = 0;
+/* let killCount = 0; */
+let monsterSpawnCount = 0; // 몬스터 스폰 수 초기화
 // 게임 데이터
 let towerCost = 100; // 타워 구입 비용
 let monsterSpawnInterval = 3000; // 몬스터 생성 주기
@@ -58,6 +58,7 @@ let opponentBasePosition; // 상대방 기지 좌표
 let opponentMonsters = []; // 상대방 몬스터 목록
 let opponentTowers = []; // 상대방 타워 목록
 let isInitGame = false;
+const NUM_OF_MONSTERS = 4; // 몬스터 개수
 // 이미지 로딩 파트
 const backgroundImage = new Image();
 backgroundImage.src = 'images/bg.webp';
@@ -211,7 +212,22 @@ function spawnMonster() {
   monsters.push(monster);
   sendEvent(PacketType.C2S_SPAWN_MONSTER, { hp: monster.getMaxHp(), monsterIndex, monsterLevel });
   monsterIndex++;
+  monsterSpawnCount++;
+
+  if (monsterSpawnCount >= 1) {
+    monsterLevel++;
+    monsterSpawnCount = 0;
+    startSpawning();
+  }
 }
+
+function startSpawning() {
+  if (monsterintervalId !== null) {
+    clearInterval(monsterintervalId);
+  }
+  monsterintervalId = setInterval(spawnMonster, monsterSpawnInterval);
+}
+
 function spawnOpponentMonster(value) {
   const newMonster = new Monster(
     opponentMonsterPath,
@@ -311,14 +327,13 @@ function gameLoop() {
         score,
         monsterLevel: monster.level,
       });
-      killCount++;
+      /* killCount++;
 
-      if (killCount === 10 && monsterSpawnInterval > 1000) {
-        monsterSpawnInterval -= 500;
+      if (killCount === 2) {
         monsterLevel++;
         killCount = 0;
         startSpawning();
-      }
+      } */
     }
   }
 
@@ -339,13 +354,6 @@ function gameLoop() {
     opponentBase.draw(opponentCtx, baseImage, true);
   }
   requestAnimationFrame(gameLoop); // 지속적으로 다음 프레임에 gameLoop 함수 호출할 수 있도록 함
-}
-
-function startSpawning() {
-  if (monsterintervalId !== null) {
-    clearInterval(monsterintervalId);
-  }
-  monsterintervalId = setInterval(spawnMonster, monsterSpawnInterval);
 }
 
 function opponentBaseAttacked(value) {
