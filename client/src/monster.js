@@ -24,7 +24,7 @@ export class Monster {
     } else if (level !== 0 && level % 3 === 0 && level % 10 !== 0) {
       return 'tank';
     } else if (level !== 0 && level % 5 === 0) {
-      return 'defenseBoost';
+      return 'healing';
     } else {
       return 'normal';
     }
@@ -42,6 +42,15 @@ export class Monster {
         this.speed = 1;
         this.attackPower = 15 + 2 * level;
         break;
+      case 'healing':
+        this.maxHp = 100 + 10 * level;
+        this.speed = 2;
+        this.attackPower = 10 + 1 * level;
+        this.healingInterval = 100;
+        this.healingAmount = 1;
+        this.startHealing();
+        break;
+      /* (더미)
       case 'speedBoost':
         this.maxHp = 100 + 10 * level;
         this.speed = 2;
@@ -53,7 +62,7 @@ export class Monster {
         this.speed = 2;
         this.attackPower = 10 + 1 * level;
         this.defenseBoost = 1.5;
-        break;
+        break; */
       default:
         this.maxHp = 100 + 10 * level;
         this.speed = 2;
@@ -61,6 +70,16 @@ export class Monster {
     }
 
     this.hp = this.maxHp;
+  }
+
+  startHealing() {
+    if (this.type === 'healing') {
+      this.healingTimer = setInterval(() => {
+        if (this.hp < this.maxHp) {
+          this.hp = Math.min(this.hp + this.healingAmount, this.maxHp);
+        }
+      }, this.healingInterval);
+    }
   }
 
   getImageForLevel(level) {
@@ -127,7 +146,7 @@ export class Monster {
   }
 
   getHp() {
-    return this.hp;
+    this.hp = value;
   }
 
   draw(ctx) {
