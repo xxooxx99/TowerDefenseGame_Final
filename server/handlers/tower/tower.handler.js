@@ -15,9 +15,6 @@ export const towerAddHandler = (socket, data) => {
       const towerType = userData.towerInit[towerData];
       for (let towerId in towerType)
         for (let i = 0; i < towerType[towerId].length; i++) {
-          console.log(towerType[towerId][i]);
-          console.log(towerType[towerId][i].posX, posX); // towerType[towerId][i].posX undefined
-          console.log(towerType[towerId][i].posY - posY);
           const value =
             Math.abs(towerType[towerId][i].posX - posX) +
             Math.abs(towerType[towerId][i].posY - posY);
@@ -26,7 +23,6 @@ export const towerAddHandler = (socket, data) => {
     }
   }
 
-  console.log('min' + min);
   if (min < 80) return { status: 'fail', message: '타워간 거리가 너무 가깝습니다!' };
 
   min = Infinity;

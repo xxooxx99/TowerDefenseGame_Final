@@ -14,17 +14,21 @@ export class Tower {
             this.height = 75; // 타워 이미지 세로 길이
             this.cooldown = 0; // 타워 공격 쿨타임
             this.beamDuration = 0; // 타워 광선 지속 시간
-            this.target = null; // 타워 광선의 목표
-            this.towerNumber = towerNumber;
+            this.target = []; // 타워 광선의 목표
+            this.targetNumber = towerNumber;
+            this.hits = towerIdData.hits || 1;
+            this.criticalPercent = towerIdData.criticalPercent || 10;
+            this.criticalDamage = towerIdData.criticalDamage || 1.2;
+            this.splashRange = towerIdData.splashRange;
+            this.isBufTower = {};
             this.image = new Image();
 
             this.towerId = towerIdData.id;
             this.towerType = towerType;
-            this.attackPower = towerIdData.power;
+            this.attackPower = 60; //towerIdData.power;
             this.range = towerIdData.range;
             this.attackCycle = towerIdData.attackCycle;
             this.imageNum = Math.trunc(towerId / 100) - 1 + (towerId % 100); // 나중에 중간에 7 곱해야함
-            console.log(this.imageNum, this.towerId);
           }
         }
       }
@@ -33,25 +37,57 @@ export class Tower {
 
   draw(ctx) {
     ctx.drawImage(towerImages[this.imageNum], this.x, this.y, this.width, this.height);
-    if (this.beamDuration > 0 && this.target) {
-      ctx.beginPath();
-      ctx.moveTo(this.x + this.width / 2, this.y + this.height / 2);
-      ctx.lineTo(this.target.x + this.target.width / 2, this.target.y + this.target.height / 2);
-      ctx.strokeStyle = 'skyblue';
-      ctx.lineWidth = 10;
-      ctx.stroke();
-      ctx.closePath();
+    if (this.beamDuration > 0 && this.target.length != 0) {
+      for (let i = 0; i < this.target.length; i++) {
+        ctx.beginPath();
+        ctx.moveTo(this.x + this.width / 2, this.y + this.height / 2);
+        ctx.lineTo(
+          this.target[i].x + this.target[i].width / 2,
+          this.target[i].y + this.target[i].height / 2,
+        );
+        ctx.strokeStyle = 'skyblue';
+        ctx.lineWidth = 10;
+        ctx.stroke();
+        ctx.closePath();
+      }
       this.beamDuration--;
     }
   }
 
-  attack(monster) {
-    // 타워가 타워 사정거리 내에 있는 몬스터를 공격하는 메소드이며 사정거리에 닿는지 여부는 game.js에서 확인합니다.
+  attack(monsters, towers) {
     if (this.cooldown <= 0) {
-      monster.hp -= this.attackPower;
-      this.cooldown = this.attackCycle; // 3초 쿨타임 (초당 60프레임)
-      this.beamDuration = 30; // 광선 지속 시간 (0.5초)
-      this.target = monster; // 광선의 목표 설정
+      if (this.target.length !== 0) this.target = [];
+
+      let attackCount = this.hits;
+      const critical = this.criticalPercent >= Math.floor(Math.random() * 101) ? true : false;
+
+      for (let monster of monsters) {
+        if (attackCount <= 0) break;
+
+        const distance = Math.sqrt(
+          Math.pow(this.x - monster.x, 2) + Math.pow(this.y - monster.y, 2),
+        );
+
+        if (distance <= this.range) {
+          if (critical) monster.hp -= this.attackPower * 1.2;
+          else monster.hp -= this.attackPower;
+          attackCount--;
+          this.beamDuration = 30; // 광선 지속 시간 (0.5초)
+          this.target.push(monster); // 광선의 목표 설정
+
+          //스플래쉬 데미지는 크리티컬이 터지지 않게끔 설정
+          if (this.splashRange) {
+            for (let nighMonster of monsters) {
+              const nighDistance = Math.sqrt(
+                Math.pow(monster.x - nighMonster.x, 2) + Math.pow(monster.y - nighMonster.y, 2),
+              );
+
+              if (this.splashRange >= nighDistance) nighMonster.hp -= this.attackPower; // 이펙트 추가해야함
+            }
+          }
+        }
+        if (attackCount != this.hits) this.cooldown = this.attackCycle; // 3초 쿨타임 (초당 60프레임) //만약 때렸다면 실행
+      }
     }
   }
 

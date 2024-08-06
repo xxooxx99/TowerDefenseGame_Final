@@ -25,6 +25,7 @@ const progressBar = document.getElementById('progressBar');
 const matchAcceptButton = document.getElementById('matchAcceptButton');
 const loader = document.getElementsByClassName('loader')[0];
 
+let bufTowers = [];
 let towerUpgrade = null;
 let towerBuilderId = null;
 let towerBuilderType = null;
@@ -35,7 +36,7 @@ const NUM_OF_MONSTERS = 5; // 몬스터 개수
 let intervalId = null;
 // 게임 데이터
 export let towersData; // 타워 데이터
-let monsterSpawnInterval = 3000; // 몬스터 생성 주기
+let monsterSpawnInterval = 300; // 몬스터 생성 주기
 let towerIndex = 1;
 let monsterIndex = 1;
 // 설정 데이터
@@ -51,7 +52,7 @@ let monsterPath; // 몬스터 경로
 let initialTowerCoords; // 초기 타워 좌표
 let basePosition; // 기지 좌표
 const monsters = []; // 유저 몬스터 목록
-const towers = []; // 유저 타워 목록
+export const towers = []; // 유저 타워 목록
 let score = 0; // 게임 점수
 let highScore = 0; // 기존 최고 점수
 // 상대 데이터
@@ -195,6 +196,7 @@ function placeInitialTowers(initialTowerCoords, initialTowers, context) {
             towerData.posX,
             towerData.posY,
           );
+
           initialTowers.push(tower);
         });
       }
@@ -249,7 +251,6 @@ function towerUpgrades() {
     }
   });
 
-  console.log('거리는?:' + min, selectTower);
   if (min < 50) {
     console.log('업그레이드 요청!');
     sendEvent2(PacketType.C2S_TOWER_UPGRADE, {
@@ -309,14 +310,7 @@ function gameLoop() {
   towers.forEach((tower) => {
     tower.draw(ctx);
     tower.updateCooldown();
-    monsters.forEach((monster) => {
-      const distance = Math.sqrt(
-        Math.pow(tower.x - monster.x, 2) + Math.pow(tower.y - monster.y, 2),
-      );
-      if (distance < tower.range) {
-        tower.attack(monster);
-      }
-    });
+    tower.attack(monsters);
   });
 
   // 몬스터가 공격을 했을 수 있으므로 기지 다시 그리기
