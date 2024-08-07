@@ -16,6 +16,14 @@ export const getPlayData = (uuid) => {
   return playData[uuid];
 };
 
+export const setBaseHp = (uuid, data) => {
+  return playData[uuid].setBaseHp(data.damage);
+};
+
+export const setGold = (uuid, data) => {
+  return playData[uuid].setGold(data.gold);
+};
+
 export const clearPlayData = (uuid) => {
   delete playData[uuid];
 };

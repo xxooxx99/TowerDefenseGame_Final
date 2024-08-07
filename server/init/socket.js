@@ -6,6 +6,9 @@ import {
   handlerMatchAcceptRequest,
   handlerMatchDeniedRequest,
 } from '../handlers/match/matchAcceptHandler.js';
+import { handleDieMonster, handleSpawnMonster } from '../handlers/monster/monster.handler.js';
+import { towerAddOnHandler, towerAttackHandler } from '../handlers/towers/tower.handler.js';
+import { handleMonsterBaseAttack } from '../handlers/game/gameHandler.js';
 
 const initSocket = (server) => {
   const io = new SocketIO(server);
@@ -18,6 +21,11 @@ const initSocket = (server) => {
         `Received packet: ${JSON.stringify(`패킷 타입 : ${packet.packetType} 유저 아이디 : ${packet.userId}`)}`,
       );
 
+      if (!packet.userId) {
+        console.error('Received packet without userId:', packet);
+        return;
+      }
+
       socket.userId = packet.userId;
 
       switch (packet.packetType) {
@@ -27,8 +35,23 @@ const initSocket = (server) => {
         case PacketType.C2S_MATCH_ACCEPT:
           handlerMatchAcceptRequest(socket, packet);
           break;
+        case PacketType.C2S_TOWER_BUY:
+          towerAddOnHandler(socket, packet.userId, packet.payload);
+          break;
+        case PacketType.C2S_TOWER_ATTACK:
+          towerAttackHandler(socket, packet.userId, packet.payload);
+          break;
         case PacketType.C2S_MATCH_DENIED:
           handlerMatchDeniedRequest(socket, packet);
+          break;
+        case PacketType.C2S_SPAWN_MONSTER:
+          handleSpawnMonster(socket, packet.userId, packet.payload);
+          break;
+        case PacketType.C2S_DIE_MONSTER:
+          handleDieMonster(socket, packet.userId, packet.payload);
+          break;
+        case PacketType.C2S_MONSTER_ATTACK_BASE:
+          handleMonsterBaseAttack(socket, packet.userId, packet.payload);
           break;
         default:
           console.log(`Unknown packet type: ${packet.packetType}`);
