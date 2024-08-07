@@ -14,7 +14,7 @@ const selectAB_upgrade_5 = document.getElementById('upgrade_explain_5');
 
 const upgrade_button = document.getElementById('upgrade_button');
 
-const serverSocket = io('http://localhost:5555', {
+const serverSocket = io('http://localhost:8080', {
   auth: {
     token: localStorage.getItem('token'),
   },
@@ -57,6 +57,7 @@ ability_1_button.addEventListener('click', () => {
   serverSocket.emit('event', {
     packetType: 100,
     abilityId: 1,
+    userId: localStorage.getItem('userId'),
   });
 });
 
