@@ -10,11 +10,14 @@ import { load_ability } from '../handlers/ability/ability.Handler.js';
 import connectHandler from '../handlers/index.js';
 import { handleDieMonster, handleSpawnMonster } from '../handlers/monster/monster.handler.js';
 import { towerAddOnHandler, towerAttackHandler } from '../handlers/towers/tower.handler.js';
-import { handleMonsterBaseAttack } from '../handlers/game/gameHandler.js';
+import { towerAddHandler, towerUpgrade } from '../handlers/tower/tower.handler.js';
+import { handleMonsterBaseAttack, handleBaseAttackMonster } from '../handlers/game/gameHandler.js';
+import { baseAttackMonster } from '../models/baseUpgrade.js';
 
 const initSocket = (server) => {
   const io = new SocketIO();
   io.attach(server);
+  //connectHandler(io);
 
   io.on('connection', (socket) => {
     console.log(`New user connected: ${socket.id}`);
@@ -59,6 +62,20 @@ const initSocket = (server) => {
           break;
         case PacketType.C2S_LOAD_ABILITY_REQUEST:
           load_ability(socket, packet);
+        case PacketType.C2S_BASE_ATTACK_MONSTER:
+          handleBaseAttackMonster(socket, packet.userId, packet.payload);
+          break;
+        case PacketType.S2C_TOWER_CREATE:
+          towerAddHandler(socket, packet);
+          break;
+        case PacketType.C2S_TOWER_UPGRADE:
+          towerUpgrade(socket, packet);
+          break;
+        case PacketType.C2S_BASE_ATTACK:
+          baseAttackMonster(socket, uuid, payload);
+          break;
+        case PacketType.S2C_UPDATE_MONSTER_HP:
+          updateMonstersHp(packet.payload);
           break;
         default:
           console.log(`Unknown packet type: ${packet.packetType}`);
