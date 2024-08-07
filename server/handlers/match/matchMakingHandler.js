@@ -1,4 +1,9 @@
-import { PacketType } from '../../constants.js';
+import {
+  INITIAL_TOWER_NUMBER,
+  PacketType,
+  RESOLUTION_HEIGHT,
+  RESOLUTION_WIDTH,
+} from '../../constants.js';
 import { addAccept_queue } from './matchAcceptHandler.js';
 import { prisma } from '../../utils/prisma/index.js';
 
@@ -11,18 +16,49 @@ let CLIENTS = {};
 // 수락 대기열을 구별하기 위한 인덱스
 let index = 0;
 
-// async function getUserWinRate(userId) {
-//   const userInfo = await prisma.userInfo.findUnique({
-//     where: { userId: userId },
-//   });
+function generateRandomMonsterPath() {
+  const canvasHeight = RESOLUTION_HEIGHT;
+  const canvasWidth = RESOLUTION_WIDTH;
+  const path = [];
+  let currentX = 0;
+  let currentY = Math.floor(Math.random() * 21) + 500;
+  path.push({ x: currentX, y: currentY });
+  while (currentX < canvasWidth) {
+    currentX += Math.floor(Math.random() * 100) + 50;
+    if (currentX > canvasWidth) {
+      currentX = canvasWidth;
+    }
+    currentY += Math.floor(Math.random() * 200) - 100;
+    if (currentY < 0) {
+      currentY = 0;
+    }
+    if (currentY > canvasHeight) {
+      currentY = canvasHeight;
+    }
+    path.push({ x: currentX, y: currentY });
+  }
+  return path;
+}
 
-//   if (!userInfo) {
-//     throw new Error(`User info not found for userId: ${userId}`);
-//   }
-//   const winRate = userInfo.win / (userInfo.win + userInfo.lose);
-//   return winRate;
-// }
+function getRandomPositionNearPath(maxDistance, monsterPath) {
+  const segmentIndex = Math.floor(Math.random() * (monsterPath.length - 1));
+  const startX = monsterPath[segmentIndex].x;
+  const startY = monsterPath[segmentIndex].y;
+  const endX = monsterPath[segmentIndex + 1].x;
+  const endY = monsterPath[segmentIndex + 1].y;
 
+  const t = Math.random();
+  const posX = startX + t * (endX - startX);
+  const posY = startY + t * (endY - startY);
+
+  const offsetX = (Math.random() - 0.5) * 2 * maxDistance;
+  const offsetY = (Math.random() - 0.5) * 2 * maxDistance;
+
+  return {
+    x: posX + offsetX,
+    y: posY + offsetY,
+  };
+}
 async function handleMatchRequest(socket, data) {
   const { userId } = data;
   console.log(`매치 요청을 보낸 유저 ID: ${userId}`);
@@ -35,7 +71,7 @@ async function handleMatchRequest(socket, data) {
   }
 
   // const winRate = await getUserWinRate(userId);
-  matching_queue.push({ socket, userId });
+  matching_queue.push({ socket, userId, startTime: Date.now() });
   console.log(`현재 대기열 상태: ${matching_queue.map((user) => user.userId).join(`, `)}`);
 
   socket.on('disconnect', () => {
@@ -50,6 +86,11 @@ async function handleMatchRequest(socket, data) {
 
 async function tryMatch() {
   const now = Date.now();
+
+  if (matching_queue.length < 2) {
+    setTimeout(tryMatch, 10000);
+    return;
+  }
 
   for (let i = 0; i < matching_queue.length - 1; i++) {
     for (let j = i + 1; j < matching_queue.length; j++) {
