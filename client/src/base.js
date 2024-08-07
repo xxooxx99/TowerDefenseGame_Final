@@ -27,7 +27,7 @@ export class Base {
     );
 
     if (this.beamDuration > 0) {
-      monsterList.forEach((monster) => {
+      monsterList.forEach(monster => {
         ctx.beginPath();
         ctx.moveTo(this.x, this.y);
         ctx.lineTo(monster.x, monster.y);
@@ -51,28 +51,28 @@ export class Base {
 
   attackMonsters(payload) {
     this.beamDuration = 20; // 예시로 20 프레임 동안 빔을 표시
-    const { baseUuid, monsterIndices } = payload; // payload에서 데이터 추출
+    const { baseUuid, monsterIndices } = payload;  // payload에서 데이터 추출
     fetch('/api/base-attack-monster', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ baseUuid, monsterIndices }), // payload를 그대로 전송
+      body: JSON.stringify({ baseUuid, monsterIndices })  // payload를 그대로 전송
     })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.success) {
-          console.log(`Base Successfully ATTACK ALL MONSTERS!`);
-          data.updatedMonsters.forEach((updatedMonster) => {
-            const monster = this.monsters.find((m) => m.id === updatedMonster.id);
-            if (monster) {
-              monster.hp = updatedMonster.hp; // 몬스터의 HP를 업데이트
-            }
-          });
-        } else {
-          console.error('Base attack failed');
-        }
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-      });
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        console.log(`Base Successfully ATTACK ALL MONSTERS!`);
+        data.updatedMonsters.forEach(updatedMonster => {
+          const monster = this.monsters.find(m => m.id === updatedMonster.id);
+          if (monster) {
+            monster.hp = updatedMonster.hp; // 몬스터의 HP를 업데이트
+          }
+        });
+      } else {
+        console.error('Base attack failed');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    });
   }
 }
