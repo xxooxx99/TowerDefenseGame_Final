@@ -6,6 +6,7 @@ import {
   handlerMatchAcceptRequest,
   handlerMatchDeniedRequest,
 } from '../handlers/match/matchAcceptHandler.js';
+import { load_ability } from '../handlers/ability/ability.Handler.js';
 
 const initSocket = (server) => {
   const io = new SocketIO(server);
@@ -29,6 +30,9 @@ const initSocket = (server) => {
           break;
         case PacketType.C2S_MATCH_DENIED:
           handlerMatchDeniedRequest(socket, packet);
+          break;
+        case PacketType.C2S_LOAD_ABILITY_REQUEST:
+          load_ability(socket, packet);
           break;
         default:
           console.log(`Unknown packet type: ${packet.packetType}`);

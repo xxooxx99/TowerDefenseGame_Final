@@ -137,6 +137,7 @@
       <img src="/images/logo.png" alt="logo" />
       <button id="registerButton">회원가입</button>
       <button id="loginButton">로그인</button>
+      <button id="abilityButton" style="display: none">능력</button>
       <button id="matchButton" style="display: none">다른 유저와 대결하기</button>
     </div>
 
@@ -185,6 +186,7 @@
         if (token && userId) {
           document.getElementById('registerButton').style.display = 'none';
           document.getElementById('loginButton').style.display = 'none';
+          document.getElementById('abilityButton').style.display = 'block';
           document.getElementById('matchButton').style.display = 'block';
           document.getElementById('current-user').innerText = `현재 접속된 아이디: ${userId}`;
           document.getElementById('logout-container').style.display = 'block';
@@ -197,6 +199,10 @@
 
       document.getElementById('loginButton').addEventListener('click', () => {
         window.location.href = 'login.html';
+      });
+
+      document.getElementById('abilityButton').addEventListener('click', () => {
+        window.location.href = 'ability.html';
       });
 
       document.getElementById('matchButton').addEventListener('click', () => {

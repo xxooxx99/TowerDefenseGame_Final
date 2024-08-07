@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 1600px;
+        height: 100vh;
+        margin: 0;
+        background-color: #2d2d2d;
+        flex-direction: column;
+      }
+      .ability {
+        width: 1600px;
+        height: 900px;
+        margin-top: 40px;
+      }
+      .ability_list {
+        width: 600px;
+        height: 700px;
+        float: left;
+        margin-left: 8%;
+        background-color: white;
+      }
+      .user_info_container {
+        width: 540px;
+        height: 50px;
+        display: flex;
+        margin-top: 20px;
+        margin-left: 30px;
+        margin-right: 30px;
+        outline: solid 3px black;
+        align-items: center;
+      }
+      .user_id {
+        width: 290px;
+        margin-left: 10px;
+      }
+      .user_money {
+        width: 290px;
+        margin-right: 10px;
+        text-align: right;
+      }
+      .current_ability {
+        width: auto;
+        height: 150px;
+        margin-top: 40px;
+        margin-left: 30px;
+        margin-right: 30px;
+      }
+      .current_ability_word {
+        width: auto;
+        height: 30px;
+        margin: 0px;
+        font-size: 1.1em;
+      }
+      .current_ability_1 {
+        width: 120px;
+        height: 120px;
+        outline: solid 3px black;
+      }
+      .ability_container_word {
+        width: auto;
+        height: 30px;
+        margin: 20px 30px 0px 30px;
+        font-size: 1em;
+      }
+      .ability_container {
+        width: auto;
+        display: grid;
+        grid-template-columns: 120px 120px 120px 120px;
+        grid-auto-rows: minmax(120px, 120px);
+        column-gap: 20px;
+        height: 390px;
+        margin: 0px 30px 0px 30px;
+      }
+      .ability_1 {
+        width: 120px;
+        height: 120px;
+        padding: 0px;
+        outline: solid 3px black;
+      }
+
+      .ability_info {
+        width: 600px;
+        height: 700px;
+        float: right;
+        margin-right: 8%;
+        background-color: white;
+      }
+      .selected_ability_info {
+        width: auto;
+        height: 120px;
+        margin: 20px 20px 0px 20px;
+      }
+      .selected_ability_icon {
+        width: 114px;
+        height: 114px;
+        border: solid 3px black;
+        float: left;
+      }
+      .selected_ability_name {
+        width: 430px;
+        height: 30px;
+        margin: 5px;
+        float: left;
+      }
+      .selected_ability_explanation {
+        width: 430px;
+        height: 70px;
+        margin: 5px;
+        font-size: 0.95em;
+        outline: solid 3px black;
+        float: left;
+        overflow: hidden;
+      }
+      .selected_ability_upgrade {
+        width: auto;
+        height: 440px;
+        margin: 20px 20px 0px 20px;
+        display: flex;
+        outline: solid 3px black;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .upgrade_explain {
+        width: 560px;
+        height: 100px;
+        margin: 10px 20px 10px 20px;
+        font-size: 1.2em;
+      }
+      .upgrade_button_container {
+        width: 560px;
+        height: 50px;
+        margin: 20px 20px 20px 20px;
+      }
+      .ability_button {
+        width: 250px;
+        height: 50px;
+        margin: 0px 15px 0px 15px;
+        float: left;
+        font-size: 1.2em;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="ability">
+      <div class="ability_list">
+        <div class="user_info_container">
+          <h2 class="user_id" id="user_id">계정 : 11111</h2>
+          <h2 class="user_money">소지 골드 : 0</h2>
+        </div>
+        <div class="current_ability">
+          <h3 class="current_ability_word">현재 장착중인 능력</h3>
+          <div class="current_ability_1">
+            <img
+              src="/images/ability/ability_money.png"
+              width="120"
+              height="120"
+              alt="ability_money"
+            />
+          </div>
+        </div>
+        <h2 class="ability_container_word">능력들</h2>
+        <div class="ability_container">
+          <button class="ability_1" id="ability_1">
+            <img
+              src="/images/ability/ability_money.png"
+              width="110"
+              height="110"
+              alt="ability_money"
+            />
+          </button>
+        </div>
+      </div>
+
+      <div class="ability_info">
+        <div class="selected_ability_info">
+          <div class="selected_ability_icon">
+            <img id="selected_ability_icon" width="116" height="116" />
+          </div>
+          <h2 class="selected_ability_name" id="selected_ability_name"></h2>
+          <h3 class="selected_ability_explanation" id="selected_ability_explanation"></h3>
+        </div>
+        <div class="selected_ability_upgrade">
+          <h2 class="upgrade_explain upgrade_explain_1" id="upgrade_explain_1"></h2>
+          <h2 class="upgrade_explain upgrade_explain_2" id="upgrade_explain_2"></h2>
+          <h2 class="upgrade_explain upgrade_explain_3" id="upgrade_explain_3"></h2>
+          <h2 class="upgrade_explain upgrade_explain_4" id="upgrade_explain_4"></h2>
+          <h2 class="upgrade_explain upgrade_explain_5" id="upgrade_explain_5"></h2>
+        </div>
+        <div class="upgrade_button_container">
+          <button
+            class="ability_button upgrade_button"
+            id="upgrade_button"
+            disabled="true"
+          ></button>
+          <button class="ability_button returnbutton" id="return_button">
+            메인화면으로 돌아가기
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script type="module">
+      window.onload = function () {
+        import('./src/ability.js');
+      };
+
+      document.getElementById('return_button').addEventListener('click', () => {
+        window.location.href = 'index.html';
+      });
+    </script>
+  </body>
+</html>
