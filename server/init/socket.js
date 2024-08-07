@@ -6,18 +6,16 @@ import {
   handlerMatchAcceptRequest,
   handlerMatchDeniedRequest,
 } from '../handlers/match/matchAcceptHandler.js';
-import connectHandler from '../handlers/index.js';
 import { handleDieMonster, handleSpawnMonster } from '../handlers/monster/monster.handler.js';
 import { towerAddOnHandler, towerAttackHandler } from '../handlers/towers/tower.handler.js';
+import { towerAddHandler, towerUpgrade } from '../handlers/tower/tower.handler.js';
 import { handleMonsterBaseAttack, handleBaseAttackMonster } from '../handlers/game/gameHandler.js';
 import { baseAttackMonster } from '../models/baseUpgrade.js';
 
 const initSocket = (server) => {
   const io = new SocketIO();
   io.attach(server);
-  connectHandler(io);
-
-  return;
+  //connectHandler(io);
 
   io.on('connection', (socket) => {
     console.log(`New user connected: ${socket.id}`);
@@ -64,10 +62,10 @@ const initSocket = (server) => {
           handleBaseAttackMonster(socket, packet.userId, packet.payload);
           break;
         case PacketType.S2C_TOWER_CREATE:
-          towerAddHandler(socket, packet.userId, packet.payload);
+          towerAddHandler(socket, packet);
           break;
         case PacketType.C2S_TOWER_UPGRADE:
-          towerUpgrade(socket, packet.userId, packet.payload);
+          towerUpgrade(socket, packet);
           break;
         case PacketType.C2S_BASE_ATTACK:
           baseAttackMonster(socket, uuid, payload);
