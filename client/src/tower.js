@@ -130,6 +130,19 @@ export class Tower {
         } // 쿨타임, 만약 때렸다면 실행
       }
     }
+    return false;
+  }
+
+  getTowerIndex() {
+    return this.towerIndex;
+  }
+
+  setTowerIndex(index) {
+    this.towerIndex = index;
+  }
+
+  getAttackPower() {
+    return this.attackPower;
   }
 
   updateCooldown() {

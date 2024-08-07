@@ -31,11 +31,15 @@ let towerBuilderType = null;
 let posX = 0;
 let posY = 0;
 
-const NUM_OF_MONSTERS = 5; // 몬스터 개수
 let intervalId = null;
 // 게임 데이터
 export let towersData; // 타워 데이터
-let monsterSpawnInterval = 300; // 몬스터 생성 주기
+let monsterintervalId = null;
+/* let killCount = 0; */
+let monsterSpawnCount = 0; // 몬스터 스폰 수 초기화
+// 게임 데이터
+let towerCost = 100; // 타워 구입 비용
+let monsterSpawnInterval = 1000; // 몬스터 생성 주기
 let towerIndex = 1;
 let monsterIndex = 1;
 // 설정 데이터
@@ -50,7 +54,7 @@ let monsterLevel = 0; // 몬스터 레벨
 let monsterPath; // 몬스터 경로
 let initialTowerCoords; // 초기 타워 좌표
 let basePosition; // 기지 좌표
-const monsters = []; // 유저 몬스터 목록
+let monsters = []; // 유저 몬스터 목록
 let towers = {}; // 유저 타워 목록
 let score = 0; // 게임 점수
 let highScore = 0; // 기존 최고 점수
@@ -60,9 +64,10 @@ let opponentBaseHp = 0;
 let opponentMonsterPath; // 상대방 몬스터 경로
 let opponentInitialTowerCoords; // 상대방 초기 타워 좌표
 let opponentBasePosition; // 상대방 기지 좌표
-const opponentMonsters = []; // 상대방 몬스터 목록
+let opponentMonsters = []; // 상대방 몬스터 목록
 let opponentTowers = {}; // 상대방 타워 목록
 let isInitGame = false;
+const NUM_OF_MONSTERS = 4; // 몬스터 개수
 // 이미지 로딩 파트
 const backgroundImage = new Image();
 backgroundImage.src = 'images/bg.webp';
@@ -195,7 +200,7 @@ function towerBuilderCheck(towerType, button) {
 
 function towerRequest() {
   const towerType = TOWER_TYPE[towerBuilderId / 100 - 1];
-  sendEvent2(PacketType.C2S_TOWER_CREATE, {
+  sendEvent(PacketType.C2S_TOWER_CREATE, {
     userId,
     towerType,
     towerId: towerBuilderId,
@@ -226,7 +231,7 @@ function towerUpgrades() {
 
   if (min < 50) {
     console.log('업그레이드 요청!');
-    sendEvent2(PacketType.C2S_TOWER_UPGRADE, {
+    sendEvent(PacketType.C2S_TOWER_UPGRADE, {
       userId,
       towerType: selectTower.towerType,
       towerId: selectTower.towerId,
@@ -234,14 +239,35 @@ function towerUpgrades() {
     });
   }
 }
+function placeNewOpponentTower(value) {
+  const newTowerCoords = value[value.length - 1];
+  const newTower = new Tower(newTowerCoords.tower.X, newTowerCoords.tower.Y);
+  newTower.setTowerIndex(newTowerCoords.towerIndex);
+  opponentTowers.push(newTower);
+}
+
+function opponentTowerAttack(monsterValue, towerValue) {
+  const attackedTower = opponentTowers.find((tower) => {
+    return tower.getTowerIndex() === towerValue.towerIndex;
+  });
+  const attackedMonster = opponentMonsters.find((monster) => {
+    return monster.getMonsterIndex() === monsterValue.monsterIndex;
+  });
+  attackedMonster.setHp(monsterValue.hp);
+  attackedTower.attack(attackedMonster);
+}
 
 function placeBase(position, isPlayer) {
   if (isPlayer) {
-    base = new Base(position.x, position.y, baseHp);
-    base.draw(ctx, baseImage);
+    if (!base) {
+      base = new Base(position.x, position.y, baseHp);
+      base.draw(ctx, baseImage);
+    }
   } else {
-    opponentBase = new Base(position.x, position.y, baseHp);
-    opponentBase.draw(opponentCtx, baseImage, true);
+    if (!opponentBase) {
+      opponentBase = new Base(position.x, position.y, baseHp);
+      opponentBase.draw(opponentCtx, baseImage, true);
+    }
   }
 }
 
@@ -249,13 +275,25 @@ function spawnMonster() {
   const monster = new Monster(monsterPath, monsterImages, monsterLevel);
   monster.setMonsterIndex(monsterIndex);
   monsters.push(monster);
-
   sendEvent(PacketType.C2S_SPAWN_MONSTER, { hp: monster.getMaxHp(), monsterIndex, monsterLevel });
   monsterIndex++;
+  monsterSpawnCount++;
 
-  // TODO. 서버로 몬스터 생성 이벤트 전송
+  if (monsterSpawnCount >= 1) {
+    monsterLevel++;
+    monsterSpawnCount = 0;
+    startSpawning();
+  }
 }
-/* function spawnOpoonentMonster(value) {
+
+function startSpawning() {
+  if (monsterintervalId !== null) {
+    clearInterval(monsterintervalId);
+  }
+  monsterintervalId = setInterval(spawnMonster, monsterSpawnInterval);
+}
+
+function spawnOpponentMonster(value) {
   const newMonster = new Monster(
     opponentMonsterPath,
     monsterImages,
@@ -263,7 +301,34 @@ function spawnMonster() {
   );
   newMonster.setMonsterIndex(value[value.length - 1].monsterIndex);
   opponentMonsters.push(newMonster);
-} */
+}
+function destroyOpponentMonster(index) {
+  const destroyedMonsterIndex = opponentMonsters.findIndex((monster) => {
+    return monster.getMonsterIndex() === index;
+  });
+  opponentMonsters.splice(destroyedMonsterIndex, 1);
+}
+
+function gameSync(data) {
+  score = data.score;
+  userGold = data.gold;
+  baseHp = data.baseHp;
+  base.updateHp(baseHp);
+
+  if (data.attackedMonster === undefined) {
+    return;
+  }
+
+  const attackedMonster = monsters.find((monster) => {
+    return monster.getMonsterIndex() === data.attackedMonster.monsterIndex;
+  });
+
+  if (attackedMonster) {
+    attackedMonster.setHp(data.attackedMonster.hp);
+  } else {
+    console.error('Monster not found', data.attackedMonster.monsterIndex);
+  }
+}
 
 function gameLoop() {
   // 렌더링 시에는 항상 배경 이미지부터 그려야 합니다! 그래야 다른 이미지들이 배경 이미지 위에 그려져요!
@@ -296,7 +361,7 @@ function gameLoop() {
   for (let towerId in growthTowers) {
     for (let i = 0; i < growthTowers[towerId].length; i++) {
       if (growthTowers[towerId][i].killCount <= 0 && growthTowers[towerId][i].satisfied) {
-        sendEvent2(PacketType.C2S_TOWER_UPGRADE, {
+        sendEvent(PacketType.C2S_TOWER_UPGRADE, {
           userId,
           towerType: TOWER_TYPE[TOWER_TYPE.length - 1],
           towerId: towerId,
@@ -314,16 +379,33 @@ function gameLoop() {
     const monster = monsters[i];
     if (monster.hp > 0) {
       const Attacked = monster.move();
+      monster.draw(ctx, false);
       if (Attacked) {
         const attackedSound = new Audio('sounds/attacked.wav');
         attackedSound.volume = 0.3;
         attackedSound.play();
-        // TODO. 몬스터가 기지를 공격했을 때 서버로 이벤트 전송
         monsters.splice(i, 1);
+        sendEvent(PacketType.C2S_DIE_MONSTER, {
+          monsterIndex: monster.getMonsterIndex(),
+          score,
+          monsterLevel: monster.level,
+        });
+        sendEvent(PacketType.C2S_MONSTER_ATTACK_BASE, { damage: monster.Damage() });
       }
     } else {
-      // TODO. 몬스터 사망 이벤트 전송
       monsters.splice(i, 1);
+      sendEvent(PacketType.C2S_DIE_MONSTER, {
+        monsterIndex: monster.getMonsterIndex(),
+        score,
+        monsterLevel: monster.level,
+      });
+      /* killCount++;
+
+      if (killCount === 2) {
+        monsterLevel++;
+        killCount = 0;
+        startSpawning();
+      } */
     }
   }
 
@@ -350,15 +432,10 @@ function gameLoop() {
     monster.draw(opponentCtx, true);
   });
 
-  opponentBase.draw(opponentCtx, baseImage, true);
-
-  requestAnimationFrame(gameLoop); // 지속적으로 다음 프레임에 gameLoop 함수 호출할 수 있도록 함
-}
-function startSpawning() {
-  if (intervalId !== null) {
-    clearInterval(intervalId);
+  if (opponentBase) {
+    opponentBase.draw(opponentCtx, baseImage, true);
   }
-  intervalId = setInterval(spawnMonster, monsterSpawnInterval);
+  requestAnimationFrame(gameLoop); // 지속적으로 다음 프레임에 gameLoop 함수 호출할 수 있도록 함
 }
 
 function opponentBaseAttacked(value) {
@@ -392,7 +469,10 @@ function initGame() {
   bgm.volume = 0.2;
   bgm.play();
   initMap(); // 맵 초기화 (배경, 몬스터 경로 그리기)
-  startSpawning();
+  setTimeout(() => {
+    startSpawning();
+  }, 10000);
+
   gameLoop(); // 게임 루프 최초 실행
   isInitGame = true;
 }
@@ -591,6 +671,28 @@ Promise.all([
       });
     }
   });
+  serverSocket.on('gameSync', (packet) => {
+    switch (packet.packetType) {
+      case PacketType.S2C_ENEMY_TOWER_SPAWN:
+        placeNewOpponentTower(packet.data.opponentTowers);
+        break;
+      case PacketType.S2C_ENEMY_TOWER_ATTACK:
+        opponentTowerAttack(packet.data.attackedOpponentMonster, packet.data.attackedOpponentTower);
+        break;
+      case PacketType.S2C_ENEMY_SPAWN_MONSTER:
+        spawnOpponentMonster(packet.data.opponentMonsters);
+        break;
+      case PacketType.S2C_ENEMY_DIE_MONSTER:
+        destroyOpponentMonster(packet.data.destroyedOpponentMonsterIndex);
+        break;
+      case PacketType.S2C_UPDATE_BASE_HP:
+        opponentBaseAttacked(packet.data.opponentBaseHp);
+        break;
+      case PacketType.S2C_GAMESYNC:
+        gameSync(packet.data);
+        break;
+    }
+  });
 });
 
 const buyTowerButton1 = document.createElement('button');
@@ -667,34 +769,29 @@ const mousePos = (event) => {
 const gameCanvas = document.getElementById('gameCanvas');
 gameCanvas.addEventListener('click', mousePos);
 
-export const sendEvent = (handlerId, payload) => {
-  function decycle(obj, stack = []) {
-    if (!obj || typeof obj !== 'object') {
-      return obj;
-    }
+// function decycle(obj, stack = []) {
+//   if (!obj || typeof obj !== 'object') {
+//     return obj;
+//   }
+//   if (stack.includes(obj)) {
+//     return null;
+//   }
+//   const newStack = stack.concat([obj]);
+//   if (Array.isArray(obj)) {
+//     return obj.map((item) => decycle(item, newStack));
+//   }
+//   return Object.keys(obj).reduce((acc, key) => {
+//     acc[key] = decycle(obj[key], newStack);
+//     return acc;
+//   }, {});
+// }
 
-    if (stack.includes(obj)) {
-      return null;
-    }
-
-    const newStack = stack.concat([obj]);
-
-    if (Array.isArray(obj)) {
-      return obj.map((item) => decycle(item, newStack));
-    }
-
-    return Object.keys(obj).reduce((acc, key) => {
-      acc[key] = decycle(obj[key], newStack);
-      return acc;
-    }, {});
-  }
-};
-
-function sendEvent2(handlerId, payload) {
+function sendEvent(handlerId, payload) {
+  // const decycledPayload = decycle(payload);
   serverSocket.emit('event', {
     userId,
     clientVersion: CLIENT_VERSION,
-    PacketType: handlerId,
-    payload,
+    packetType: handlerId,
+    payload, //: decycledPayload,
   });
 }

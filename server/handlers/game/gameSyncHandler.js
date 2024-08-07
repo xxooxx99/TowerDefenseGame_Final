@@ -1,6 +1,6 @@
-import { PacketType } from '../constants.js';
-import { getPlayData } from '../models/playData.model.js';
-import { CLIENTS } from './match/matchMakingHandler.js';
+import { PacketType } from '../../constants.js';
+import { getPlayData } from '../../models/playData.model.js';
+import { CLIENTS } from '../match/matchMakingHandler.js';
 
 // 상태 동기화 패킷 생성 및 전송
 function sendGameSync(socket, userId, packetType, payload) {

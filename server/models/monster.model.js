@@ -17,6 +17,16 @@ export const setMonster = (uuid, hp, monsterIndex, monsterLevel) => {
   return monsterIndex;
 };
 
+export const setDamagedMonsterHp = (uuid, damage, monsterIndex) => {
+  const attackedMonster = monsters[uuid].find((monster) => {
+    return monster.monsterIndex === monsterIndex;
+  });
+
+  attackedMonster.hp -= damage;
+
+  return attackedMonster.hp;
+};
+
 export const clearMonsters = (uuid) => {
   return (monsters[uuid] = []);
 };

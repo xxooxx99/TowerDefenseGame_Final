@@ -1,8 +1,14 @@
 import { handleConnection, handlerDisconnect, handlerEvent } from './helper.js';
 import { PacketType } from '../constants.js';
 import { handleMatchRequest } from './match/matchMakingHandler.js';
-import { handlerMatchAcceptRequest } from './match/matchAcceptHandler.js';
-import { handlerMatchDeniedRequest } from './match/matchAcceptHandler.js';
+
+import {
+  handlerMatchAcceptRequest,
+  handlerMatchDeniedRequest,
+} from '../handlers/match/matchAcceptHandler.js';
+import { handleDieMonster, handleSpawnMonster } from '../handlers/monster/monster.handler.js';
+import { towerAddOnHandler, towerAttackHandler } from '../handlers/towers/tower.handler.js';
+import { handleMonsterBaseAttack } from '../handlers/game/gameHandler.js';
 
 const connectHandler = (io) => {
   io.on('connection', (socket) => {
@@ -10,22 +16,36 @@ const connectHandler = (io) => {
     socket.emit('connection', { status: 'success', message: '연결 완료' });
 
     handleConnection(socket);
-    socket.on('event', (data) => {
-      socket.userId = data.userId;
-      console.log('2');
+    socket.on('event', (packet) => {
+      socket.userId = packet.userId;
 
-      switch (data.packetType) {
+      switch (packet.packetType) {
         case PacketType.C2S_MATCH_REQUEST:
-          handleMatchRequest(socket, data);
+          handleMatchRequest(socket, packet);
           break;
         case PacketType.C2S_MATCH_ACCEPT:
-          handlerMatchAcceptRequest(socket, data);
+          handlerMatchAcceptRequest(socket, packet);
+          break;
+        case PacketType.C2S_TOWER_BUY:
+          towerAddOnHandler(socket, packet.userId, packet.payload);
+          break;
+        case PacketType.C2S_TOWER_ATTACK:
+          towerAttackHandler(socket, packet.userId, packet.payload);
           break;
         case PacketType.C2S_MATCH_DENIED:
-          handlerMatchDeniedRequest(socket, data);
+          handlerMatchDeniedRequest(socket, packet);
+          break;
+        case PacketType.C2S_SPAWN_MONSTER:
+          handleSpawnMonster(socket, packet.userId, packet.payload);
+          break;
+        case PacketType.C2S_DIE_MONSTER:
+          handleDieMonster(socket, packet.userId, packet.payload);
+          break;
+        case PacketType.C2S_MONSTER_ATTACK_BASE:
+          handleMonsterBaseAttack(socket, packet.userId, packet.payload);
           break;
         default:
-          handlerEvent(io, socket, data);
+          handlerEvent(io, socket, packet);
         //console.log(`Unknown packet type: ${packet.packetType}`);
       }
     });
