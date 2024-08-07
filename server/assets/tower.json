@@ -12,31 +12,157 @@
       { "id": 106, "power": 100, "cost": 350, "UpgradeCost": 40, "attackCycle": 180, "range": 300 }
     ],
     "speedTower": [
-      { "id": 200, "power": 40, "cost": 50, "UpgradeCost": 100, "attackCycle": 180, "range": 300 },
-      { "id": 201, "power": 50, "cost": 100, "UpgradeCost": 90, "attackCycle": 180, "range": 300 },
-      { "id": 202, "power": 60, "cost": 150, "UpgradeCost": 80, "attackCycle": 180, "range": 300 },
-      { "id": 203, "power": 70, "cost": 200, "UpgradeCost": 70, "attackCycle": 180, "range": 300 },
-      { "id": 204, "power": 80, "cost": 250, "UpgradeCost": 60, "attackCycle": 180, "range": 300 },
-      { "id": 205, "power": 90, "cost": 300, "UpgradeCost": 50, "attackCycle": 180, "range": 300 },
-      { "id": 206, "power": 100, "cost": 350, "UpgradeCost": 40, "attackCycle": 180, "range": 300 }
+      { "id": 200, "power": 40, "cost": 50, "UpgradeCost": 100, "attackCycle": 160, "range": 300 },
+      { "id": 201, "power": 50, "cost": 100, "UpgradeCost": 90, "attackCycle": 140, "range": 300 },
+      { "id": 202, "power": 60, "cost": 150, "UpgradeCost": 80, "attackCycle": 120, "range": 300 },
+      { "id": 203, "power": 70, "cost": 200, "UpgradeCost": 70, "attackCycle": 100, "range": 300 },
+      { "id": 204, "power": 80, "cost": 250, "UpgradeCost": 60, "attackCycle": 80, "range": 300 },
+      { "id": 205, "power": 90, "cost": 300, "UpgradeCost": 50, "attackCycle": 60, "range": 300 },
+      { "id": 206, "power": 100, "cost": 350, "UpgradeCost": 40, "attackCycle": 40, "range": 300 }
+    ],
+    "speedSupportTower": [
+      {
+        "id": 300,
+        "power": 40,
+        "cost": 50,
+        "UpgradeCost": 100,
+        "attackCycle": 200,
+        "range": 300,
+        "addSpeed": 170,
+        "bufRange": 500
+      },
+      {
+        "id": 301,
+        "power": 50,
+        "cost": 100,
+        "UpgradeCost": 90,
+        "attackCycle": 200,
+        "range": 300,
+        "addSpeed": 10,
+        "bufRange": 500
+      },
+      {
+        "id": 302,
+        "power": 60,
+        "cost": 150,
+        "UpgradeCost": 80,
+        "attackCycle": 200,
+        "range": 300,
+        "addSpeed": 10,
+        "bufRange": 500
+      },
+      {
+        "id": 303,
+        "power": 70,
+        "cost": 200,
+        "UpgradeCost": 70,
+        "attackCycle": 200,
+        "range": 300,
+        "addSpeed": 10,
+        "bufRange": 500
+      },
+      {
+        "id": 304,
+        "power": 80,
+        "cost": 250,
+        "UpgradeCost": 60,
+        "attackCycle": 200,
+        "range": 300,
+        "addSpeed": 10,
+        "bufRange": 500
+      },
+      {
+        "id": 305,
+        "power": 90,
+        "cost": 300,
+        "UpgradeCost": 50,
+        "attackCycle": 200,
+        "range": 300,
+        "addSpeed": 10,
+        "bufRange": 500
+      },
+      {
+        "id": 306,
+        "power": 100,
+        "cost": 350,
+        "UpgradeCost": 40,
+        "attackCycle": 200,
+        "range": 300,
+        "addSpeed": 10,
+        "bufRange": 500
+      }
     ],
     "attackSupportTower": [
-      { "id": 300, "power": 40, "cost": 50, "UpgradeCost": 100, "attackCycle": 1000, "range": 300 },
-      { "id": 301, "power": 50, "cost": 100, "UpgradeCost": 90, "attackCycle": 1000, "range": 300 },
-      { "id": 302, "power": 60, "cost": 150, "UpgradeCost": 80, "attackCycle": 1000, "range": 300 },
-      { "id": 303, "power": 70, "cost": 200, "UpgradeCost": 70, "attackCycle": 1000, "range": 300 },
-      { "id": 304, "power": 80, "cost": 250, "UpgradeCost": 60, "attackCycle": 1000, "range": 300 },
-      { "id": 305, "power": 90, "cost": 300, "UpgradeCost": 50, "attackCycle": 1000, "range": 300 },
-      { "id": 306, "power": 100, "cost": 350, "UpgradeCost": 40, "attackCycle": 1000, "range": 300 }
-    ],
-    "powerSupportTower": [
-      { "id": 400, "power": 40, "cost": 50, "UpgradeCost": 100, "attackCycle": 1000, "range": 300 },
-      { "id": 401, "power": 50, "cost": 100, "UpgradeCost": 90, "attackCycle": 1000, "range": 300 },
-      { "id": 402, "power": 60, "cost": 150, "UpgradeCost": 80, "attackCycle": 1000, "range": 300 },
-      { "id": 403, "power": 70, "cost": 200, "UpgradeCost": 70, "attackCycle": 1000, "range": 300 },
-      { "id": 404, "power": 80, "cost": 250, "UpgradeCost": 60, "attackCycle": 1000, "range": 300 },
-      { "id": 405, "power": 90, "cost": 300, "UpgradeCost": 50, "attackCycle": 1000, "range": 300 },
-      { "id": 406, "power": 100, "cost": 350, "UpgradeCost": 40, "attackCycle": 1000, "range": 300 }
+      {
+        "id": 400,
+        "power": 40,
+        "cost": 50,
+        "UpgradeCost": 100,
+        "attackCycle": 200,
+        "range": 300,
+        "addDamage": 200,
+        "bufRange": 500
+      },
+      {
+        "id": 401,
+        "power": 50,
+        "cost": 100,
+        "UpgradeCost": 90,
+        "attackCycle": 200,
+        "range": 300,
+        "addDamage": 10,
+        "bufRange": 500
+      },
+      {
+        "id": 402,
+        "power": 60,
+        "cost": 150,
+        "UpgradeCost": 80,
+        "attackCycle": 200,
+        "range": 300,
+        "addDamage": 10,
+        "bufRange": 500
+      },
+      {
+        "id": 403,
+        "power": 70,
+        "cost": 200,
+        "UpgradeCost": 70,
+        "attackCycle": 200,
+        "range": 300,
+        "addDamage": 10,
+        "bufRange": 500
+      },
+      {
+        "id": 404,
+        "power": 80,
+        "cost": 250,
+        "UpgradeCost": 60,
+        "attackCycle": 200,
+        "range": 300,
+        "addDamage": 10,
+        "bufRange": 500
+      },
+      {
+        "id": 405,
+        "power": 90,
+        "cost": 300,
+        "UpgradeCost": 50,
+        "attackCycle": 200,
+        "range": 300,
+        "addDamage": 10,
+        "bufRange": 500
+      },
+      {
+        "id": 406,
+        "power": 100,
+        "cost": 350,
+        "UpgradeCost": 40,
+        "attackCycle": 200,
+        "range": 300,
+        "addDamage": 10,
+        "bufRange": 500
+      }
     ],
     "strongTower": [
       {
@@ -44,7 +170,7 @@
         "power": 40,
         "cost": 50,
         "UpgradeCost": 100,
-        "attackCycle": 1000,
+        "attackCycle": 200,
         "range": 300,
         "criticalPercent": 10,
         "criticalDamage": 1.5
@@ -54,7 +180,7 @@
         "power": 50,
         "cost": 100,
         "UpgradeCost": 90,
-        "attackCycle": 1000,
+        "attackCycle": 200,
         "range": 300,
         "criticalPercent": 10,
         "criticalDamage": 1.5
@@ -64,7 +190,7 @@
         "power": 60,
         "cost": 150,
         "UpgradeCost": 80,
-        "attackCycle": 1000,
+        "attackCycle": 200,
         "range": 300,
         "criticalPercent": 10,
         "criticalDamage": 1.5
@@ -74,7 +200,7 @@
         "power": 70,
         "cost": 200,
         "UpgradeCost": 70,
-        "attackCycle": 1000,
+        "attackCycle": 200,
         "range": 300,
         "criticalPercent": 10,
         "criticalDamage": 1.5
@@ -84,7 +210,7 @@
         "power": 80,
         "cost": 250,
         "UpgradeCost": 60,
-        "attackCycle": 1000,
+        "attackCycle": 200,
         "range": 300,
         "criticalPercent": 10,
         "criticalDamage": 1.5
@@ -94,7 +220,7 @@
         "power": 90,
         "cost": 300,
         "UpgradeCost": 50,
-        "attackCycle": 1000,
+        "attackCycle": 200,
         "range": 300,
         "criticalPercent": 10,
         "criticalDamage": 1.5
@@ -104,7 +230,7 @@
         "power": 100,
         "cost": 350,
         "UpgradeCost": 40,
-        "attackCycle": 1000,
+        "attackCycle": 200,
         "range": 300,
         "criticalPercent": 10,
         "criticalDamage": 1.5
@@ -113,19 +239,19 @@
     "splashTower": [
       {
         "id": 600,
-        "power": 40,
+        "power": 600,
         "cost": 50,
         "UpgradeCost": 100,
-        "attackCycle": 1000,
+        "attackCycle": 200,
         "range": 300,
-        "splashRange": 100
+        "splashRange": 500
       },
       {
         "id": 601,
         "power": 50,
         "cost": 100,
         "UpgradeCost": 90,
-        "attackCycle": 1000,
+        "attackCycle": 200,
         "range": 300,
         "splashRange": 100
       },
@@ -134,7 +260,7 @@
         "power": 60,
         "cost": 150,
         "UpgradeCost": 80,
-        "attackCycle": 1000,
+        "attackCycle": 200,
         "range": 300,
         "splashRange": 100
       },
@@ -143,7 +269,7 @@
         "power": 70,
         "cost": 200,
         "UpgradeCost": 70,
-        "attackCycle": 1000,
+        "attackCycle": 200,
         "range": 300,
         "splashRange": 100
       },
@@ -152,7 +278,7 @@
         "power": 80,
         "cost": 250,
         "UpgradeCost": 60,
-        "attackCycle": 1000,
+        "attackCycle": 200,
         "range": 300,
         "splashRange": 100
       },
@@ -161,7 +287,7 @@
         "power": 90,
         "cost": 300,
         "UpgradeCost": 50,
-        "attackCycle": 1000,
+        "attackCycle": 200,
         "range": 300,
         "splashRange": 100
       },
@@ -170,7 +296,7 @@
         "power": 100,
         "cost": 350,
         "UpgradeCost": 40,
-        "attackCycle": 1000,
+        "attackCycle": 200,
         "range": 300,
         "splashRange": 100
       }
@@ -181,7 +307,7 @@
         "power": 40,
         "cost": 50,
         "UpgradeCost": 100,
-        "attackCycle": 1000,
+        "attackCycle": 200,
         "range": 300,
         "hits": 2
       },
@@ -190,7 +316,7 @@
         "power": 50,
         "cost": 100,
         "UpgradeCost": 90,
-        "attackCycle": 1000,
+        "attackCycle": 200,
         "range": 300,
         "hits": 3
       },
@@ -199,7 +325,7 @@
         "power": 60,
         "cost": 150,
         "UpgradeCost": 80,
-        "attackCycle": 1000,
+        "attackCycle": 200,
         "range": 300,
         "hits": 4
       },
@@ -208,7 +334,7 @@
         "power": 70,
         "cost": 200,
         "UpgradeCost": 70,
-        "attackCycle": 1000,
+        "attackCycle": 200,
         "range": 300,
         "hits": 5
       },
@@ -217,7 +343,7 @@
         "power": 80,
         "cost": 250,
         "UpgradeCost": 60,
-        "attackCycle": 1000,
+        "attackCycle": 200,
         "range": 300,
         "hits": 6
       },
@@ -226,7 +352,7 @@
         "power": 90,
         "cost": 300,
         "UpgradeCost": 50,
-        "attackCycle": 1000,
+        "attackCycle": 200,
         "range": 300,
         "hits": 7
       },
@@ -235,28 +361,84 @@
         "power": 100,
         "cost": 350,
         "UpgradeCost": 40,
-        "attackCycle": 1000,
+        "attackCycle": 200,
         "range": 300,
         "hits": 8
       }
     ],
     "poisonTower": [
-      { "id": 800, "power": 40, "cost": 50, "UpgradeCost": 100, "attackCycle": 1000, "range": 300 },
-      { "id": 801, "power": 50, "cost": 100, "UpgradeCost": 90, "attackCycle": 1000, "range": 300 },
-      { "id": 802, "power": 60, "cost": 150, "UpgradeCost": 80, "attackCycle": 1000, "range": 300 },
-      { "id": 803, "power": 70, "cost": 200, "UpgradeCost": 70, "attackCycle": 1000, "range": 300 },
-      { "id": 804, "power": 80, "cost": 250, "UpgradeCost": 60, "attackCycle": 1000, "range": 300 },
-      { "id": 805, "power": 90, "cost": 300, "UpgradeCost": 50, "attackCycle": 1000, "range": 300 },
-      { "id": 806, "power": 100, "cost": 350, "UpgradeCost": 40, "attackCycle": 1000, "range": 300 }
+      { "id": 800, "power": 40, "cost": 50, "UpgradeCost": 100, "attackCycle": 200, "range": 300 },
+      { "id": 801, "power": 50, "cost": 100, "UpgradeCost": 90, "attackCycle": 200, "range": 300 },
+      { "id": 802, "power": 60, "cost": 150, "UpgradeCost": 80, "attackCycle": 200, "range": 300 },
+      { "id": 803, "power": 70, "cost": 200, "UpgradeCost": 70, "attackCycle": 200, "range": 300 },
+      { "id": 804, "power": 80, "cost": 250, "UpgradeCost": 60, "attackCycle": 200, "range": 300 },
+      { "id": 805, "power": 90, "cost": 300, "UpgradeCost": 50, "attackCycle": 200, "range": 300 },
+      { "id": 806, "power": 100, "cost": 350, "UpgradeCost": 40, "attackCycle": 200, "range": 300 }
     ],
     "growthTower": [
-      { "id": 900, "power": 40, "cost": 50, "UpgradeCost": 100, "attackCycle": 1000, "range": 300 },
-      { "id": 901, "power": 50, "cost": 100, "UpgradeCost": 90, "attackCycle": 1000, "range": 300 },
-      { "id": 902, "power": 60, "cost": 150, "UpgradeCost": 80, "attackCycle": 1000, "range": 300 },
-      { "id": 903, "power": 70, "cost": 200, "UpgradeCost": 70, "attackCycle": 1000, "range": 300 },
-      { "id": 904, "power": 80, "cost": 250, "UpgradeCost": 60, "attackCycle": 1000, "range": 300 },
-      { "id": 905, "power": 90, "cost": 300, "UpgradeCost": 50, "attackCycle": 1000, "range": 300 },
-      { "id": 906, "power": 100, "cost": 350, "UpgradeCost": 40, "attackCycle": 1000, "range": 300 }
+      {
+        "id": 900,
+        "power": 40,
+        "cost": 0,
+        "UpgradeCost": 100,
+        "attackCycle": 200,
+        "range": 300,
+        "killCount": 3
+      },
+      {
+        "id": 901,
+        "power": 50,
+        "cost": 0,
+        "UpgradeCost": 90,
+        "attackCycle": 200,
+        "range": 300,
+        "killCount": 1000
+      },
+      {
+        "id": 902,
+        "power": 60,
+        "cost": 0,
+        "UpgradeCost": 80,
+        "attackCycle": 200,
+        "range": 300,
+        "killCount": 3
+      },
+      {
+        "id": 903,
+        "power": 70,
+        "cost": 0,
+        "UpgradeCost": 70,
+        "attackCycle": 200,
+        "range": 300,
+        "killCount": 3
+      },
+      {
+        "id": 904,
+        "power": 80,
+        "cost": 0,
+        "UpgradeCost": 60,
+        "attackCycle": 200,
+        "range": 300,
+        "killCount": 3
+      },
+      {
+        "id": 905,
+        "power": 90,
+        "cost": 0,
+        "UpgradeCost": 50,
+        "attackCycle": 200,
+        "range": 300,
+        "killCount": 3
+      },
+      {
+        "id": 906,
+        "power": 100,
+        "cost": 0,
+        "UpgradeCost": 40,
+        "attackCycle": 200,
+        "range": 300,
+        "killCount": 3
+      }
     ]
   }
 }

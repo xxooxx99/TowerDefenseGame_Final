@@ -21,8 +21,8 @@ export const PacketType = {
 export const TOWER_TYPE = [
   'baseTower',
   'speedTower',
+  'speedSupportTower',
   'attackSupportTower',
-  'powerSupportTower',
   'strongTower',
   'splashTower',
   'multiShotTower',

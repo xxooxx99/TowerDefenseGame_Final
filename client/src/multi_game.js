@@ -25,7 +25,6 @@ const progressBar = document.getElementById('progressBar');
 const matchAcceptButton = document.getElementById('matchAcceptButton');
 const loader = document.getElementsByClassName('loader')[0];
 
-let bufTowers = [];
 let towerUpgrade = null;
 let towerBuilderId = null;
 let towerBuilderType = null;
@@ -52,7 +51,7 @@ let monsterPath; // 몬스터 경로
 let initialTowerCoords; // 초기 타워 좌표
 let basePosition; // 기지 좌표
 const monsters = []; // 유저 몬스터 목록
-export const towers = []; // 유저 타워 목록
+let towers = {}; // 유저 타워 목록
 let score = 0; // 게임 점수
 let highScore = 0; // 기존 최고 점수
 // 상대 데이터
@@ -62,7 +61,7 @@ let opponentMonsterPath; // 상대방 몬스터 경로
 let opponentInitialTowerCoords; // 상대방 초기 타워 좌표
 let opponentBasePosition; // 상대방 기지 좌표
 const opponentMonsters = []; // 상대방 몬스터 목록
-const opponentTowers = []; // 상대방 타워 목록
+let opponentTowers = {}; // 상대방 타워 목록
 let isInitGame = false;
 // 이미지 로딩 파트
 const backgroundImage = new Image();
@@ -70,25 +69,18 @@ backgroundImage.src = 'images/bg.webp';
 const opponentBackgroundImage = new Image();
 opponentBackgroundImage.src = 'images/bg.webp';
 export const towerImages = [];
-// for (let i = 0; i < 9; i++) {
-//   for (let k = 0; k <= 6; k++) {
-//     const image = new Image();
-//     image.src = `images/tower${100 * (i + 1) + k}.png`;
-//   }
-// }
-
-for (let i = 0; i < 2; i++) {
-  for (let k = 0; k < 1; k++) {
+for (let i = 0; i < 9; i++) {
+  for (let k = 0; k <= 0; k++) {
     const image = new Image();
     image.src = `images/tower${100 * (i + 1) + k}.png`;
     towerImages.push(image);
   }
 }
+
 const image = new Image();
-image.src = `images/tower${101}.png`;
+image.src = `images/tower${901}.png`;
 towerImages.push(image);
 
-// towerImage.src = 'images/tower.png';
 const baseImage = new Image();
 baseImage.src = 'images/base.png';
 const pathImage = new Image();
@@ -99,13 +91,6 @@ for (let i = 1; i <= NUM_OF_MONSTERS; i++) {
   img.src = `images/monster${i}.png`;
   monsterImages.push(img);
 }
-// monsterPath = monsterPath || [];
-// initialTowerCoords = initialTowerCoords || [];
-// basePosition = basePosition || { x: 0, y: 0 };
-
-// opponentMonsterPath = opponentMonsterPath || [];
-// opponentInitialTowerCoords = opponentInitialTowerCoords || [];
-// opponentBasePosition = opponentBasePosition || { x: 0, y: 0 };
 
 let bgm;
 
@@ -113,8 +98,8 @@ function initMap() {
   ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height); // 배경 이미지 그리기
   drawPath(monsterPath, ctx);
   drawPath(opponentMonsterPath, opponentCtx);
-  placeInitialTowers(initialTowerCoords, towers, ctx); // 초기 타워 배치
-  placeInitialTowers(opponentInitialTowerCoords, opponentTowers, opponentCtx); // 상대방 초기 타워 배치
+  placeInitialTowers(initialTowerCoords, towers); // 초기 타워 배치
+  placeInitialTowers(opponentInitialTowerCoords, opponentTowers); // 상대방 초기 타워 배치
   if (!base) placeBase(basePosition, true);
   if (!opponentBase) placeBase(opponentBasePosition, false);
   towerIndex += INITIAL_TOWER_NUMBER;
@@ -154,36 +139,15 @@ function drawRotatedImage(image, x, y, width, height, angle, context) {
   context.restore();
 }
 
-function generateRandomMonsterPath() {
-  const path = [];
-  let currentX = 0;
-  let currentY = Math.floor(Math.random() * 21) + 500; // 500 ~ 520 범위의 y 시작 (캔버스 y축 중간쯤에서 시작할 수 있도록 유도)
-
-  path.push({ x: currentX, y: currentY });
-
-  while (currentX < canvas.width - 50) {
-    currentX += Math.floor(Math.random() * 100) + 50; // 50 ~ 150 범위의 x 증가
-    // x 좌표에 대한 clamp 처리
-    if (currentX > canvas.width - 50) {
-      currentX = canvas.width - 50;
+function placeInitialTowers(initialTowerCoords, initialTowers) {
+  for (let towerData in towersData) {
+    initialTowers[towerData] = {};
+    for (let i = 0; i < towersData[towerData].length; i++) {
+      const id = towersData[towerData][i].id;
+      initialTowers[towerData][id] = [];
     }
-
-    currentY += Math.floor(Math.random() * 200) - 100; // -100 ~ 100 범위의 y 변경
-    // y 좌표에 대한 clamp 처리
-    if (currentY < 50) {
-      currentY = 50;
-    }
-    if (currentY > canvas.height - 50) {
-      currentY = canvas.height - 50;
-    }
-
-    path.push({ x: currentX, y: currentY });
   }
 
-  return path;
-}
-
-function placeInitialTowers(initialTowerCoords, initialTowers, context) {
   for (let towerCoords in initialTowerCoords) {
     if (towerCoords !== 'length') {
       const towerType = initialTowerCoords[towerCoords];
@@ -197,7 +161,7 @@ function placeInitialTowers(initialTowerCoords, initialTowers, context) {
             towerData.posY,
           );
 
-          initialTowers.push(tower);
+          initialTowers[towerCoords][towerId].push(tower);
         });
       }
     }
@@ -243,13 +207,22 @@ function towerRequest() {
 function towerUpgrades() {
   let min = Infinity;
   let selectTower = null;
-  towers.forEach((tower) => {
-    const length = Math.abs(posX - tower.x) + Math.abs(posY - tower.y);
-    if (min > length) {
-      min = length;
-      selectTower = tower;
+  for (let towerType in towers) {
+    for (let towerId in towers[towerType]) {
+      for (let i = 0; i < towers[towerType][towerId].length; i++) {
+        const tower = towers[towerType][towerId][i];
+        const length = Math.abs(posX - tower.x) + Math.abs(posY - tower.y);
+        if (min > length) {
+          min = length;
+          selectTower = tower;
+        }
+      }
     }
-  });
+  }
+  if (selectTower.towerType == TOWER_TYPE[TOWER_TYPE.length - 1]) {
+    console.log('성장형 타워는 직접 업그레이드 할 수 없습니다.');
+    return;
+  }
 
   if (min < 50) {
     console.log('업그레이드 요청!');
@@ -307,11 +280,31 @@ function gameLoop() {
   ctx.fillText(`현재 레벨: ${monsterLevel}`, 100, 200); // 최고 기록 표시
 
   // 타워 그리기 및 몬스터 공격 처리
-  towers.forEach((tower) => {
-    tower.draw(ctx);
-    tower.updateCooldown();
-    tower.attack(monsters);
-  });
+
+  for (let towerType in towers) {
+    for (let towerId in towers[towerType]) {
+      for (let i = 0; i < towers[towerType][towerId].length; i++) {
+        const tower = towers[towerType][towerId][i];
+        tower.draw(ctx);
+        tower.updateCooldown();
+        tower.attack(monsters, towers);
+      }
+    }
+  }
+
+  const growthTowers = towers[TOWER_TYPE[TOWER_TYPE.length - 1]];
+  for (let towerId in growthTowers) {
+    for (let i = 0; i < growthTowers[towerId].length; i++) {
+      if (growthTowers[towerId][i].killCount <= 0) {
+        sendEvent2(PacketType.C2S_TOWER_UPGRADE, {
+          userId,
+          towerType: TOWER_TYPE[TOWER_TYPE.length - 1],
+          towerId: towerId,
+          towerNumber: growthTowers[towerId][i].towerNumber,
+        });
+      }
+    }
+  }
 
   // 몬스터가 공격을 했을 수 있으므로 기지 다시 그리기
   base.draw(ctx, baseImage);
@@ -341,10 +334,15 @@ function gameLoop() {
   // 상대방 게임 화면 업데이트
   opponentCtx.drawImage(opponentBackgroundImage, 0, 0, opponentCanvas.width, opponentCanvas.height);
   drawPath(opponentMonsterPath, opponentCtx); // 상대방 경로 다시 그리기
-  opponentTowers.forEach((tower) => {
-    tower.draw(opponentCtx);
-    tower.updateCooldown(); // 적 타워의 쿨다운 업데이트
-  });
+
+  for (let towerType in opponentTowers) {
+    for (let towerId in opponentTowers[towerType])
+      for (let i = 0; i < opponentTowers[towerType][towerId].length; i++) {
+        const tower = opponentTowers[towerType][towerId][i];
+        tower.draw(opponentCtx);
+        tower.updateCooldown();
+      }
+  }
 
   opponentMonsters.forEach((monster) => {
     monster.move();
@@ -433,7 +431,6 @@ function matchFind() {
 }
 
 function matchStart() {
-  console.log('매치 스타트');
   clearInterval(matchAcceptInterval);
   progressBarMessage.textContent = '게임이 5초 뒤에 시작됩니다.';
   matchAcceptButton.style.display = 'none';
@@ -533,36 +530,41 @@ Promise.all([
     const { towerType, towerId, towerCost, towerData } = data;
 
     if (userId !== data.userId) {
-      for (let i = 0; i < opponentTowers.length; i++) {
-        if (opponentTowers[i].towerNumber == towerData.number) {
-          opponentTowers.splice(i, 1);
+      const arr = opponentTowers[towerType][towerId - 1];
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i].towerNumber == towerData.number) {
+          arr.splice(i, 1);
           break;
         }
       }
+
       const tower = new Tower(towerType, towerId, towerData.number, towerData.posX, towerData.posY);
-      opponentTowers.push(tower);
+      opponentTowers[towerType][towerId].push(tower);
     } else {
-      for (let i = 0; i < towers.length; i++) {
-        if (towers[i].towerNumber == towerData.number) {
-          towers.splice(i, 1);
+      const arr = towers[towerType][towerId - 1];
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i].towerNumber == towerData.number) {
+          arr.splice(i, 1);
           break;
         }
       }
+
       const tower = new Tower(towerType, towerId, towerData.number, towerData.posX, towerData.posY);
-      towers.push(tower);
+      towers[towerType][towerId].push(tower);
       userGold -= towerCost;
     }
   });
 
   serverSocket.on('userTowerCreate', (data) => {
     const { towerId, towerCost, number, posX, posY } = data;
+    console.log(towerId);
 
     if (userId !== data.userId) {
       const tower = new Tower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
-      opponentTowers.push(tower);
+      opponentTowers[TOWER_TYPE[towerId / 100 - 1]][towerId].push(tower);
     } else {
       const tower = new Tower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
-      towers.push(tower);
+      towers[TOWER_TYPE[towerId / 100 - 1]][towerId].push(tower);
       userGold -= towerCost;
     }
   });

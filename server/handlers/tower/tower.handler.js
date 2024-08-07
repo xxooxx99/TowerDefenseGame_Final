@@ -15,10 +15,11 @@ export const towerAddHandler = (socket, data) => {
       const towerType = userData.towerInit[towerData];
       for (let towerId in towerType)
         for (let i = 0; i < towerType[towerId].length; i++) {
-          const value =
-            Math.abs(towerType[towerId][i].posX - posX) +
-            Math.abs(towerType[towerId][i].posY - posY);
-          min = Math.min(min, value);
+          const distance = Math.sqrt(
+            Math.pow(posX - towerType[towerId][i].posX, 2) +
+              Math.pow(posY - towerType[towerId][i].posY, 2),
+          );
+          min = Math.min(min, distance);
         }
     }
   }
@@ -27,8 +28,8 @@ export const towerAddHandler = (socket, data) => {
 
   min = Infinity;
   for (const road of userData.monsterPath) {
-    const value = Math.abs(road.x - posX) + Math.abs(road.y - posY);
-    min = Math.min(min, value);
+    const distance = Math.sqrt(Math.pow(posX - road.x, 2) + Math.pow(posY - road.y, 2));
+    min = Math.min(min, distance);
   }
 
   if (min < 100) return { status: 'fail', message: '타워와 도로 간 거리가 너무 가깝습니다!' };
@@ -43,8 +44,7 @@ export const towerAddHandler = (socket, data) => {
 
     userData.spendGold(towerAsset[towerType][index].cost);
     const newNumber = userData.towerInit.length + 1;
-    towerSet(userData.towerInit, towerType, towerId, { number: newNumber, posX, posY });
-
+    towerSet(userData.towerInit, towerType, towerId * 1, { number: newNumber, posX, posY });
     let packet = {
       packetType: PacketType.S2C_TOWER_CREATE,
       userId: userId,
@@ -82,10 +82,9 @@ export const towerUpgrade = (socket, data) => {
 
     userData.spendGold(towerAsset[towerType][index].cost);
 
-    const newTower = towerDelete(userData.towerInit, towerType, towerId, towerNumber);
-    towerSet(userData.towerInit, towerType, towerId + 1, newTower[0], true);
+    const newTower = towerDelete(userData.towerInit, towerType, towerId * 1, towerNumber);
+    towerSet(userData.towerInit, towerType, towerId * 1 + 1, newTower[0], true);
 
-    //console.log(typeof newTower[0].number, typeof newTower[0].posX, typeof newTower[0].posY);
     let packet = {
       packetType: PacketType.S2C_TOWER_CREATE,
       userId: userId,
