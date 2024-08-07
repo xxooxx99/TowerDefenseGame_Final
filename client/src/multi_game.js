@@ -424,7 +424,7 @@ function gameLoop() {
       for (let i = 0; i < opponentTowers[towerType][towerId].length; i++) {
         const tower = opponentTowers[towerType][towerId][i];
         tower.draw(opponentCtx);
-        tower.attack(monsters, towers, false);
+        tower.attack(opponentMonsters, towers, false);
         tower.updateCooldown();
       }
   }
