@@ -12,6 +12,7 @@ import { registerHandler } from './handlers/account/register.handler.js';
 import { loginHandler } from './handlers/account/login.handler.js';
 import { messageSendHandler } from './handlers/account/messageAuth.handler.js';
 import { config } from 'dotenv';
+import { loadGameAssets } from './init/assets.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,6 +40,8 @@ app.use('/api', [messageSendHandler, registerHandler, loginHandler]); // /라는
 app.get('/api', (req, res) => {
   res.sendFile('index.html', { root: path.join(__dirname, '../client') });
 });
+
+loadGameAssets();
 
 server.listen(process.env.PORT, async () => {
   const address = server.address();

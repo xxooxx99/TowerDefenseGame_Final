@@ -12,6 +12,9 @@ export const PacketType = {
   C2S_MATCH_ACCEPT: 16,
   C2S_MATCH_DENIED: 17,
   S2C_MATCH_START: 18,
+  S2C_USER_GOLD_INIT: 25,
+  C2S_TOWER_CREATE: 55,
+  C2S_TOWER_UPGRADE: 56,
   C2S_SPAWN_MONSTER: 21,
   S2C_ENEMY_SPAWN_MONSTER: 22,
   C2S_DIE_MONSTER: 23,
@@ -20,3 +23,15 @@ export const PacketType = {
   S2C_UPDATE_BASE_HP: 41,
   S2C_GAMESYNC: 99,
 };
+
+export const TOWER_TYPE = [
+  'baseTower',
+  'speedTower',
+  'speedSupportTower',
+  'attackSupportTower',
+  'strongTower',
+  'splashTower',
+  'multiShotTower',
+  'poisonTower',
+  'growthTower',
+];

@@ -1,21 +1,29 @@
-const towers = {};
+import { getGameAssets } from '../init/assets.js';
 
-export const createTowers = (uuid) => {
-  towers[uuid] = [];
+export const userTowerDataInit = () => {
+  let towerAsset = getGameAssets().towerData.towerType;
+  let userTower = { length: 0 };
+  for (let towerData in towerAsset) {
+    const towers = towerAsset[towerData];
+    userTower[towerData] = {};
+    for (let i = 0; i < towers.length; i++) {
+      const towerId = towers[i].id;
+      userTower[towerData][towerId] = [];
+    }
+  }
+
+  return userTower;
 };
 
-export const getTowers = (uuid) => {
-  return towers[uuid];
+export const towerSet = (userTower, towerType, towerId, newUserTowerData, upgrade = false) => {
+  if (!upgrade) userTower.length++;
+  userTower[towerType][towerId].push(newUserTowerData);
 };
 
-export const setTower = (uuid, coordinateX, coordinateY, level, towerIndex) => {
-  return towers[uuid].push({ tower: { X: coordinateX, Y: coordinateY }, level, towerIndex });
-};
-
-export const clearTowers = (uuid) => {
-  return (towers[uuid] = []);
-};
-
-export const removetower = (uuid, index) => {
-  towers[uuid].splice(index, 1);
+export const towerDelete = (userTower, towerType, towerId, towerNumber) => {
+  for (let i = 0; i < userTower[towerType][towerId].length; i++) {
+    if (userTower[towerType][towerId][i].number == towerNumber)
+      console.log(userTower[towerType][towerId][i]);
+    return userTower[towerType][towerId].splice(i, 1);
+  }
 };

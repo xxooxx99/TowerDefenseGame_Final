@@ -4,8 +4,6 @@ import {
   RESOLUTION_HEIGHT,
   RESOLUTION_WIDTH,
 } from '../../constants.js';
-import { createPlayData, GameData, getPlayData } from '../../models/playData.model.js';
-import { createTowers, setTower } from '../../models/tower.model.js';
 import { addAccept_queue } from './matchAcceptHandler.js';
 
 // 매칭 대기열
@@ -118,65 +116,8 @@ function tryMatch() {
           index: index,
         };
 
-        createTowers(player1.userId);
-        createTowers(player2.userId);
-
-        const initialHp = 100;
-        const player1MonsterPath = generateRandomMonsterPath();
-        const player2MonsterPath = generateRandomMonsterPath();
-        let player1InitialTowerCoords = [];
-        let player2InitialTowerCoords = [];
-
-        for (let i = 0; i < INITIAL_TOWER_NUMBER; i++) {
-          const towerCoords1 = getRandomPositionNearPath(200, player1MonsterPath);
-          const towerCoords2 = getRandomPositionNearPath(200, player2MonsterPath);
-
-          player1InitialTowerCoords.push(towerCoords1);
-          player2InitialTowerCoords.push(towerCoords2);
-
-          setTower(player1.userId, towerCoords1.x, towerCoords1.y, 1, i + 1);
-          setTower(player2.userId, towerCoords2.x, towerCoords2.y, 1, i + 1);
-        }
-
-        createPlayData(
-          player1.userId,
-          new GameData(
-            player1MonsterPath,
-            player1InitialTowerCoords,
-            player1MonsterPath[player1MonsterPath.length - 1],
-            player2MonsterPath,
-            player2InitialTowerCoords,
-            player2MonsterPath[player2MonsterPath.length - 1],
-            player2.userId,
-          ),
-        );
-        createPlayData(
-          player2.userId,
-          new GameData(
-            player2MonsterPath,
-            player2InitialTowerCoords,
-            player2MonsterPath[player2MonsterPath.length - 1],
-            player1MonsterPath,
-            player1InitialTowerCoords,
-            player1MonsterPath[player1MonsterPath.length - 1],
-            player1.userId,
-          ),
-        );
-
-        const player1Payload = {
-          ...getPlayData(player1.userId),
-          baseHp: initialHp,
-          opponentBaseHp: initialHp,
-        };
-        const player2Payload = {
-          ...getPlayData(player2.userId),
-          baseHp: initialHp,
-          opponentBaseHp: initialHp,
-        };
-
-        player1.socket.emit('event', packet, player1Payload);
-        player2.socket.emit('event', { ...packet, opponentId: player1.userId }, player2Payload);
-
+        player1.socket.emit('event', packet);
+        player2.socket.emit('event', { ...packet, opponentId: player1.userId });
         addAccept_queue(index, player1, player2);
         index++;
         return;

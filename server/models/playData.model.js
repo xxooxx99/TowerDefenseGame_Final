@@ -1,13 +1,23 @@
+const opponentData = {};
+
+export const setOpponentData = (userId, opponentSocket) => {
+  opponentData[userId] = opponentSocket;
+};
+
+export const getOpponentInfo = (userId) => {
+  return opponentData[userId];
+};
+
 const playData = {};
 
 export const createPlayData = (uuid, initData) => {
   playData[uuid] = new GameData(
     initData.monsterPath,
-    initData.initialTowerCoords,
-    initData.basePosition,
+    initData.towerInit,
+    initData.basePos,
     initData.opponentMonsterPath,
-    initData.opponentInitialTowerCoords,
-    initData.opponentBasePosition,
+    initData.opponentTowerInit,
+    initData.opponentBasePos,
     initData.opponentUserInfo,
   );
 };
@@ -61,12 +71,13 @@ export class GameData {
     this.userGold = 1000;
     this.baseHp = 100;
     this.monsterPath = monsterPath;
-    this.initialTowerCoords = initialTowerCoords;
-    this.basePosition = basePosition;
+    this.towerInit = initialTowerCoords;
+    this.basePos = basePosition;
     this.opponentMonsterPath = opponentMonsterPath;
-    this.opponentInitialTowerCoords = opponentInitialTowerCoords;
-    this.opponentBasePosition = opponentBasePosition;
+    this.opponentTowerInit = opponentInitialTowerCoords;
+    this.opponentBasePos = opponentBasePosition;
     this.opponentUserInfo = opponentUserInfo;
+    this.opponentBaseHp = 100;
   }
 
   getOpponentInfo() {

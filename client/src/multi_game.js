@@ -1,7 +1,7 @@
 import { Base } from './base.js';
 import { Monster } from './monster.js';
 import { Tower } from './tower.js';
-import { CLIENT_VERSION, INITIAL_TOWER_NUMBER, PacketType } from '../constants.js';
+import { CLIENT_VERSION, INITIAL_TOWER_NUMBER, PacketType, TOWER_TYPE } from '../constants.js';
 
 if (!localStorage.getItem('token')) {
   alert('로그인이 필요합니다.');
@@ -25,12 +25,21 @@ const progressBar = document.getElementById('progressBar');
 const matchAcceptButton = document.getElementById('matchAcceptButton');
 const loader = document.getElementsByClassName('loader')[0];
 
+let towerUpgrade = null;
+let towerBuilderId = null;
+let towerBuilderType = null;
+let posX = 0;
+let posY = 0;
+
+let intervalId = null;
+// 게임 데이터
+export let towersData; // 타워 데이터
 let monsterintervalId = null;
 /* let killCount = 0; */
 let monsterSpawnCount = 0; // 몬스터 스폰 수 초기화
 // 게임 데이터
 let towerCost = 100; // 타워 구입 비용
-let monsterSpawnInterval = 3000; // 몬스터 생성 주기
+let monsterSpawnInterval = 1000; // 몬스터 생성 주기
 let towerIndex = 1;
 let monsterIndex = 1;
 // 설정 데이터
@@ -38,7 +47,7 @@ let acceptTime = 10000; // 수락 대기 시간
 // 인터벌 데이터
 let matchAcceptInterval;
 // 유저 데이터
-let userGold = 1000; // 유저 골드
+let userGold; // 유저 골드
 let base; // 기지 객체
 let baseHp = 0; // 기지 체력
 let monsterLevel = 0; // 몬스터 레벨
@@ -46,7 +55,7 @@ let monsterPath; // 몬스터 경로
 let initialTowerCoords; // 초기 타워 좌표
 let basePosition; // 기지 좌표
 let monsters = []; // 유저 몬스터 목록
-let towers = []; // 유저 타워 목록
+let towers = {}; // 유저 타워 목록
 let score = 0; // 게임 점수
 let highScore = 0; // 기존 최고 점수
 // 상대 데이터
@@ -56,7 +65,7 @@ let opponentMonsterPath; // 상대방 몬스터 경로
 let opponentInitialTowerCoords; // 상대방 초기 타워 좌표
 let opponentBasePosition; // 상대방 기지 좌표
 let opponentMonsters = []; // 상대방 몬스터 목록
-let opponentTowers = []; // 상대방 타워 목록
+let opponentTowers = {}; // 상대방 타워 목록
 let isInitGame = false;
 const NUM_OF_MONSTERS = 4; // 몬스터 개수
 // 이미지 로딩 파트
@@ -64,8 +73,19 @@ const backgroundImage = new Image();
 backgroundImage.src = 'images/bg.webp';
 const opponentBackgroundImage = new Image();
 opponentBackgroundImage.src = 'images/bg.webp';
-const towerImage = new Image();
-towerImage.src = 'images/tower.png';
+export const towerImages = [];
+for (let i = 0; i < 9; i++) {
+  for (let k = 0; k <= 0; k++) {
+    const image = new Image();
+    image.src = `images/tower${100 * (i + 1) + k}.png`;
+    towerImages.push(image);
+  }
+}
+
+const image = new Image();
+image.src = `images/tower${901}.png`;
+towerImages.push(image);
+
 const baseImage = new Image();
 baseImage.src = 'images/base.png';
 const pathImage = new Image();
@@ -76,13 +96,6 @@ for (let i = 1; i <= NUM_OF_MONSTERS; i++) {
   img.src = `images/monster${i}.png`;
   monsterImages.push(img);
 }
-monsterPath = monsterPath || [];
-initialTowerCoords = initialTowerCoords || [];
-basePosition = basePosition || { x: 0, y: 0 };
-
-opponentMonsterPath = opponentMonsterPath || [];
-opponentInitialTowerCoords = opponentInitialTowerCoords || [];
-opponentBasePosition = opponentBasePosition || { x: 0, y: 0 };
 
 let bgm;
 
@@ -90,8 +103,8 @@ function initMap() {
   ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height); // 배경 이미지 그리기
   drawPath(monsterPath, ctx);
   drawPath(opponentMonsterPath, opponentCtx);
-  placeInitialTowers(initialTowerCoords, towers, ctx); // 초기 타워 배치
-  placeInitialTowers(opponentInitialTowerCoords, opponentTowers, opponentCtx); // 상대방 초기 타워 배치
+  placeInitialTowers(initialTowerCoords, towers); // 초기 타워 배치
+  placeInitialTowers(opponentInitialTowerCoords, opponentTowers); // 상대방 초기 타워 배치
   if (!base) placeBase(basePosition, true);
   if (!opponentBase) placeBase(opponentBasePosition, false);
   towerIndex += INITIAL_TOWER_NUMBER;
@@ -131,48 +144,100 @@ function drawRotatedImage(image, x, y, width, height, angle, context) {
   context.restore();
 }
 
-function getRandomPositionNearPath(maxDistance) {
-  const segmentIndex = Math.floor(Math.random() * (monsterPath.length - 1));
-  const startX = monsterPath[segmentIndex].x;
-  const startY = monsterPath[segmentIndex].y;
-  const endX = monsterPath[segmentIndex + 1].x;
-  const endY = monsterPath[segmentIndex + 1].y;
-  const t = Math.random();
-  const posX = startX + t * (endX - startX);
-  const posY = startY + t * (endY - endY);
-  const offsetX = (Math.random() - 0.5) * 2 * maxDistance;
-  const offsetY = (Math.random() - 0.5) * 2 * maxDistance;
-  return {
-    x: posX + offsetX,
-    y: posY + offsetY,
-  };
+function placeInitialTowers(initialTowerCoords, initialTowers) {
+  for (let towerData in towersData) {
+    initialTowers[towerData] = {};
+    for (let i = 0; i < towersData[towerData].length; i++) {
+      const id = towersData[towerData][i].id;
+      initialTowers[towerData][id] = [];
+    }
+  }
+
+  for (let towerCoords in initialTowerCoords) {
+    if (towerCoords !== 'length') {
+      const towerType = initialTowerCoords[towerCoords];
+      for (let towerId in towerType) {
+        towerType[towerId].forEach((towerData) => {
+          const tower = new Tower(
+            towerCoords,
+            towerId,
+            towerData.number,
+            towerData.posX,
+            towerData.posY,
+          );
+
+          initialTowers[towerCoords][towerId].push(tower);
+        });
+      }
+    }
+  }
 }
 
-function placeInitialTowers(initialTowerCoords, initialTowers, context) {
-  let initTowerIndex = 1;
-  initialTowerCoords.forEach((towerCoords) => {
-    const tower = new Tower(towerCoords.x, towerCoords.y);
-    tower.setTowerIndex(initTowerIndex);
-    initialTowers.push(tower);
-    initTowerIndex++;
-    tower.draw(context, towerImage);
+function towerUpgradeCheck() {
+  if (towerBuilderId || towerBuilderType) return;
+  if (towerUpgrade) {
+    towerUpgrade = null;
+    upgradeTowerButton.style.backgroundColor = 'white';
+  } else {
+    towerUpgrade = 'ok';
+    upgradeTowerButton.style.backgroundColor = 'red';
+  }
+}
+
+//건물 건설 활성화 및 비활성화 버튼
+function towerBuilderCheck(towerType, button) {
+  if (towerUpgrade) return;
+  if (!towerBuilderId) {
+    towerBuilderId = towerType;
+    towerBuilderType = TOWER_TYPE[towerBuilderId / 100];
+    button.style.backgroundColor = 'red';
+  } else if (towerBuilderId === towerType) {
+    button.style.backgroundColor = 'white';
+    towerBuilderId = null;
+    towerBuilderType = null;
+  } else console.log('build를 취소해주세요!');
+}
+
+function towerRequest() {
+  const towerType = TOWER_TYPE[towerBuilderId / 100 - 1];
+  sendEvent(PacketType.C2S_TOWER_CREATE, {
+    userId,
+    towerType,
+    towerId: towerBuilderId,
+    posX,
+    posY,
   });
 }
 
-function placeNewTower() {
-  // 타워를 구입할 수 있는 자원이 있을 때 타워 구입 후 랜덤 배치
-  if (userGold < towerCost) {
-    alert('골드가 부족합니다.');
+function towerUpgrades() {
+  let min = Infinity;
+  let selectTower = null;
+  for (let towerType in towers) {
+    for (let towerId in towers[towerType]) {
+      for (let i = 0; i < towers[towerType][towerId].length; i++) {
+        const tower = towers[towerType][towerId][i];
+        const length = Math.abs(posX - tower.x) + Math.abs(posY - tower.y);
+        if (min > length) {
+          min = length;
+          selectTower = tower;
+        }
+      }
+    }
+  }
+  if (selectTower.towerType == TOWER_TYPE[TOWER_TYPE.length - 1]) {
+    console.log('성장형 타워는 직접 업그레이드 할 수 없습니다.');
     return;
   }
-  const { x, y } = getRandomPositionNearPath(200);
-  const tower = new Tower(x, y);
-  tower.setTowerIndex(towerIndex);
-  towers.push(tower);
 
-  sendEvent(PacketType.C2S_TOWER_BUY, { x, y, level: 1, towerIndex, towerCost });
-  towerIndex++;
-  tower.draw(ctx, towerImage);
+  if (min < 50) {
+    console.log('업그레이드 요청!');
+    sendEvent(PacketType.C2S_TOWER_UPGRADE, {
+      userId,
+      towerType: selectTower.towerType,
+      towerId: selectTower.towerId,
+      towerNumber: selectTower.towerNumber,
+    });
+  }
 }
 function placeNewOpponentTower(value) {
   const newTowerCoords = value[value.length - 1];
@@ -280,25 +345,32 @@ function gameLoop() {
   ctx.fillText(`현재 레벨: ${monsterLevel}`, 100, 200); // 최고 기록 표시
 
   // 타워 그리기 및 몬스터 공격 처리
-  towers.forEach((tower) => {
-    tower.draw(ctx, towerImage);
-    tower.updateCooldown();
-    monsters.forEach((monster) => {
-      const distance = Math.sqrt(
-        Math.pow(tower.x - monster.x, 2) + Math.pow(tower.y - monster.y, 2),
-      );
-      if (distance < tower.range) {
-        const Attacked = tower.attack(monster);
-        if (Attacked) {
-          sendEvent(PacketType.C2S_TOWER_ATTACK, {
-            damage: tower.getAttackPower(),
-            monsterIndex: monster.getMonsterIndex(),
-            towerIndex: tower.getTowerIndex(),
-          });
-        }
+
+  for (let towerType in towers) {
+    for (let towerId in towers[towerType]) {
+      for (let i = 0; i < towers[towerType][towerId].length; i++) {
+        const tower = towers[towerType][towerId][i];
+        tower.draw(ctx);
+        tower.updateCooldown();
+        tower.attack(monsters, towers);
       }
-    });
-  });
+    }
+  }
+
+  const growthTowers = towers[TOWER_TYPE[TOWER_TYPE.length - 1]];
+  for (let towerId in growthTowers) {
+    for (let i = 0; i < growthTowers[towerId].length; i++) {
+      if (growthTowers[towerId][i].killCount <= 0 && growthTowers[towerId][i].satisfied) {
+        sendEvent(PacketType.C2S_TOWER_UPGRADE, {
+          userId,
+          towerType: TOWER_TYPE[TOWER_TYPE.length - 1],
+          towerId: towerId,
+          towerNumber: growthTowers[towerId][i].towerNumber,
+        });
+        growthTowers[towerId][i].satisfied = false;
+      }
+    }
+  }
 
   // 몬스터가 공격을 했을 수 있으므로 기지 다시 그리기
   base.draw(ctx, baseImage);
@@ -337,13 +409,23 @@ function gameLoop() {
     }
   }
 
+  monsters.forEach((monster) => {
+    monster.move();
+    monster.draw(ctx, true);
+  });
+
   // 상대방 게임 화면 업데이트
   opponentCtx.drawImage(opponentBackgroundImage, 0, 0, opponentCanvas.width, opponentCanvas.height);
   drawPath(opponentMonsterPath, opponentCtx); // 상대방 경로 다시 그리기
-  opponentTowers.forEach((tower) => {
-    tower.draw(opponentCtx, towerImage);
-    tower.updateCooldown(); // 적 타워의 쿨다운 업데이트
-  });
+
+  for (let towerType in opponentTowers) {
+    for (let towerId in opponentTowers[towerType])
+      for (let i = 0; i < opponentTowers[towerType][towerId].length; i++) {
+        const tower = opponentTowers[towerType][towerId][i];
+        tower.draw(opponentCtx);
+        tower.updateCooldown();
+      }
+  }
 
   opponentMonsters.forEach((monster) => {
     monster.move();
@@ -360,22 +442,27 @@ function opponentBaseAttacked(value) {
   opponentBaseHp = value;
   opponentBase.updateHp(opponentBaseHp);
 }
-function initGame(payload) {
+function initGame() {
+  // if (!payload) {
+  //   console.log('Received payload:', payload);
+  //   return;
+  // }
   if (isInitGame) {
     return;
   }
-  userGold = payload.userGold;
-  baseHp = payload.baseHp;
-  monsterPath = payload.monsterPath;
-  initialTowerCoords = payload.initialTowerCoords;
-  basePosition = payload.basePosition;
-  opponentMonsterPath = payload.opponentMonsterPath;
-  opponentInitialTowerCoords = payload.opponentInitialTowerCoords;
-  opponentBasePosition = payload.opponentBasePosition;
-  opponentBaseHp = payload.opponentBaseHp;
-  opponentBase = new Base(opponentBasePosition.x, opponentBasePosition.y, baseHp);
-  opponentBase.draw(opponentCtx, baseImage, true);
-  opponentBaseHp = payload.baseHp;
+
+  // userGold = payload.userGold;
+  // baseHp = payload.baseHp;
+  // monsterPath = payload.monsterPath;
+  // initialTowerCoords = payload.initialTowerCoords;
+  // basePosition = payload.basePosition;
+  // opponentMonsterPath = payload.opponentMonsterPath;
+  // opponentInitialTowerCoords = payload.opponentInitialTowerCoords;
+  // opponentBasePosition = payload.opponentBasePosition;
+  // opponentBaseHp = payload.opponentBaseHp;
+  // opponentBase = new Base(opponentBasePosition.x, opponentBasePosition.y, baseHp);
+  // opponentBase.draw(opponentCtx, baseImage, true);
+  // opponentBaseHp = payload.baseHp;
 
   bgm = new Audio('sounds/bgm.mp3');
   bgm.loop = true;
@@ -425,7 +512,6 @@ function matchFind() {
 }
 
 function matchStart() {
-  console.log('매치 스타트');
   clearInterval(matchAcceptInterval);
   progressBarMessage.textContent = '게임이 5초 뒤에 시작됩니다.';
   matchAcceptButton.style.display = 'none';
@@ -440,7 +526,8 @@ function matchStart() {
       clearInterval(progressInterval);
       progressBarContainer.style.display = 'none';
       progressBar.style.display = 'none';
-      buyTowerButton.style.display = 'block';
+      for (let i = 0; i < buttons.length; i++) buttons[i].style.display = 'block';
+      upgradeTowerButton.style.display = 'block';
       canvas.style.display = 'block';
       opponentCanvas.style.display = 'block';
       // TODO. 유저 및 상대방 유저 데이터 초기화
@@ -452,7 +539,7 @@ function matchStart() {
 Promise.all([
   new Promise((resolve) => (opponentBackgroundImage.onload = resolve)),
   new Promise((resolve) => (backgroundImage.onload = resolve)),
-  new Promise((resolve) => (towerImage.onload = resolve)),
+  ...towerImages.map((img) => new Promise((resolve) => (img.onload = resolve))),
   new Promise((resolve) => (baseImage.onload = resolve)),
   new Promise((resolve) => (pathImage.onload = resolve)),
   ...monsterImages.map((img) => new Promise((resolve) => (img.onload = resolve))),
@@ -479,6 +566,27 @@ Promise.all([
     console.log('client checking: ', userId);
   });
 
+  serverSocket.on('gameInit', (packetType, data) => {
+    towersData = data.towersData;
+    monsterPath = data.Payload.monsterPath;
+    initialTowerCoords = data.Payload.towerInit;
+    basePosition = data.Payload.basePos;
+    opponentMonsterPath = data.Payload.opponentMonsterPath;
+    opponentInitialTowerCoords = data.Payload.opponentTowerInit;
+    opponentBasePosition = data.Payload.opponentBasePos;
+    userGold = data.Payload.userGold;
+    baseHp = data.Payload.baseHp;
+    score = data.Payload.score;
+
+    if (!isInitGame) {
+      initGame();
+    }
+  });
+
+  serverSocket.on('response', (data) => {
+    console.log(data.message);
+  });
+
   serverSocket.on('error', (data) => {
     alert(data.message);
     window.location.href = 'index.html';
@@ -494,15 +602,52 @@ Promise.all([
       console.log('매치 스타트');
       matchStart();
     }
-    if (data.PacketType === 18) {
-      let progressValue = 0;
-      const progressInterval = setInterval(() => {
-        if (progressValue >= 100) {
-          clearInterval(progressInterval);
+    // if (!isInitGame) {
+    //   initGame(payload);
+    // }
+  });
+
+  serverSocket.on('userTowerUpgrade', (data) => {
+    const { towerType, towerId, towerCost, towerData } = data;
+
+    if (userId !== data.userId) {
+      const arr = opponentTowers[towerType][towerId - 1];
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i].towerNumber == towerData.number) {
+          arr.splice(i, 1);
+          break;
         }
-      });
+      }
+
+      const tower = new Tower(towerType, towerId, towerData.number, towerData.posX, towerData.posY);
+      opponentTowers[towerType][towerId].push(tower);
+    } else {
+      const arr = towers[towerType][towerId - 1];
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i].towerNumber == towerData.number) {
+          arr.splice(i, 1);
+          break;
+        }
+      }
+
+      const tower = new Tower(towerType, towerId, towerData.number, towerData.posX, towerData.posY);
+      towers[towerType][towerId].push(tower);
+      userGold -= towerCost;
     }
-    initGame(payload);
+  });
+
+  serverSocket.on('userTowerCreate', (data) => {
+    const { towerId, towerCost, number, posX, posY } = data;
+    console.log(towerId);
+
+    if (userId !== data.userId) {
+      const tower = new Tower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
+      opponentTowers[TOWER_TYPE[towerId / 100 - 1]][towerId].push(tower);
+    } else {
+      const tower = new Tower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
+      towers[TOWER_TYPE[towerId / 100 - 1]][towerId].push(tower);
+      userGold -= towerCost;
+    }
   });
 
   serverSocket.on('gameOver', (data) => {
@@ -550,45 +695,103 @@ Promise.all([
   });
 });
 
-const buyTowerButton = document.createElement('button');
-buyTowerButton.textContent = '타워 구입';
-buyTowerButton.style.position = 'absolute';
-buyTowerButton.style.top = '10px';
-buyTowerButton.style.right = '10px';
-buyTowerButton.style.padding = '10px 20px';
-buyTowerButton.style.fontSize = '16px';
-buyTowerButton.style.cursor = 'pointer';
-buyTowerButton.style.display = 'none';
-buyTowerButton.addEventListener('click', placeNewTower);
-document.body.appendChild(buyTowerButton);
+const buyTowerButton1 = document.createElement('button');
+buyTowerButton1.textContent = '기본 타워';
+const buyTowerButton2 = document.createElement('button');
+buyTowerButton2.textContent = '공속 타워';
+const buyTowerButton3 = document.createElement('button');
+buyTowerButton3.textContent = '공속 지원 타워';
+const buyTowerButton4 = document.createElement('button');
+buyTowerButton4.textContent = '공격력 지원 타워';
+const buyTowerButton5 = document.createElement('button');
+buyTowerButton5.textContent = '치명타 타워';
+const buyTowerButton6 = document.createElement('button');
+buyTowerButton6.textContent = '스플래쉬 타워';
+const buyTowerButton7 = document.createElement('button');
+buyTowerButton7.textContent = '멀티샷 타워';
+const buyTowerButton8 = document.createElement('button');
+buyTowerButton8.textContent = '맹독 타워';
+const buyTowerButton9 = document.createElement('button');
+buyTowerButton9.textContent = '성장 타워';
 
-function decycle(obj, stack = []) {
-  if (!obj || typeof obj !== 'object') {
-    return obj;
-  }
+const buttons = [
+  buyTowerButton1,
+  buyTowerButton2,
+  buyTowerButton3,
+  buyTowerButton4,
+  buyTowerButton5,
+  buyTowerButton6,
+  buyTowerButton7,
+  buyTowerButton8,
+  buyTowerButton9,
+];
 
-  if (stack.includes(obj)) {
-    return null;
-  }
-
-  const newStack = stack.concat([obj]);
-
-  if (Array.isArray(obj)) {
-    return obj.map((item) => decycle(item, newStack));
-  }
-
-  return Object.keys(obj).reduce((acc, key) => {
-    acc[key] = decycle(obj[key], newStack);
-    return acc;
-  }, {});
+for (let i = 0; i < buttons.length; i++) {
+  buttons[i].style.position = 'absolute';
+  buttons[i].style.backgroundColor = 'white';
+  buttons[i].style.top = ((i + 1) * 100).toString() + 'px'; // 100씩 증가
+  buttons[i].style.right = '60px'; //고정해야함
+  buttons[i].style.padding = '20px 40px';
+  buttons[i].style.fontSize = '20px';
+  buttons[i].style.cursor = 'pointer';
+  buttons[i].style.display = 'none';
+  buttons[i].addEventListener('click', (event) => {
+    towerBuilderCheck((i + 1) * 100, buttons[i]); //일단 테스트
+    event.stopPropagation();
+  });
+  document.body.appendChild(buttons[i]);
 }
 
+const upgradeTowerButton = document.createElement('button');
+upgradeTowerButton.textContent = '타워 강화';
+upgradeTowerButton.style.position = 'absolute';
+upgradeTowerButton.style.backgroundColor = 'white';
+upgradeTowerButton.style.top = '1000px';
+upgradeTowerButton.style.right = '60px';
+upgradeTowerButton.style.padding = '20px 40px';
+upgradeTowerButton.style.fontSize = '20px';
+upgradeTowerButton.style.cursor = 'pointer';
+upgradeTowerButton.style.display = 'none';
+upgradeTowerButton.addEventListener('click', (event) => {
+  towerUpgradeCheck();
+  event.stopPropagation();
+});
+document.body.appendChild(upgradeTowerButton);
+
+const mousePos = (event) => {
+  posX = event.offsetX;
+  posY = event.offsetY;
+  if (towerBuilderId) towerRequest();
+  if (towerUpgrade) {
+    towerUpgrades();
+  }
+};
+const gameCanvas = document.getElementById('gameCanvas');
+gameCanvas.addEventListener('click', mousePos);
+
+// function decycle(obj, stack = []) {
+//   if (!obj || typeof obj !== 'object') {
+//     return obj;
+//   }
+//   if (stack.includes(obj)) {
+//     return null;
+//   }
+//   const newStack = stack.concat([obj]);
+//   if (Array.isArray(obj)) {
+//     return obj.map((item) => decycle(item, newStack));
+//   }
+//   return Object.keys(obj).reduce((acc, key) => {
+//     acc[key] = decycle(obj[key], newStack);
+//     return acc;
+//   }, {});
+// }
+
 function sendEvent(handlerId, payload) {
-  const decycledPayload = decycle(payload);
+  // const decycledPayload = decycle(payload);
   serverSocket.emit('event', {
     userId,
     clientVersion: CLIENT_VERSION,
     packetType: handlerId,
-    payload: decycledPayload,
+    payload, //: decycledPayload,
   });
 }

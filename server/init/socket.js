@@ -6,15 +6,21 @@ import {
   handlerMatchAcceptRequest,
   handlerMatchDeniedRequest,
 } from '../handlers/match/matchAcceptHandler.js';
+import connectHandler from '../handlers/index.js';
 import { handleDieMonster, handleSpawnMonster } from '../handlers/monster/monster.handler.js';
 import { towerAddOnHandler, towerAttackHandler } from '../handlers/towers/tower.handler.js';
 import { handleMonsterBaseAttack } from '../handlers/game/gameHandler.js';
 
 const initSocket = (server) => {
-  const io = new SocketIO(server);
+  const io = new SocketIO();
+  io.attach(server);
+  connectHandler(io);
+
+  return;
 
   io.on('connection', (socket) => {
     console.log(`New user connected: ${socket.id}`);
+    socket.emit('connection', { status: 'success', message: '연결 완료' });
 
     socket.on('event', (packet) => {
       console.log(
