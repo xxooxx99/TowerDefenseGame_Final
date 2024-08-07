@@ -6,7 +6,7 @@ import { getOpponentInfo } from '../../models/playData.model.js';
 
 export const towerAddHandler = (socket, data) => {
   const towerAsset = getGameAssets().towerData.towerType;
-  const { userId, towerType, towerId, posX, posY } = data;
+  const { userId, towerType, towerId, posX, posY } = data.payload;
   const userData = getPlayData(userId);
 
   let min = Infinity;
@@ -34,7 +34,7 @@ export const towerAddHandler = (socket, data) => {
 
   if (min < 100) return { status: 'fail', message: '타워와 도로 간 거리가 너무 가깝습니다!' };
 
-  const index = towerId % 100;
+  const index = (towerId * 1) % 100;
   if (!towerAsset[towerType][index]) return { status: 'fail', message: '잘못된 접근입니다!' };
 
   try {

@@ -374,7 +374,7 @@ function gameLoop() {
   }
 
   // 몬스터가 공격을 했을 수 있으므로 기지 다시 그리기
-  base.draw(ctx, baseImage,monsters);
+  base.draw(ctx, baseImage, monsters);
 
   for (let i = monsters.length - 1; i >= 0; i--) {
     const monster = monsters[i];
@@ -731,8 +731,8 @@ const buttons = [
   buyTowerButton9,
 ];
 function updateMonstersHp(updatedMonsters) {
-  updatedMonsters.forEach(updatedMonster => {
-    const monster = monsters.find(m => m.getMonsterIndex() === updatedMonster.id);
+  updatedMonsters.forEach((updatedMonster) => {
+    const monster = monsters.find((m) => m.getMonsterIndex() === updatedMonster.id);
     if (monster) {
       console.log(`Updating monster HP: ${updatedMonster.id} to ${updatedMonster.hp}`); // 업데이트 로그 출력
       monster.setHp(updatedMonster.hp);
@@ -751,13 +751,12 @@ attackMonstersButton.style.cursor = 'pointer';
 document.body.appendChild(attackMonstersButton);
 
 attackMonstersButton.addEventListener('click', () => {
-  const monsterIndices = monsters.map(monster => monster.getMonsterIndex());
-  const baseUuid = localStorage.getItem('userId');  // Base UUID를 설정합니다.
-  console.log('Monster Indices:', monsterIndices);  // 디버그 로그 추가
-  console.log('Base UUID:', baseUuid);  // 디버그 로그 추가
+  const monsterIndices = monsters.map((monster) => monster.getMonsterIndex());
+  const baseUuid = localStorage.getItem('userId'); // Base UUID를 설정합니다.
+  console.log('Monster Indices:', monsterIndices); // 디버그 로그 추가
+  console.log('Base UUID:', baseUuid); // 디버그 로그 추가
   sendEvent(PacketType.C2S_MONSTER_ATTACK_BASE, { baseUuid, monsterIndices });
 });
-
 
 for (let i = 0; i < buttons.length; i++) {
   buttons[i].style.position = 'absolute';
