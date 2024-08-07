@@ -47,7 +47,7 @@ export class Monster {
         this.speed = 2;
         this.attackPower = 10 + 1 * level;
         this.healingInterval = 100;
-        this.healingAmount = 1;
+        this.healingAmount = 1 * level;
         this.startHealing();
         break;
       /* (더미)
