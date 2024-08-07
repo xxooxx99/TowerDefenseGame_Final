@@ -25,6 +25,7 @@ export class Tower {
             this.bufRange = towerIdData.bufRange;
             this.image = new Image();
             this.killCount = towerIdData.killCount || null;
+            this.satisfied = towerIdData.satisfied || undefined;
 
             this.towerId = towerIdData.id;
             this.towerType = towerType;

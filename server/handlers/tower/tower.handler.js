@@ -84,7 +84,6 @@ export const towerUpgrade = (socket, data) => {
 
     const newTower = towerDelete(userData.towerInit, towerType, towerId * 1, towerNumber);
     towerSet(userData.towerInit, towerType, towerId * 1 + 1, newTower[0], true);
-
     let packet = {
       packetType: PacketType.S2C_TOWER_CREATE,
       userId: userId,

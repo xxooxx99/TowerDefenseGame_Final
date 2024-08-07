@@ -383,7 +383,8 @@
         "UpgradeCost": 100,
         "attackCycle": 200,
         "range": 300,
-        "killCount": 3
+        "killCount": 3,
+        "satisfied": true
       },
       {
         "id": 901,
@@ -392,7 +393,8 @@
         "UpgradeCost": 90,
         "attackCycle": 200,
         "range": 300,
-        "killCount": 1000
+        "killCount": 1000,
+        "satisfied": true
       },
       {
         "id": 902,
@@ -401,7 +403,8 @@
         "UpgradeCost": 80,
         "attackCycle": 200,
         "range": 300,
-        "killCount": 3
+        "killCount": 3,
+        "satisfied": true
       },
       {
         "id": 903,
@@ -410,7 +413,8 @@
         "UpgradeCost": 70,
         "attackCycle": 200,
         "range": 300,
-        "killCount": 3
+        "killCount": 3,
+        "satisfied": true
       },
       {
         "id": 904,
@@ -419,7 +423,8 @@
         "UpgradeCost": 60,
         "attackCycle": 200,
         "range": 300,
-        "killCount": 3
+        "killCount": 3,
+        "satisfied": true
       },
       {
         "id": 905,
@@ -428,7 +433,8 @@
         "UpgradeCost": 50,
         "attackCycle": 200,
         "range": 300,
-        "killCount": 3
+        "killCount": 3,
+        "satisfied": true
       },
       {
         "id": 906,
@@ -437,7 +443,8 @@
         "UpgradeCost": 40,
         "attackCycle": 200,
         "range": 300,
-        "killCount": 3
+        "killCount": 3,
+        "satisfied": true
       }
     ]
   }

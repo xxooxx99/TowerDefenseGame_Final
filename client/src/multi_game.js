@@ -295,13 +295,14 @@ function gameLoop() {
   const growthTowers = towers[TOWER_TYPE[TOWER_TYPE.length - 1]];
   for (let towerId in growthTowers) {
     for (let i = 0; i < growthTowers[towerId].length; i++) {
-      if (growthTowers[towerId][i].killCount <= 0) {
+      if (growthTowers[towerId][i].killCount <= 0 && growthTowers[towerId][i].satisfied) {
         sendEvent2(PacketType.C2S_TOWER_UPGRADE, {
           userId,
           towerType: TOWER_TYPE[TOWER_TYPE.length - 1],
           towerId: towerId,
           towerNumber: growthTowers[towerId][i].towerNumber,
         });
+        growthTowers[towerId][i].satisfied = false;
       }
     }
   }
