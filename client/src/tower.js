@@ -58,7 +58,7 @@ export class Tower {
     }
   }
 
-  attack(monsters, towers) {
+  attack(monsters, towers, my = true) {
     if (this.cooldown <= 0) {
       if (this.target.length !== 0) this.target = [];
 
@@ -104,8 +104,8 @@ export class Tower {
         );
 
         if (distance <= this.range) {
-          if (critical) monster.hp -= (this.attackPower + extraPower) * 1.2;
-          else monster.hp -= this.attackPower + extraPower;
+          if (critical && my) monster.hp -= (this.attackPower + extraPower) * 1.2;
+          else if (my) monster.hp -= this.attackPower + extraPower;
           attackCount--;
           this.beamDuration = 30; // 광선 지속 시간 (0.5초)
           this.target.push(monster); // 광선의 목표 설정
@@ -117,11 +117,12 @@ export class Tower {
                 Math.pow(monster.x - nighMonster.x, 2) + Math.pow(monster.y - nighMonster.y, 2),
               );
 
-              if (this.splashRange >= nighDistance) nighMonster.hp -= this.attackPower + extraPower; // 이펙트 추가해야함
+              if (this.splashRange >= nighDistance && my)
+                nighMonster.hp -= this.attackPower + extraPower; // 이펙트 추가해야함
             }
           }
 
-          if (this.killCount != null || monster.hp <= 0) {
+          if ((this.killCount != null || monster.hp <= 0) && my) {
             this.killCount--;
           }
         }
