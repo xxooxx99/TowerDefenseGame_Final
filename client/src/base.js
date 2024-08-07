@@ -8,6 +8,7 @@ export class Base {
     this.maxHp = maxHp;
     this.attackPower = 1000;
     this.beamDuration = 0;
+    this.monsters = [];
   }
 
   draw(ctx, baseImage, monsterList, isOpponent = false) {
@@ -52,6 +53,17 @@ export class Base {
   attackMonsters(payload) {
     this.beamDuration = 20; // 예시로 20 프레임 동안 빔을 표시
     const { baseUuid, monsterIndices } = payload;  // payload에서 데이터 추출
+
+    // 실제로 몬스터에게 데미지를 입히는 로직
+    monsterIndices.forEach(index => {
+      const monster = this.monsters.find(m => m.getMonsterIndex() === index);
+      if (monster) {
+        monster.receiveDamage(this.attackPower); // 몬스터에게 데미지를 입힘
+        console.log(`Monster ${index} received ${this.attackPower} damage!`);
+      }
+    });
+
+    // 서버에 공격 요청을 전송
     fetch('/api/base-attack-monster', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -65,10 +77,11 @@ export class Base {
           const monster = this.monsters.find(m => m.id === updatedMonster.id);
           if (monster) {
             monster.hp = updatedMonster.hp; // 몬스터의 HP를 업데이트
+            console.log(`Monster ${updatedMonster.id} HP updated to ${updatedMonster.hp}`);
           }
         });
       } else {
-        console.error('Base attack failed');
+        console.error('Base attack failed:', data.error);
       }
     })
     .catch(error => {

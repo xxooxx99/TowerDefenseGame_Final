@@ -160,8 +160,22 @@ export class Monster {
   }
 
   getHp() {
-    this.hp = value;
+    this.hp;
   }
+
+  receiveDamage(damage) {
+    this.hp -= damage;
+    if (this.hp <= 0) {
+      this.die();
+    }
+  }
+
+  die() {
+    console.log(`Monster ${this.monsterIndex} died`);
+  }
+
+
+
 
   draw(ctx) {
     if (this.image) {
