@@ -4,6 +4,7 @@ export class Monster {
       throw new Error('몬스터가 이동할 경로가 필요합니다.');
     }
 
+
     this.path = path;
     this.monsterImages = monsterImages;
     this.level = level;
@@ -15,6 +16,7 @@ export class Monster {
     this.width = 40;
     this.height = 40;
     this.image = this.getImageForLevel(level);
+
     this.init(level);
   }
 
@@ -101,6 +103,7 @@ export class Monster {
     }
 
     return this.monsterImages[imageIndex] || this.monsterImages[0];
+
   }
 
   move() {
