@@ -784,7 +784,8 @@ attackMonstersButton.addEventListener('click', () => {
   const baseUuid = localStorage.getItem('userId'); // Base UUID를 설정합니다.
   console.log('Monster Indices:', monsterIndices); // 디버그 로그 추가
   console.log('Base UUID:', baseUuid); // 디버그 로그 추가
-  sendEvent(PacketType.C2S_MONSTER_ATTACK_BASE, { baseUuid, monsterIndices });
+  base.monsters = monsters; // Base 객체에 필드 몬스터 목록을 설정합니다.
+  base.attackMonsters({ baseUuid, monsterIndices });
 });
 
 for (let i = 0; i < buttons.length; i++) {
