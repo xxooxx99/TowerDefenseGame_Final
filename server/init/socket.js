@@ -13,6 +13,7 @@ import { towerAddOnHandler, towerAttackHandler } from '../handlers/towers/tower.
 import { towerAddHandler, towerUpgrade } from '../handlers/tower/tower.handler.js';
 import { handleMonsterBaseAttack, handleBaseAttackMonster } from '../handlers/game/gameHandler.js';
 import { baseAttackMonster } from '../models/baseUpgrade.js';
+import { add_count } from '../handlers/ability/ability_1.handler.js';
 
 const initSocket = (server) => {
   const io = new SocketIO();
@@ -76,6 +77,9 @@ const initSocket = (server) => {
           break;
         case PacketType.S2C_UPDATE_MONSTER_HP:
           updateMonstersHp(packet.payload);
+          break;
+        case PacketType.C2S_KILL_MONSTER_EVENT:
+          add_count(socket, packet);
           break;
         default:
           console.log(`Unknown packet type: ${packet.packetType}`);

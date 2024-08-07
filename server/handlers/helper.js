@@ -1,5 +1,3 @@
-import handlerMappings from './handlerMappings.js';
-
 export const handleConnection = (socket) => {
   console.log('클라이언트 연결 완료');
   //socket.emit('connection', { status: 'success', message: '연결 완료' });

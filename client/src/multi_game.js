@@ -409,6 +409,9 @@ function gameLoop() {
         score,
         monsterLevel: monster.level,
       });
+      sendEvent(PacketType.C2S_KILL_MONSTER_EVENT, {
+        userId: localStorage.getItem('userId'),
+      });
       /* killCount++;
 
       if (killCount === 2) {
@@ -632,6 +635,9 @@ Promise.all([
     if (data.PacketType === 18) {
       console.log('매치 스타트');
       matchStart();
+    }
+    if (data.PacketType === 111) {
+      console.log('능력으로 인한 돈 추가');
     }
     // if (!isInitGame) {
     //   initGame(payload);
