@@ -11,6 +11,7 @@ import initSocket from './init/socket.js';
 import { registerHandler } from './handlers/account/register.handler.js';
 import { loginHandler } from './handlers/account/login.handler.js';
 import { messageSendHandler } from './handlers/account/messageAuth.handler.js';
+import { handleBaseAttackMonster } from './handlers/game/gameHandler.js';
 import { config } from 'dotenv';
 import { loadGameAssets } from './init/assets.js';
 
@@ -36,6 +37,8 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, '../client')));
 app.use('/api', [messageSendHandler, registerHandler, loginHandler]); // /라는 경로를 통해 들어온 데이터는 해당 배열의 핸들러가 순차적으로 진행.
+
+app.post('/api/base-attack-monster', handleBaseAttackMonster); 
 
 app.get('/api', (req, res) => {
   res.sendFile('index.html', { root: path.join(__dirname, '../client') });

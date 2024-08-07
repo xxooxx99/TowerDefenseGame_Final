@@ -40,6 +40,7 @@ let monsterSpawnCount = 0; // 몬스터 스폰 수 초기화
 // 게임 데이터
 let towerCost = 100; // 타워 구입 비용
 let monsterSpawnInterval = 1000; // 몬스터 생성 주기
+
 let towerIndex = 1;
 let monsterIndex = 1;
 // 설정 데이터
@@ -373,7 +374,7 @@ function gameLoop() {
   }
 
   // 몬스터가 공격을 했을 수 있으므로 기지 다시 그리기
-  base.draw(ctx, baseImage);
+  base.draw(ctx, baseImage,monsters);
 
   for (let i = monsters.length - 1; i >= 0; i--) {
     const monster = monsters[i];
@@ -686,8 +687,11 @@ Promise.all([
       case PacketType.S2C_ENEMY_DIE_MONSTER:
         destroyOpponentMonster(packet.data.destroyedOpponentMonsterIndex);
         break;
-      case PacketType.S2C_UPDATE_BASE_HP:
+      case PacketType.C2S_UPDATE_BASE_HP:
         opponentBaseAttacked(packet.data.opponentBaseHp);
+        break;
+      case PacketType.S2C_UPDATE_MONSTER_HP:
+        updateMonstersHp(packet.payload);
         break;
       case PacketType.S2C_GAMESYNC:
         gameSync(packet.data);
@@ -726,6 +730,34 @@ const buttons = [
   buyTowerButton8,
   buyTowerButton9,
 ];
+function updateMonstersHp(updatedMonsters) {
+  updatedMonsters.forEach(updatedMonster => {
+    const monster = monsters.find(m => m.getMonsterIndex() === updatedMonster.id);
+    if (monster) {
+      console.log(`Updating monster HP: ${updatedMonster.id} to ${updatedMonster.hp}`); // 업데이트 로그 출력
+      monster.setHp(updatedMonster.hp);
+    }
+  });
+}
+
+const attackMonstersButton = document.createElement('button');
+attackMonstersButton.textContent = 'Base Attack';
+attackMonstersButton.style.position = 'absolute';
+attackMonstersButton.style.top = '10px';
+attackMonstersButton.style.left = '10px';
+attackMonstersButton.style.padding = '10px 20px';
+attackMonstersButton.style.fontSize = '16px';
+attackMonstersButton.style.cursor = 'pointer';
+document.body.appendChild(attackMonstersButton);
+
+attackMonstersButton.addEventListener('click', () => {
+  const monsterIndices = monsters.map(monster => monster.getMonsterIndex());
+  const baseUuid = localStorage.getItem('userId');  // Base UUID를 설정합니다.
+  console.log('Monster Indices:', monsterIndices);  // 디버그 로그 추가
+  console.log('Base UUID:', baseUuid);  // 디버그 로그 추가
+  sendEvent(PacketType.C2S_MONSTER_ATTACK_BASE, { baseUuid, monsterIndices });
+});
+
 
 for (let i = 0; i < buttons.length; i++) {
   buttons[i].style.position = 'absolute';

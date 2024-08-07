@@ -1,15 +1,16 @@
 export class Base {
   constructor(x, y, maxHp) {
-    // 생성자 안에서 기지의 속성을 정의한다고 생각하시면 됩니다!
-    this.x = x; // 기지 이미지 x 좌표
-    this.y = y; // 기지 이미지 y 좌표
-    this.width = 85; // 기지 이미지 가로 길이 (이미지 파일 길이에 따라 변경 필요하며 세로 길이와 비율을 맞춰주셔야 합니다!)
-    this.height = 112; // 기지 이미지 세로 길이
-    this.hp = maxHp; // 기지의 현재 HP
-    this.maxHp = maxHp; // 기지의 최대 HP
+    this.x = x;
+    this.y = y;
+    this.width = 85;
+    this.height = 112;
+    this.hp = maxHp;
+    this.maxHp = maxHp;
+    this.attackPower = 1000;
+    this.beamDuration = 0;
   }
 
-  draw(ctx, baseImage, isOpponent = false) {
+  draw(ctx, baseImage, monsterList, isOpponent = false) {
     ctx.drawImage(
       baseImage,
       this.x - this.width,
@@ -24,12 +25,54 @@ export class Base {
       this.x - this.width,
       this.y - this.height / 2 - 10,
     );
+
+    if (this.beamDuration > 0) {
+      monsterList.forEach(monster => {
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(monster.x, monster.y);
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 5;
+        ctx.stroke();
+        ctx.closePath();
+      });
+      this.beamDuration--;
+    }
   }
+
   takeDamage(amount) {
     this.hp -= amount;
     return this.hp <= 0;
   }
+
   updateHp(newHp) {
     this.hp = newHp;
+  }
+
+  attackMonsters(payload) {
+    this.beamDuration = 20; // 예시로 20 프레임 동안 빔을 표시
+    const { baseUuid, monsterIndices } = payload;  // payload에서 데이터 추출
+    fetch('/api/base-attack-monster', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ baseUuid, monsterIndices })  // payload를 그대로 전송
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        console.log(`Base Successfully ATTACK ALL MONSTERS!`);
+        data.updatedMonsters.forEach(updatedMonster => {
+          const monster = this.monsters.find(m => m.id === updatedMonster.id);
+          if (monster) {
+            monster.hp = updatedMonster.hp; // 몬스터의 HP를 업데이트
+          }
+        });
+      } else {
+        console.error('Base attack failed');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    });
   }
 }
