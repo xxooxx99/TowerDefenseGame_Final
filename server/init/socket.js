@@ -18,13 +18,13 @@ const initSocket = (server) => {
   //connectHandler(io);
 
   io.on('connection', (socket) => {
-    console.log(`New user connected: ${socket.id}`);
+    //console.log(`New user connected: ${socket.id}`);
     socket.emit('connection', { status: 'success', message: '연결 완료' });
 
     socket.on('event', (packet) => {
-      console.log(
-        `Received packet: ${JSON.stringify(`패킷 타입 : ${packet.packetType} 유저 아이디 : ${packet.userId}`)}`,
-      );
+      // console.log(
+      //   `Received packet: ${JSON.stringify(`패킷 타입 : ${packet.packetType} 유저 아이디 : ${packet.userId}`)}`,
+      // );
 
       if (!packet.userId) {
         console.error('Received packet without userId:', packet);
