@@ -112,4 +112,8 @@ export class GameData {
       this.userGold += 500;
     }
   }
+
+  addGold(value) {
+    this.userGold += value;
+  }
 }

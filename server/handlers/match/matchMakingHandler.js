@@ -5,6 +5,7 @@ import {
   RESOLUTION_WIDTH,
 } from '../../constants.js';
 import { addAccept_queue } from './matchAcceptHandler.js';
+import { prisma } from '../../utils/prisma/index.js';
 
 // 매칭 대기열
 let matching_queue = [];
@@ -83,7 +84,7 @@ async function handleMatchRequest(socket, data) {
   tryMatch();
 }
 
-function tryMatch() {
+async function tryMatch() {
   const now = Date.now();
 
   if (matching_queue.length < 2) {
@@ -110,14 +111,30 @@ function tryMatch() {
 
         console.log(`매칭 성공: ${player1.userId} vs ${player2.userId}`);
 
+        const User1Data = await prisma.userInfo.findFirst({
+          where: { userId: player1.userId },
+        });
+
+        const User2Data = await prisma.userInfo.findFirst({
+          where: { userId: player2.userId },
+        });
+
         const packet = {
           PacketType: PacketType.S2C_MATCH_FOUND_NOTIFICATION,
           opponentId: player2.userId,
+          ownUserData: User1Data,
+          opponentUserData: User2Data,
           index: index,
         };
 
         player1.socket.emit('event', packet);
-        player2.socket.emit('event', { ...packet, opponentId: player1.userId });
+        player2.socket.emit('event', {
+          ...packet,
+          opponentId: player1.userId,
+          ownUserData: User2Data,
+          opponentUserData: User1Data,
+        });
+
         addAccept_queue(index, player1, player2);
         index++;
         return;
