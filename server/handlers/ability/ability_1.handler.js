@@ -15,7 +15,6 @@ async function add_count(socket, data) {
     existingUser.count++;
   }
 
-  console.log(ability_count_list);
   for (let index = 0; index < ability_count_list.length; index++) {
     if (ability_count_list[index].count >= abilityActiveNeedCount) {
       ability_count_list[index].socket.emit('event', {
@@ -26,6 +25,10 @@ async function add_count(socket, data) {
       ability_count_list.splice(index, 1);
     }
   }
+
+  socket.on('disconnect', () => {
+    ability_count_list = ability_count_list.filter((user) => user.userId !== userId);
+  });
 }
 
 export { add_count };
