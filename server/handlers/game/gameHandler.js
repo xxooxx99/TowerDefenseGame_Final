@@ -5,7 +5,6 @@ import { getBase, baseAttackMonster } from '../../models/baseUpgrade.js';
 
 function handleMonsterBaseAttack(socket, uuid, payload) {
   const playerData = getPlayData(uuid);
-  
   if (!playerData) {
     console.error(`Player data not found for UUID: ${uuid}`);
     return;
@@ -45,7 +44,10 @@ function handleBaseAttackMonster(socket, uuid, payload) {
 
   try {
     const updatedMonsters = baseAttackMonster(baseUuid, monsterIndices);
-    socket.emit('event', { packetType: PacketType.S2C_UPDATE_MONSTER_HP, payload: updatedMonsters });
+    socket.emit('event', {
+      packetType: PacketType.S2C_UPDATE_MONSTER_HP,
+      payload: updatedMonsters,
+    });
   } catch (error) {
     console.error('Error in baseAttackMonster:', error);
   }

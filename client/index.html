@@ -79,6 +79,57 @@
         font-size: 16px;
         cursor: pointer;
       }
+      .matchAcceptButton {
+        position: relative;
+        width: 200px;
+        height: 30px;
+        left: 37.8px;
+      }
+      .user-info {
+        position: relative;
+        text-align: center;
+        width: 600px;
+        height: 400px;
+        top: 200px;
+      }
+      .user-name {
+        position: absolute;
+        width: 600px;
+        bottom: 200px;
+        margin: auto;
+        text-align: center;
+      }
+      .user-winRate {
+        position: absolute;
+        width: 600px;
+        bottom: 120px;
+        margin: auto;
+        text-align: center;
+      }
+      .ownUser-name {
+        float: left;
+        width: 200px;
+      }
+      .versus {
+        float: left;
+        width: 200px;
+      }
+      .opponentUser-name {
+        float: left;
+        width: 200px;
+      }
+      .ownUser-winRate {
+        float: left;
+        width: 200px;
+      }
+      .winRatemargin {
+        float: left;
+        width: 200px;
+      }
+      .opponentUser-winRate {
+        float: left;
+        width: 200px;
+      }
     </style>
   </head>
   <body>
@@ -86,9 +137,8 @@
       <img src="/images/logo.png" alt="logo" />
       <button id="registerButton">회원가입</button>
       <button id="loginButton">로그인</button>
-      <button id="loginButton2">로그인2 (로컬에서 2인 테스트 할 때 사용)</button>
-      <button id="matchButton">다른 유저와 대결하기</button>
-      <button id="matchButton2">다른 유저와 대결하기2 (로컬에서 2인 테스트 할 때 사용)</button>
+      <button id="abilityButton" style="display: none">능력</button>
+      <button id="matchButton" style="display: none">다른 유저와 대결하기</button>
     </div>
 
     <div class="logout-container" id="logout-container" style="display: none">
@@ -96,11 +146,33 @@
       <button id="logout">로그아웃</button>
     </div>
 
+    <div class="user-info" id="user-info" style="display: none">
+      <div class="user-name" id="user-name" style="display: block">
+        <h3 class="ownUser-name" id="ownUser-name" style="color: white">
+          나
+          <!-- 자신을 띄우는 글귀 -->
+        </h3>
+        <h3 class="versus" id="versus">VS</h3>
+        <h3 class="opponentUser-name" id="opponentUser-name" style="color: white">
+          상대방의 아이디를 띄우는 글귀
+        </h3>
+      </div>
+      <div class="user-winRate" id="user-winRate" style="display: block">
+        <h3 class="ownUser-winRate" id="ownUser-winRate" style="color: white">
+          자신의 승률을 띄우는 글귀
+        </h3>
+        <h3 class="winRatemargin" id="winRatemargin"></h3>
+        <h3 class="opponentUser-winRate" id="opponentUser-winRate" style="color: white">
+          상대방의 승률을 띄우는 글귀
+        </h3>
+      </div>
+    </div>
+
     <div id="progressBarContainer">
       <h1 id="progressBarMessage" style="color: white">대결 상대를 탐색중입니다!</h1>
       <div class="loader"></div>
       <progress id="progressBar" max="100" value="0" style="display: none"></progress>
-      <button id="matchAcceptButton" display="none">대결 수락하기</button>
+      <button class="matchAcceptButton" id="matchAcceptButton" display="none">대결 수락하기</button>
     </div>
 
     <canvas id="gameCanvas" width="1500" height="680"></canvas>
@@ -114,7 +186,8 @@
         if (token && userId) {
           document.getElementById('registerButton').style.display = 'none';
           document.getElementById('loginButton').style.display = 'none';
-          document.getElementById('loginButton2').style.display = 'none';
+          document.getElementById('abilityButton').style.display = 'block';
+          document.getElementById('matchButton').style.display = 'block';
           document.getElementById('current-user').innerText = `현재 접속된 아이디: ${userId}`;
           document.getElementById('logout-container').style.display = 'block';
         }
@@ -128,8 +201,8 @@
         window.location.href = 'login.html';
       });
 
-      document.getElementById('loginButton2').addEventListener('click', () => {
-        window.location.href = 'login2.html';
+      document.getElementById('abilityButton').addEventListener('click', () => {
+        window.location.href = 'ability.html';
       });
 
       document.getElementById('matchButton').addEventListener('click', () => {
@@ -137,12 +210,6 @@
         document.getElementById('progressBarContainer').style.display = 'block';
         document.getElementById('matchAcceptButton').style.display = 'none';
         import('./src/multi_game.js');
-      });
-
-      document.getElementById('matchButton2').addEventListener('click', () => {
-        document.querySelector('.button-container').style.display = 'none';
-        document.getElementById('progressBarContainer').style.display = 'block';
-        import('./src/multi_game2.js');
       });
 
       document.getElementById('logout').addEventListener('click', async () => {
@@ -164,7 +231,8 @@
             document.getElementById('logout-container').style.display = 'none';
             document.getElementById('registerButton').style.display = 'block';
             document.getElementById('loginButton').style.display = 'block';
-            document.getElementById('loginButton2').style.display = 'block';
+            document.getElementById('matchButton').style.display = 'none';
+            location.reload();
           } else {
             alert('로그아웃 실패');
           }
