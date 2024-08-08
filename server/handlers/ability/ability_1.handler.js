@@ -2,7 +2,7 @@ import { PacketType } from '../../constants.js';
 import { getPlayData } from '../../models/playData.model.js';
 
 const abilityGold = 1;
-const abilityActiveNeedCount = 5;
+const abilityActiveNeedCount = 10;
 
 let ability_count_list = [];
 

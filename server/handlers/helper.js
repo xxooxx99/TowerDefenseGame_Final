@@ -16,7 +16,6 @@ export const handlerDisconnect = (socket) => {
 };
 
 export const handlerEvent = async (io, socket, packet) => {
-  console.log('@@@@@', packet);
   const handler = handlerMappings[packet.packetType];
   if (!handler) {
     socket.emit('response', { status: 'fail', message: '잘못된 요청입니다.' });

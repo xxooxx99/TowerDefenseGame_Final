@@ -5,7 +5,6 @@ import { getBase, baseAttackMonster } from '../../models/baseUpgrade.js';
 
 function handleMonsterBaseAttack(socket, uuid, payload) {
   const playerData = getPlayData(uuid);
-
   if (!playerData) {
     console.error(`Player data not found for UUID: ${uuid}`);
     return;

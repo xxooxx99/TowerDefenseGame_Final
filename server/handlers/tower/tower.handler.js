@@ -68,7 +68,7 @@ export const towerAddHandler = (socket, data) => {
 
 export const towerUpgrade = (socket, data) => {
   try {
-    const { userId, towerType, towerId, towerNumber } = data;
+    const { userId, towerType, towerId, towerNumber } = data.payload;
     const towerAsset = getGameAssets().towerData.towerType;
     const userData = getPlayData(userId);
     const index = towerId % 100;
@@ -81,14 +81,14 @@ export const towerUpgrade = (socket, data) => {
       return { status: 'fail', message: '타워를 업그레이드 비용이 부족합니다.' };
 
     userData.spendGold(towerAsset[towerType][index].cost);
-
     const newTower = towerDelete(userData.towerInit, towerType, towerId * 1, towerNumber);
     towerSet(userData.towerInit, towerType, towerId * 1 + 1, newTower[0], true);
+
     let packet = {
       packetType: PacketType.S2C_TOWER_CREATE,
       userId: userId,
       towerType: towerType,
-      towerId: towerId + 1,
+      towerId: towerId * 1 + 1,
       towerCost: towerAsset[towerType][index].cost,
       towerData: newTower[0],
     };

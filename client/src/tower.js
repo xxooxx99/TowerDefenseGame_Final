@@ -32,7 +32,7 @@ export class Tower {
             this.attackPower = 60;
             this.range = towerIdData.range;
             this.attackCycle = towerIdData.attackCycle;
-            this.imageNum = Math.trunc(towerId / 100) - 1 + (towerId % 100); // 나중에 중간에 7 곱해야함
+            this.imageNum = (Math.trunc(towerId / 100) - 1) * 2 + (towerId % 100); // 나중에 중간에 7 곱해야함
           }
         }
       }
@@ -122,7 +122,7 @@ export class Tower {
             }
           }
 
-          if ((this.killCount != null || monster.hp <= 0) && my) {
+          if (this.killCount != null && monster.hp <= 0 && my) {
             this.killCount--;
           }
         }
