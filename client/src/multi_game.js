@@ -76,16 +76,12 @@ const opponentBackgroundImage = new Image();
 opponentBackgroundImage.src = 'images/bg.webp';
 export const towerImages = [];
 for (let i = 0; i < 9; i++) {
-  for (let k = 0; k <= 0; k++) {
+  for (let k = 0; k <= 1; k++) {
     const image = new Image();
     image.src = `images/tower${100 * (i + 1) + k}.png`;
     towerImages.push(image);
   }
 }
-
-const image = new Image();
-image.src = `images/tower${901}.png`;
-towerImages.push(image);
 
 const baseImage = new Image();
 baseImage.src = 'images/base.png';
@@ -217,9 +213,10 @@ function towerUpgrades() {
     for (let towerId in towers[towerType]) {
       for (let i = 0; i < towers[towerType][towerId].length; i++) {
         const tower = towers[towerType][towerId][i];
-        const length = Math.abs(posX - tower.x) + Math.abs(posY - tower.y);
-        if (min > length) {
-          min = length;
+        const distance = Math.sqrt(Math.pow(posX - tower.x, 2) + Math.pow(posY - tower.y, 2));
+
+        if (min > distance) {
+          min = distance;
           selectTower = tower;
         }
       }
@@ -231,7 +228,6 @@ function towerUpgrades() {
   }
 
   if (min < 50) {
-    console.log('업그레이드 요청!');
     sendEvent(PacketType.C2S_TOWER_UPGRADE, {
       userId,
       towerType: selectTower.towerType,
@@ -752,11 +748,11 @@ attackMonstersButton.style.cursor = 'pointer';
 document.body.appendChild(attackMonstersButton);
 
 attackMonstersButton.addEventListener('click', () => {
-  const monsterIndices = monsters.map(monster => monster.getMonsterIndex());
-  const baseUuid = localStorage.getItem('userId');  // Base UUID를 설정합니다.
-  console.log('Monster Indices:', monsterIndices);  // 디버그 로그 추가
-  console.log('Base UUID:', baseUuid);  // 디버그 로그 추가
-  base.monsters = monsters;  // Base 객체에 필드 몬스터 목록을 설정합니다.
+  const monsterIndices = monsters.map((monster) => monster.getMonsterIndex());
+  const baseUuid = localStorage.getItem('userId'); // Base UUID를 설정합니다.
+  console.log('Monster Indices:', monsterIndices); // 디버그 로그 추가
+  console.log('Base UUID:', baseUuid); // 디버그 로그 추가
+  base.monsters = monsters; // Base 객체에 필드 몬스터 목록을 설정합니다.
   base.attackMonsters({ baseUuid, monsterIndices });
 });
 
@@ -795,6 +791,7 @@ document.body.appendChild(upgradeTowerButton);
 const mousePos = (event) => {
   posX = event.offsetX;
   posY = event.offsetY;
+  console.log(posX, posY);
   if (towerBuilderId) towerRequest();
   if (towerUpgrade) {
     towerUpgrades();
