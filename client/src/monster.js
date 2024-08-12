@@ -174,21 +174,39 @@ export class Monster {
     console.log(`Monster ${this.monsterIndex} died`);
   }
 
-
-
-
   draw(ctx) {
     if (this.image) {
       ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
 
       ctx.save(); // 현재 상태 저장
-      // ctx.fillRect(this.x, this.y, this.width, this.height);
       ctx.restore(); // 상태 복원
+      let monsterName = '';
 
-      // 몬스터 상태 표시
+      switch (this.type) {
+        case 'fast':
+          monsterName = '재빠른 늑대';
+          break;
+        case 'tank':
+          monsterName = '튼실한 오크';
+          break;
+        case 'healing':
+          monsterName = '힐하는 해골';
+          break;
+        default:
+          monsterName = '슬라임';
+          break;
+      }
+
+      const text = `${monsterName} (레벨 ${this.level}) ${this.hp}/${this.maxHp}`;
+
       ctx.font = '12px Arial';
       ctx.fillStyle = 'white';
-      ctx.fillText(`(레벨 ${this.level}) ${this.hp}/${this.maxHp}`, this.x, this.y - 5);
+
+      const textWidth = ctx.measureText(text).width;
+
+      const textX = this.x + this.width / 2 - textWidth / 2;
+      const textY = this.y - 5;
+      ctx.fillText(text, textX, textY);
     } else {
       console.error('몬스터 이미지를 찾을 수 없습니다.');
     }

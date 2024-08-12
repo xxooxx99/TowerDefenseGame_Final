@@ -719,7 +719,7 @@ Promise.all([
       case PacketType.S2C_ENEMY_DIE_MONSTER:
         destroyOpponentMonster(packet.data.destroyedOpponentMonsterIndex);
         break;
-      case PacketType.C2S_UPDATE_BASE_HP:
+      case PacketType.S2C_UPDATE_BASE_HP:
         opponentBaseAttacked(packet.data.opponentBaseHp);
         break;
       case PacketType.S2C_UPDATE_MONSTER_HP:
