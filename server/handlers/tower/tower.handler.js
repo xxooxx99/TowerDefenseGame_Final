@@ -3,6 +3,7 @@ import { getGameAssets } from '../../init/assets.js';
 import { towerSet, towerDelete } from '../../models/tower.model.js';
 import { getPlayData } from '../../models/playData.model.js';
 import { getOpponentInfo } from '../../models/playData.model.js';
+import { getMonsters } from '../../models/monster.model.js';
 
 export const towerAddHandler = (socket, data) => {
   const towerAsset = getGameAssets().towerData.towerType;
@@ -74,7 +75,7 @@ export const towerUpgrade = (socket, data) => {
     const index = towerId % 100;
     const gold = userData.getGold();
 
-    if (towerId % 100 >= 6)
+    if (towerId % 100 >= 2)
       return { status: 'fail', message: '모든 업그레이드가 진행된 타워입니다.' };
 
     if (gold < towerAsset[towerType][index].cost)
@@ -104,12 +105,42 @@ export const towerUpgrade = (socket, data) => {
   }
 };
 
-// ex
-// userTower = {
-//     length: 0,
-//       towerType: {
-//          ID : [
-//           {towerNum ,x, y },
-//          ]
-//       }
-// }
+export const towerAttack = (socket, data) => {
+  try {
+    const { userId, towerType, towerId, towerNumber, monsterIndexs, time } = data.payload;
+    const towerAsset = getGameAssets().towerData.towerType;
+    const userData = getPlayData(userId);
+    const monsters = getMonsters(userId);
+
+    if (!userData || !monsters)
+      return { status: 'fail', message: '해당 유저 정보가 존재하지 않습니다.' };
+
+    if (!userData.towerInit[towerType][towerId][towerNumber])
+      return { status: 'fail', message: '해당 타워가 존재하지 않습니다.' };
+
+    for (let i = 0; i < monsterIndexs.length; i++) {
+      let check = false;
+      for (let k = 0; k < monsters.length; k++) {
+        if (check) break;
+        else if (monsterIndexs[i] == monsters[k].monsterIndex) check = true;
+      }
+
+      if (!check) return { status: 'fail', message: '필드에 해당 몬스터가 존재하지 않습니다.' };
+    }
+
+    const towerStatus = towerAsset[towerType][towerId];
+    for (let monsterIndex of monsterIndexs) {
+      const attackedMonster = monsters.find((monster) => monster.monsterIndex === monsterIndex);
+      // const tower
+      setDamagedMonsterHp(userId, towerStatus.power, monsterIndex);
+      sendGameSync(socket, userId, PacketType.S2C_ENEMY_TOWER_ATTACK, {
+        attackedMonster,
+        attackedTower,
+      });
+    }
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+export const towerDestroy = (socket, data) => {};

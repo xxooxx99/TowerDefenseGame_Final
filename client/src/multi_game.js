@@ -85,7 +85,7 @@ const opponentBackgroundImage = new Image();
 opponentBackgroundImage.src = 'images/bg.webp';
 export const towerImages = [];
 for (let i = 0; i < 9; i++) {
-  for (let k = 0; k <= 1; k++) {
+  for (let k = 0; k <= 2; k++) {
     const image = new Image();
     image.src = `images/tower${100 * (i + 1) + k}.png`;
     towerImages.push(image);
@@ -557,8 +557,9 @@ function matchStart() {
       clearInterval(progressInterval);
       progressBarContainer.style.display = 'none';
       progressBar.style.display = 'none';
-      for (let i = 0; i < buttons.length; i++) buttons[i].style.display = 'block';
-      upgradeTowerButton.style.display = 'block';
+      towersBox.style.display = 'block';
+      towersBox.style.justifyContent = 'center';
+      towersBox.style.textAlign = 'center';
       canvas.style.display = 'block';
       opponentCanvas.style.display = 'block';
       // TODO. 유저 및 상대방 유저 데이터 초기화
@@ -643,7 +644,7 @@ Promise.all([
 
   serverSocket.on('userTowerUpgrade', (data) => {
     const { towerType, towerId, towerCost, towerData } = data;
-
+    console.log(`받은 업그레이드 데이터:${towerId}`);
     if (userId !== data.userId) {
       const arr = opponentTowers[towerType][towerId - 1];
       for (let i = 0; i < arr.length; i++) {
@@ -732,36 +733,6 @@ Promise.all([
   });
 });
 
-const buyTowerButton1 = document.createElement('button');
-buyTowerButton1.textContent = '기본 타워';
-const buyTowerButton2 = document.createElement('button');
-buyTowerButton2.textContent = '공속 타워';
-const buyTowerButton3 = document.createElement('button');
-buyTowerButton3.textContent = '공속 지원 타워';
-const buyTowerButton4 = document.createElement('button');
-buyTowerButton4.textContent = '공격력 지원 타워';
-const buyTowerButton5 = document.createElement('button');
-buyTowerButton5.textContent = '치명타 타워';
-const buyTowerButton6 = document.createElement('button');
-buyTowerButton6.textContent = '스플래쉬 타워';
-const buyTowerButton7 = document.createElement('button');
-buyTowerButton7.textContent = '멀티샷 타워';
-const buyTowerButton8 = document.createElement('button');
-buyTowerButton8.textContent = '맹독 타워';
-const buyTowerButton9 = document.createElement('button');
-buyTowerButton9.textContent = '성장 타워';
-
-const buttons = [
-  buyTowerButton1,
-  buyTowerButton2,
-  buyTowerButton3,
-  buyTowerButton4,
-  buyTowerButton5,
-  buyTowerButton6,
-  buyTowerButton7,
-  buyTowerButton8,
-  buyTowerButton9,
-];
 function updateMonstersHp(updatedMonsters) {
   updatedMonsters.forEach((updatedMonster) => {
     const monster = monsters.find((m) => m.getMonsterIndex() === updatedMonster.id);
@@ -778,7 +749,7 @@ attackMonstersButton.style.position = 'absolute';
 attackMonstersButton.style.top = '10px';
 attackMonstersButton.style.left = '10px';
 attackMonstersButton.style.padding = '10px 20px';
-attackMonstersButton.style.fontSize = '16px';
+attackMonstersButton.style.fontSize = '8px';
 attackMonstersButton.style.cursor = 'pointer';
 document.body.appendChild(attackMonstersButton);
 
@@ -791,37 +762,42 @@ attackMonstersButton.addEventListener('click', () => {
   base.attackMonsters({ baseUuid, monsterIndices });
 });
 
+const towersBox = window.document.getElementById('towers');
+const buyTowerButton1 = document.getElementById('baseTower');
+const buyTowerButton2 = document.getElementById('speedTower');
+const buyTowerButton3 = document.getElementById('speedSupportTower');
+const buyTowerButton4 = document.getElementById('attackSupportTower');
+const buyTowerButton5 = document.getElementById('strongTower');
+const buyTowerButton6 = document.getElementById('splashTower');
+const buyTowerButton7 = document.getElementById('multiShotTower');
+const buyTowerButton8 = document.getElementById('poisonTower');
+const buyTowerButton9 = document.getElementById('growthTower');
+const upgradeTowerButton = document.getElementById('towerUpgrade');
+
+const buttons = [
+  buyTowerButton1,
+  buyTowerButton2,
+  buyTowerButton3,
+  buyTowerButton4,
+  buyTowerButton5,
+  buyTowerButton6,
+  buyTowerButton7,
+  buyTowerButton8,
+  buyTowerButton9,
+];
+
 for (let i = 0; i < buttons.length; i++) {
-  buttons[i].style.position = 'absolute';
-  buttons[i].style.backgroundColor = 'white';
-  buttons[i].style.top = ((i + 1) * 100).toString() + 'px'; // 100씩 증가
-  buttons[i].style.right = '60px'; //고정해야함
-  buttons[i].style.padding = '20px 40px';
-  buttons[i].style.fontSize = '20px';
-  buttons[i].style.cursor = 'pointer';
-  buttons[i].style.display = 'none';
   buttons[i].addEventListener('click', (event) => {
-    towerBuilderCheck((i + 1) * 100, buttons[i]); //일단 테스트
+    towerBuilderCheck((i + 1) * 100, buttons[i]);
     event.stopPropagation();
   });
-  document.body.appendChild(buttons[i]);
+  //towersBox.appendChild(buttons[i]);
 }
 
-const upgradeTowerButton = document.createElement('button');
-upgradeTowerButton.textContent = '타워 강화';
-upgradeTowerButton.style.position = 'absolute';
-upgradeTowerButton.style.backgroundColor = 'white';
-upgradeTowerButton.style.top = '1000px';
-upgradeTowerButton.style.right = '60px';
-upgradeTowerButton.style.padding = '20px 40px';
-upgradeTowerButton.style.fontSize = '20px';
-upgradeTowerButton.style.cursor = 'pointer';
-upgradeTowerButton.style.display = 'none';
 upgradeTowerButton.addEventListener('click', (event) => {
   towerUpgradeCheck();
   event.stopPropagation();
 });
-document.body.appendChild(upgradeTowerButton);
 
 const mousePos = (event) => {
   posX = event.offsetX;
