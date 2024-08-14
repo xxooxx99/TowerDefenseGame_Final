@@ -17,7 +17,8 @@ export class Monster {
     this.width = 40;
     this.height = 40;
     this.image = this.getImageForLevel(level);
-
+    this.onDie = null; // 몬스터가 죽을 때 호출되는 콜백 추가
+    
     this.init(level);
   }
 
@@ -165,13 +166,21 @@ export class Monster {
 
   receiveDamage(damage) {
     this.hp -= damage;
+    console.log(`Monster HP after damage: ${this.hp}`);
     if (this.hp <= 0) {
-      this.die();
+      if (this.onDie) {
+        console.log('Monster is dead. Triggering onDie callback.');
+        this.onDie(); // 몬스터가 죽으면 콜백 호출
+      }
     }
   }
 
+
   die() {
     console.log(`Monster ${this.monsterIndex} died`);
+    if (typeof this.onDie === "function") {
+      this.onDie(); // 몬스터가 죽을 때 호출되는 콜백
+    }
   }
 
 

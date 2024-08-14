@@ -1,5 +1,6 @@
 import { Base } from './base.js';
 import { Monster } from './monster.js';
+import { Boss } from './boss.js'; // 보스 클래스 추가
 import { Tower } from './tower.js';
 import { CLIENT_VERSION, INITIAL_TOWER_NUMBER, PacketType, TOWER_TYPE } from '../constants.js';
 
@@ -280,6 +281,7 @@ function placeBase(position, isPlayer) {
 function spawnMonster() {
   const monster = new Monster(monsterPath, monsterImages, monsterLevel);
   monster.setMonsterIndex(monsterIndex);
+  monster.onDie = onMonsterDie; // 몬스터가 죽을 때 호출되는 콜백 설정
   monsters.push(monster);
   sendEvent(PacketType.C2S_SPAWN_MONSTER, { hp: monster.getMaxHp(), monsterIndex, monsterLevel });
   monsterIndex++;
@@ -489,6 +491,15 @@ function initGame() {
 }
 
 function matchFind(ownUserData, opponentUserData) {
+  if (!ownUserData || !opponentUserData) {
+    console.error('User data is missing:', { ownUserData, opponentUserData });
+    return;
+  }
+
+  if (!ownUserData.userId || !opponentUserData.userId) {
+    console.error('User ID is missing:', { ownUserId: ownUserData.userId, opponentUserId: opponentUserData.userId });
+    return;
+  }
   progressBarMessage.textContent = '게임을 찾았습니다.';
   matchAcceptButton.style.display = 'block';
 
@@ -540,6 +551,10 @@ function calWinRate(userData) {
     return Math.round((userData.win / (userData.win + userData.lose)) * 100);
   }
 }
+// 전역 변수로 게임 시작 여부를 추적
+let isGameStarted = false;
+
+
 
 function matchStart() {
   clearInterval(matchAcceptInterval);
@@ -561,10 +576,12 @@ function matchStart() {
       upgradeTowerButton.style.display = 'block';
       canvas.style.display = 'block';
       opponentCanvas.style.display = 'block';
+      showGameElements();  // 게임 시작 시 요소 표시
       // TODO. 유저 및 상대방 유저 데이터 초기화
     }
   }, 500);
 }
+
 
 // 이미지 로딩 완료 후 서버와 연결하고 게임 초기화
 Promise.all([
@@ -627,7 +644,11 @@ Promise.all([
     console.log(`서버로부터 이벤트 수신: ${JSON.stringify(data)}`);
 
     if (data.PacketType === 14) {
-      matchFind(data.ownUserData, data.opponentUserData);
+      if (data.ownUserData && data.opponentUserData) {
+        matchFind(data.ownUserData, data.opponentUserData);
+      } else {
+        console.error('User data is missing:', data);
+      }
     }
     if (data.PacketType === 18) {
       console.log('매치 스타트');
@@ -683,6 +704,51 @@ Promise.all([
       userGold -= towerCost;
     }
   });
+// 항복하기 버튼 생성 및 설정
+const surrenderButton = document.createElement('button');
+surrenderButton.textContent = '항복하기';
+surrenderButton.style.position = 'absolute';
+surrenderButton.style.top = '100px'; // 기존 UI 요소 아래 위치하도록 설정
+surrenderButton.style.right = '10px';
+surrenderButton.style.padding = '10px 20px';
+surrenderButton.style.fontSize = '16px';
+surrenderButton.style.cursor = 'pointer';
+document.body.appendChild(surrenderButton);
+
+// 항복하기 버튼 클릭 시 게임 종료 및 패배 처리
+surrenderButton.addEventListener('click', () => {
+  endGame(false); // 플레이어가 항복한 경우 패배 처리
+});
+
+// 게임 종료 로직
+function endGame(isWin) {
+  bgm.pause(); // 게임 배경음악 중지
+  const winSound = new Audio('sounds/win.wav');
+  const loseSound = new Audio('sounds/lose.wav');
+  winSound.volume = 0.3;
+  loseSound.volume = 0.3;
+  
+  if (isWin) {
+    winSound.play().then(() => {
+      alert('당신이 게임에서 승리했습니다!');
+      location.reload(); // 승리 시 페이지 리로드
+    });
+  } else {
+    loseSound.play().then(() => {
+      alert('아쉽지만 대결에서 패배하셨습니다! 다음 대결에서는 꼭 이기세요!');
+      location.reload(); // 패배 시 페이지 리로드
+    });
+  }
+}
+
+// 게임 내에서 base의 hp가 0이 되었을 때 처리
+function checkBaseHp() {
+  if (baseHp <= 0) {
+    endGame(false); // 플레이어의 기지가 파괴된 경우 패배 처리
+  } else if (opponentBaseHp <= 0) {
+    endGame(true); // 상대방 기지가 파괴된 경우 승리 처리
+  }
+}
 
   serverSocket.on('gameOver', (data) => {
     bgm.pause();
@@ -852,12 +918,257 @@ gameCanvas.addEventListener('click', mousePos);
 //   }, {});
 // }
 
+//보스 출현 로직
+
+let monsterDeathCount = 10; // 몬스터가 죽을 때까지의 카운트
+const bossImage = new Image();
+bossImage.src = 'images/TowerControlBoss.png';
+let bossSpawned = false; // 보스가 출현한 상태를 관리
+
+//보스 출현 메시지 추가
+const bossAttemptElement = document.createElement('div');
+bossAttemptElement.style.position = 'absolute';
+bossAttemptElement.style.top = '50px';
+bossAttemptElement.style.left = '10px';
+bossAttemptElement.style.padding = '10px 20px';
+bossAttemptElement.style.fontSize = '30px';
+bossAttemptElement.style.color = 'red';
+document.body.appendChild(bossAttemptElement);
+updateBossAttempt();
+
+function updateBossAttempt() {
+  if (!bossSpawned) {
+    bossAttemptElement.innerText = `Boss Attempt : ${monsterDeathCount}`;
+  }
+}
+
+hideGameElements();
+
+// Base Attack 버튼 및 Boss Attempt 요소를 숨기는 로직
+function hideGameElements() {
+  if (attackMonstersButton) {
+    attackMonstersButton.style.display = 'none';
+  }
+  if (bossAttemptElement) {
+    bossAttemptElement.style.display = 'none';
+  }
+}
+
+// 게임 시작 시 호출하여 요소를 표시하는 로직
+function showGameElements() {
+  if (attackMonstersButton) {
+    attackMonstersButton.style.display = 'block';
+  }
+  if (bossAttemptElement) {
+    bossAttemptElement.style.display = 'block';
+  }
+  isGameStarted = true;
+}
+
+
+// 몬스터가 죽을 때 호출되는 콜백
+function onMonsterDie() {
+  if (!bossSpawned) {
+    monsterDeathCount--;
+    updateBossAttempt();
+    if (monsterDeathCount <= 0) {
+      bossAttemptElement.innerText = 'WARNING : Watch out for the boss';
+      spawnBoss();
+    }
+  }
+}
+
+
+
+// 보스가 죽을 때 호출되는 콜백
+function onBossDie() {
+  bossSpawned = false;
+  monsterDeathCount = 10;
+  updateBossAttempt();
+}
+
+function spawnBoss() {
+  bossSpawned = true;
+  const boss = new Boss(monsterPath, bossImage, monsterLevel);
+  boss.setMonsterIndex(monsterIndex);
+  boss.onDie = onBossDie; // 보스가 죽을 때 호출되는 콜백 설정
+  monsters.push(boss);
+  sendEvent(PacketType.C2S_SPAWN_MONSTER, { hp: boss.getMaxHp(), monsterIndex, monsterLevel, isBoss: true });
+  console.log('Boss spawned');
+  monsterIndex++;
+}
+
 function sendEvent(handlerId, payload) {
-  // const decycledPayload = decycle(payload);
+  const userId = localStorage.getItem('userId');
+
+  if (!userId) {
+    console.error('User ID is missing. Cannot send event.');
+    return;
+  }
+
   serverSocket.emit('event', {
     userId,
     clientVersion: CLIENT_VERSION,
     packetType: handlerId,
-    payload, //: decycledPayload,
+    payload,
   });
 }
+// 돌아가기 버튼 생성 및 설정
+const backButton = document.createElement('button');
+backButton.textContent = '돌아가기';
+backButton.style.position = 'absolute';
+backButton.style.top = '50px'; // 로그아웃 버튼 아래 위치하도록 설정
+backButton.style.right = '10px';
+backButton.style.padding = '10px 20px';
+backButton.style.fontSize = '16px';
+backButton.style.cursor = 'pointer';
+document.body.appendChild(backButton);
+
+// 돌아가기 버튼 클릭 시 홈 화면으로 이동
+backButton.addEventListener('click', () => {
+  location.href = 'http://localhost:8080/index.html';  // 홈 화면 경로로 이동
+});
+
+// Boss 생성 버튼 추가
+const boss1Button = document.createElement('button');
+boss1Button.textContent = 'Boss 1';
+boss1Button.style.position = 'absolute';
+boss1Button.style.bottom = '100px';
+boss1Button.style.left = '10px';
+boss1Button.style.padding = '10px 20px';
+boss1Button.style.fontSize = '16px';
+boss1Button.style.cursor = 'pointer';
+document.body.appendChild(boss1Button);
+
+const boss2Button = document.createElement('button');
+boss2Button.textContent = 'Boss 2';
+boss2Button.style.position = 'absolute';
+boss2Button.style.bottom = '150px';
+boss2Button.style.left = '10px';
+boss2Button.style.padding = '10px 20px';
+boss2Button.style.fontSize = '16px';
+boss2Button.style.cursor = 'pointer';
+document.body.appendChild(boss2Button);
+
+const boss3Button = document.createElement('button');
+boss3Button.textContent = 'Boss 3';
+boss3Button.style.position = 'absolute';
+boss3Button.style.bottom = '200px';
+boss3Button.style.left = '10px';
+boss3Button.style.padding = '10px 20px';
+boss3Button.style.fontSize = '16px';
+boss3Button.style.cursor = 'pointer';
+document.body.appendChild(boss3Button);
+
+const boss4Button = document.createElement('button');
+boss4Button.textContent = 'Boss 4';
+boss4Button.style.position = 'absolute';
+boss4Button.style.bottom = '250px';
+boss4Button.style.left = '10px';
+boss4Button.style.padding = '10px 20px';
+boss4Button.style.fontSize = '16px';
+boss4Button.style.cursor = 'pointer';
+document.body.appendChild(boss4Button);
+
+// 스킬 사용 버튼 추가
+const useSkillButton = document.createElement('button');
+useSkillButton.textContent = 'Use Skill';
+useSkillButton.style.position = 'absolute';
+useSkillButton.style.bottom = '50px';
+useSkillButton.style.left = '10px';
+useSkillButton.style.padding = '10px 20px';
+useSkillButton.style.fontSize = '16px';
+useSkillButton.style.cursor = 'pointer';
+document.body.appendChild(useSkillButton);
+
+// 보스 생성 및 스킬 사용 로직
+let currentBoss = null;
+
+boss1Button.addEventListener('click', () => {
+  spawnSpecificBoss('MightyBoss');
+});
+
+boss2Button.addEventListener('click', () => {
+  spawnSpecificBoss('TowerControlBoss');
+});
+
+boss3Button.addEventListener('click', () => {
+  spawnSpecificBoss('DoomsdayBoss');
+});
+
+boss4Button.addEventListener('click', () => {
+  spawnSpecificBoss('TimeRifter');
+});
+
+useSkillButton.addEventListener('click', () => {
+  if (currentBoss) {
+    currentBoss.handleBossSkill(currentBoss.getRandomSkill());
+  }
+});
+
+function spawnSpecificBoss(bossType) {
+  let bossImage = new Image();  // 이미지 객체로 초기화
+  let bossBGM = 'sounds/Boss_bgm.mp3';
+  let skillSounds = {};
+
+  switch (bossType) {
+    case 'MightyBoss':
+      bossImage.src = 'images/MightyBoss.png';
+      skillSounds = {
+        healSkill: '', // 현재 효과음 없음
+        spawnClone: '',
+        reduceDamage: ''
+      };
+      break;
+    case 'TowerControlBoss':
+      bossImage.src = 'images/TowerControlBoss.png';
+      skillSounds = {
+        ignoreTowerDamage: '', // 현재 효과음 없음
+        changeTowerType: '',
+        downgradeTower: ''
+      };
+      break;
+    case 'DoomsdayBoss':
+      bossImage.src = 'images/DoomsdayBoss.png';
+      skillSounds = {
+        placeMark: '', // 현재 효과음 없음
+        swapFields: '',
+        absorbDamage: ''
+      };
+      break;
+    case 'TimeRifter':
+      bossImage.src = 'images/TimeRifter.png';
+      skillSounds = {
+        rewindHealth: '', // 현재 효과음 없음
+        accelerateTime: '',
+        timeWave: ''
+      };
+      break;
+  }
+
+  // 이미지 로딩 성공 여부를 확인
+  bossImage.onload = () => {
+    currentBoss = new Boss(monsterPath, bossImage, monsterLevel, serverSocket, bossBGM, skillSounds);
+    currentBoss.init(monsterLevel);  // 보스 객체 초기화
+    currentBoss.setMonsterIndex(monsterIndex);
+    currentBoss.onDie = onBossDie; // 보스가 죽을 때 호출되는 콜백 설정
+    monsters.push(currentBoss);
+    sendEvent(PacketType.C2S_SPAWN_MONSTER, { hp: currentBoss.getMaxHp(), monsterIndex, monsterLevel, isBoss: true });
+    console.log(`${bossType} spawned`);
+    monsterIndex++;
+  };
+
+  // 이미지 로딩 실패 시 에러 처리
+  bossImage.onerror = () => {
+    console.error(`Failed to load boss image for ${bossType}`);
+  };
+}
+
+  currentBoss = new Boss(monsterPath, bossImage, monsterLevel, serverSocket, bossBGM, skillSounds);
+  currentBoss.init(monsterLevel);  // 보스 객체 초기화
+  currentBoss.setMonsterIndex(monsterIndex);
+  currentBoss.onDie = onBossDie; // 보스가 죽을 때 호출되는 콜백 설정
+  monsters.push(currentBoss);
+  sendEvent(PacketType.C2S_SPAWN_MONSTER, { hp: currentBoss.getMaxHp(), monsterIndex, monsterLevel, isBoss: true });
+  console.log(`${bossType} spawned`);
+  monsterIndex++;
