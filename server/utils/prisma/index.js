@@ -7,25 +7,3 @@ export const prisma = new PrismaClient({
   // 에러 메시지를 평문이 아닌, 개발자가 읽기 쉬운 형태로 출력해줍니다.
   errorFormat: 'pretty',
 }); // PrismaClient 인스턴스를 생성합니다.
-
-/* // UserInfo 수정용
-async function updateWin() {
-  try {
-    const updatedUserInfo = await prisma.userInfo.update({
-      where: {
-        userId: 'rhwjdgns15',
-      },
-      data: {
-        win: 83,
-        lose: 63,
-      },
-    });
-    console.log('Updated UserInfo:', updatedUserInfo);
-  } catch (error) {
-    console.error('Error updating UserInfo:', error);
-  } finally {
-    await prisma.$disconnect();
-  }
-}
-
-updateWin(); */

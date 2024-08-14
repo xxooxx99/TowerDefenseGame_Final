@@ -16,26 +16,6 @@
         background-color: #2d2d2d;
         flex-direction: column;
       }
-      #towers {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        flex-direction: row;
-        height: 100px;
-        width: 1500px;
-        background-color: lightgray;
-        display: none;
-      }
-      #buttons-tower {
-        cursor: pointer;
-        width: 100px;
-        height: 100px;
-      }
-      .buttons-tower img {
-        width: 80px;
-        height: 80px;
-        object-fit: cover; /* 이미지가 버튼에 맞게 조정됨 */
-      }
       #gameCanvas {
         border: 2px solid #000;
         display: none;
@@ -195,38 +175,6 @@
       <button class="matchAcceptButton" id="matchAcceptButton" display="none">대결 수락하기</button>
     </div>
 
-    <div id="towers">
-      <button id="baseTower" class="buttons-tower">
-        <img title="기본 타워" src="./images/tower100.png" />
-      </button>
-      <button id="speedTower" class="buttons-tower">
-        <img title="가속 타워" src="./images/tower200.png" />
-      </button>
-      <button id="speedSupportTower" class="buttons-tower">
-        <img title="공격속도 지원타워" src="./images/tower300.png" />
-      </button>
-      <button id="attackSupportTower" class="buttons-tower">
-        <img title="공격력 지원타워" src="./images/tower400.png" />
-      </button>
-      <button id="strongTower" class="buttons-tower">
-        <img title="치명타 타워" src="./images/tower500.png" />
-      </button>
-      <button id="splashTower" class="buttons-tower">
-        <img title="스플래쉬 타워" src="./images/tower600.png" />
-      </button>
-      <button id="multiShotTower" class="buttons-tower">
-        <img title="멀티샷 타워" src="./images/tower700.png" />
-      </button>
-      <button id="poisonTower" class="buttons-tower">
-        <img title="맹독 타워" src="./images/tower800.png" />
-      </button>
-      <button id="growthTower" class="buttons-tower">
-        <img title="성장형 타워" src="./images/tower900.png" />
-      </button>
-      <button id="towerUpgrade" class="buttons-tower">
-        <img title="타워 강화" src="./images/towerUpgrade.png" />
-      </button>
-    </div>
     <canvas id="gameCanvas" width="1500" height="680"></canvas>
     <canvas id="opponentCanvas" width="1500" height="680"></canvas>
 

@@ -69,7 +69,7 @@ export class GameData {
     this.score = 0;
     this.nextMilestone = 1000;
     this.userGold = 1000;
-    this.baseHp = 3;
+    this.baseHp = 100;
     this.monsterPath = monsterPath;
     this.towerInit = initialTowerCoords;
     this.basePos = basePosition;
@@ -77,7 +77,7 @@ export class GameData {
     this.opponentTowerInit = opponentInitialTowerCoords;
     this.opponentBasePos = opponentBasePosition;
     this.opponentUserInfo = opponentUserInfo;
-    this.opponentBaseHp = 3;
+    this.opponentBaseHp = 100;
   }
 
   getOpponentInfo() {

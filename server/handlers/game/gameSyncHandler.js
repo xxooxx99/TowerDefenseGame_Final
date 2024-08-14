@@ -26,8 +26,7 @@ function sendGameSync(socket, userId, packetType, payload) {
     data: {
       gold: playerData.getGold(),
       score: playerData.getScore(),
-      attackedTower: attackedTower,
-      attackedMonster: attackedMonster,
+      attackedMonster,
       baseHp: playerData.getBaseHp(),
     },
   };

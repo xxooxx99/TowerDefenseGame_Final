@@ -17,8 +17,7 @@ export class Monster {
     this.width = 40;
     this.height = 40;
     this.image = this.getImageForLevel(level);
-    this.onDie = null; // 몬스터가 죽을 때 호출되는 콜백 추가
-    
+
     this.init(level);
   }
 
@@ -39,17 +38,17 @@ export class Monster {
       case 'fast':
         this.maxHp = 50 + 5 * level;
         this.speed = 5;
-        this.attackPower = 1;
+        this.attackPower = 5 + 1 * level;
         break;
       case 'tank':
         this.maxHp = 200 + 50 * level;
         this.speed = 1;
-        this.attackPower = 1;
+        this.attackPower = 15 + 2 * level;
         break;
       case 'healing':
         this.maxHp = 100 + 10 * level;
         this.speed = 2;
-        this.attackPower = 1;
+        this.attackPower = 10 + 1 * level;
         this.healingInterval = 100;
         this.healingAmount = 1 * level;
         this.startHealing();
@@ -70,7 +69,7 @@ export class Monster {
       default:
         this.maxHp = 100 + 10 * level;
         this.speed = 2;
-        this.attackPower = 1;
+        this.attackPower = 10 + 1 * level;
     }
 
     this.hp = this.maxHp;
@@ -158,7 +157,6 @@ export class Monster {
 
   setHp(value) {
     this.hp = value;
-    return this.hp;
   }
 
   getHp() {
@@ -167,56 +165,30 @@ export class Monster {
 
   receiveDamage(damage) {
     this.hp -= damage;
-    console.log(`Monster HP after damage: ${this.hp}`);
     if (this.hp <= 0) {
-      if (this.onDie) {
-        console.log('Monster is dead. Triggering onDie callback.');
-        this.onDie(); // 몬스터가 죽으면 콜백 호출
-      }
+      this.die();
     }
   }
-
 
   die() {
     console.log(`Monster ${this.monsterIndex} died`);
-    if (typeof this.onDie === "function") {
-      this.onDie(); // 몬스터가 죽을 때 호출되는 콜백
-    }
   }
+
+
+
 
   draw(ctx) {
     if (this.image) {
       ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
 
       ctx.save(); // 현재 상태 저장
+      // ctx.fillRect(this.x, this.y, this.width, this.height);
       ctx.restore(); // 상태 복원
-      let monsterName = '';
 
-      switch (this.type) {
-        case 'fast':
-          monsterName = '재빠른 늑대';
-          break;
-        case 'tank':
-          monsterName = '튼실한 오크';
-          break;
-        case 'healing':
-          monsterName = '힐하는 해골';
-          break;
-        default:
-          monsterName = '슬라임';
-          break;
-      }
-
-      const text = `${monsterName} (레벨 ${this.level}) ${this.hp}/${this.maxHp}`;
-
+      // 몬스터 상태 표시
       ctx.font = '12px Arial';
       ctx.fillStyle = 'white';
-
-      const textWidth = ctx.measureText(text).width;
-
-      const textX = this.x + this.width / 2 - textWidth / 2;
-      const textY = this.y - 5;
-      ctx.fillText(text, textX, textY);
+      ctx.fillText(`(레벨 ${this.level}) ${this.hp}/${this.maxHp}`, this.x, this.y - 5);
     } else {
       console.error('몬스터 이미지를 찾을 수 없습니다.');
     }

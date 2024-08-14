@@ -70,21 +70,8 @@ async function handleMatchRequest(socket, data) {
     return;
   }
 
-  // 사용자의 승률 가져오기
-  const userInfo = await prisma.userInfo.findFirst({
-    where: { userId: userId },
-  });
-
-  if (!userInfo) {
-    console.log(`유저 ID ${userId}의 정보를 찾을 수 없습니다.`);
-    socket.emit('error', { message: '유저 정보를 찾을 수 없습니다.' });
-    return;
-  }
-
-  const winRate =
-    userInfo.win + userInfo.lose > 0 ? userInfo.win / (userInfo.win + userInfo.lose) : 0;
-
-  matching_queue.push({ socket, userId, winRate, startTime: Date.now() });
+  // const winRate = await getUserWinRate(userId);
+  matching_queue.push({ socket, userId, startTime: Date.now() });
   console.log(`현재 대기열 상태: ${matching_queue.map((user) => user.userId).join(`, `)}`);
 
   socket.on('disconnect', () => {
@@ -110,16 +97,12 @@ async function tryMatch() {
       const player1 = matching_queue[i];
       const player2 = matching_queue[j];
 
-      const elapsedSecondsPlayer1 = Math.floor((now - player1.startTime) / 1000);
-      const elapsedSecondsPlayer2 = Math.floor((now - player1.startTime) / 1000);
-
-      const winRateThreshold = Math.min(
-        1.0, // 최대 매칭되는 승률 차이 0.8 = 80%
-        0.1 + Math.floor(Math.max(elapsedSecondsPlayer1, elapsedSecondsPlayer2) / 5) * 0.1,
-      );
+      const elapsedSeconds = (now - player1.startTime) / 1000;
+      const winRateThreshold = 0.1 + Math.floor(elapsedSeconds / 10) * 0.1;
 
       // 매칭 성공 시
-      if (Math.abs(player1.winRate - player2.winRate) <= winRateThreshold) {
+      if (true) {
+        //if (Math.abs(player1.winRate - player2.winRate) <= winRateThreshold) {
         matching_queue.splice(j, 1);
         matching_queue.splice(i, 1);
 
@@ -142,8 +125,6 @@ async function tryMatch() {
           ownUserData: User1Data,
           opponentUserData: User2Data,
           index: index,
-          elapsedTimePlayer1: elapsedSecondsPlayer1,
-          elapsedTimePlayer2: elapsedSecondsPlayer2,
         };
 
         player1.socket.emit('event', packet);

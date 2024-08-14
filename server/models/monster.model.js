@@ -22,9 +22,9 @@ export const setDamagedMonsterHp = (uuid, damage, monsterIndex) => {
     return monster.monsterIndex === monsterIndex;
   });
 
-  if (attackedMonster) attackedMonster.hp -= damage;
+  attackedMonster.hp -= damage;
 
-  return attackedMonster;
+  return attackedMonster.hp;
 };
 
 export const clearMonsters = (uuid) => {

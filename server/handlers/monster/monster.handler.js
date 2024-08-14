@@ -26,7 +26,7 @@ function handleSpawnMonster(socket, userId, payload) {
   const mainMonsters = getMonsters(userId);
 
   sendGameSync(socket, userId, PacketType.S2C_ENEMY_SPAWN_MONSTER, { mainMonsters });
-  console.log('몬스터 생성', JSON.stringify(`Create Monster: ${monsterIndex}`));
+  //console.log('몬스터 생성', JSON.stringify(`Create Monster: ${monsterIndex}`));
   return { status: 'success', message: 'Monster created' };
 }
 
