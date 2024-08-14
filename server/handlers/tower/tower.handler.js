@@ -235,4 +235,21 @@ export const towerAttack = (socket, data) => {
   }
 };
 
+export const towerAttackHandler = (socket, userId, payload) => {
+  const { damage, monsterIndex, towerIndex } = payload;
+
+  const attackedMonsters = getMonsters(userId);
+  const attackedTowers = getTowers(userId);
+
+  const attackedMonster = attackedMonsters.find((monster) => monster.monsterIndex === monsterIndex);
+
+  const attackedTower = attackedTowers.find((tower) => tower.towerIndex === towerIndex);
+  setDamagedMonsterHp(userId, damage, monsterIndex);
+
+  sendGameSync(socket, userId, PacketType.S2C_ENEMY_TOWER_ATTACK, {
+    attackedMonster,
+    attackedTower,
+  });
+};
+
 export const towerDestroy = (socket, data) => {};

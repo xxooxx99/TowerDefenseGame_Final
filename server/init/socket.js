@@ -6,14 +6,14 @@ import {
   handlerMatchAcceptRequest,
   handlerMatchDeniedRequest,
 } from '../handlers/match/matchAcceptHandler.js';
-import { load_ability } from '../handlers/ability/ability.Handler.js';
+import {load_ability,load_user_ability,ability_upgrade,ability_equip,} from '../handlers/ability/ability.handler.js';
 import connectHandler from '../handlers/index.js';
 import { handleDieMonster, handleSpawnMonster } from '../handlers/monster/monster.handler.js';
 import { towerAddOnHandler, towerAttackHandler } from '../handlers/towers/tower.handler.js';
 import { towerAddHandler, towerAttack, towerUpgrade } from '../handlers/tower/tower.handler.js';
 import { handleMonsterBaseAttack, handleBaseAttackMonster } from '../handlers/game/gameHandler.js';
 import { baseAttackMonster } from '../models/baseUpgrade.js';
-import { add_count } from '../handlers/ability/ability_1.handler.js';
+import { add_count } from '../handlers/ability/gameAbilityActive.handler.js';
 // 보스 핸들러 가져오기
 import { handleSpawnBoss } from '../handlers/boss/bosshandlers.js';
 
@@ -66,6 +66,16 @@ const initSocket = (server) => {
           break;
         case PacketType.C2S_LOAD_ABILITY_REQUEST:
           load_ability(socket, packet);
+          break;
+        case PacketType.C2S_ABILITY_LIST_REQUEST:
+          load_user_ability(socket, packet);
+          break;
+        case PacketType.C2S_UPGRADE_ABILITY_REQUEST:
+          ability_upgrade(socket, packet);
+          break;
+        case PacketType.C2S_ABILITY_EQUIP_REQUEST:
+          ability_equip(socket, packet);
+          break;
         case PacketType.C2S_BASE_ATTACK_MONSTER:
           handleBaseAttackMonster(socket, packet.userId, packet.payload);
           break;
