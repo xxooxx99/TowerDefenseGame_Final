@@ -38,17 +38,17 @@ export class Monster {
       case 'fast':
         this.maxHp = 50 + 5 * level;
         this.speed = 5;
-        this.attackPower = 5 + 1 * level;
+        this.attackPower = 1;
         break;
       case 'tank':
         this.maxHp = 200 + 50 * level;
         this.speed = 1;
-        this.attackPower = 15 + 2 * level;
+        this.attackPower = 1;
         break;
       case 'healing':
         this.maxHp = 100 + 10 * level;
         this.speed = 2;
-        this.attackPower = 10 + 1 * level;
+        this.attackPower = 1;
         this.healingInterval = 100;
         this.healingAmount = 1 * level;
         this.startHealing();
@@ -69,7 +69,7 @@ export class Monster {
       default:
         this.maxHp = 100 + 10 * level;
         this.speed = 2;
-        this.attackPower = 10 + 1 * level;
+        this.attackPower = 1;
     }
 
     this.hp = this.maxHp;

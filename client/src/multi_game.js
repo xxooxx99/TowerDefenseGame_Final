@@ -48,7 +48,7 @@ let monsterintervalId = null;
 let monsterSpawnCount = 0; // 몬스터 스폰 수 초기화
 // 게임 데이터
 let towerCost = 100; // 타워 구입 비용
-let monsterSpawnInterval = 1000; // 몬스터 생성 주기
+let monsterSpawnInterval = 2000; // 몬스터 생성 주기
 let towerIndex = 1;
 let monsterIndex = 1;
 // 설정 데이터
@@ -285,10 +285,13 @@ function spawnMonster() {
   monsterIndex++;
   monsterSpawnCount++;
 
-  if (monsterSpawnCount >= 1) {
+  if (monsterSpawnCount >= 20) {
+    clearInterval(monsterintervalId);
     monsterLevel++;
     monsterSpawnCount = 0;
-    startSpawning();
+    setTimeout(() => {
+      startSpawning();
+    }, 5000);
   }
 }
 
