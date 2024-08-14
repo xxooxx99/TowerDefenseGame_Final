@@ -1,6 +1,13 @@
 import { Base } from './base.js';
 import { Monster } from './monster.js';
-import { Tower } from './tower.js';
+import {
+  AttackSupportTower,
+  growthTower,
+  poisonTower,
+  SpeedSupportTower,
+  SplashTower,
+  Tower,
+} from './tower.js';
 import { CLIENT_VERSION, INITIAL_TOWER_NUMBER, PacketType, TOWER_TYPE } from '../constants.js';
 
 if (!localStorage.getItem('token')) {
@@ -245,22 +252,22 @@ function towerUpgrades() {
     });
   }
 }
-function placeNewOpponentTower(value) {
-  const newTowerCoords = value[value.length - 1];
-  const newTower = new Tower(newTowerCoords.tower.X, newTowerCoords.tower.Y);
-  newTower.setTowerIndex(newTowerCoords.towerIndex);
-  opponentTowers.push(newTower);
-}
+// function placeNewOpponentTower(value) {
+//   const newTowerCoords = value[value.length - 1];
+//   const newTower = new Tower(newTowerCoords.tower.X, newTowerCoords.tower.Y);
+//   newTower.setTowerIndex(newTowerCoords.towerIndex);
+//   opponentTowers.push(newTower);
+// }
 
-function opponentTowerAttack(monsterValue, towerValue) {
-  const attackedTower = opponentTowers.find((tower) => {
-    return tower.getTowerIndex() === towerValue.towerIndex;
-  });
-  const attackedMonster = opponentMonsters.find((monster) => {
-    return monster.getMonsterIndex() === monsterValue.monsterIndex;
-  });
-  attackedMonster.setHp(monsterValue.hp);
-  attackedTower.attack(attackedMonster);
+function opponentTowerAttack(monsterValue) {
+  try {
+    const attackedMonster = opponentMonsters.find((monster) => {
+      return monster.getMonsterIndex() === monsterValue.monsterIndex;
+    });
+    attackedMonster.setHp(monsterValue.hp);
+  } catch (err) {
+    console.log('이미 사망한 몬스터입니다.');
+  }
 }
 
 function placeBase(position, isPlayer) {
@@ -321,8 +328,20 @@ function gameSync(data) {
   baseHp = data.baseHp;
   base.updateHp(baseHp);
 
+  let myTower;
+  const towerType = data.towerType || null;
+  const towerId = data.towerType || null;
+  const towerNumber = data.towerType || null;
+
   if (data.attackedMonster === undefined) {
     return;
+  }
+
+  if (towerType && towerId && towerNumber) {
+    for (let tower of towers[towerType][towerId]) {
+      if (tower.towerNumber == towerNumber) myTower = tower;
+    }
+    if (data.attackedMonster.hp <= 0 && towerType == TOWER_TYPE[8]) myTower.killCount--;
   }
 
   const attackedMonster = monsters.find((monster) => {
@@ -330,7 +349,7 @@ function gameSync(data) {
   });
 
   if (attackedMonster) {
-    attackedMonster.setHp(data.attackedMonster.hp);
+    const hp = attackedMonster.setHp(data.attackedMonster.hp);
   } else {
     console.error('Monster not found', data.attackedMonster.monsterIndex);
   }
@@ -357,8 +376,20 @@ function gameLoop() {
       for (let i = 0; i < towers[towerType][towerId].length; i++) {
         const tower = towers[towerType][towerId][i];
         tower.draw(ctx);
-        tower.updateCooldown();
-        tower.attack(monsters, towers);
+        tower.updateCooldown(); //쿨타임도
+        const data = tower.attack(monsters, towers);
+        if (data) {
+          sendEvent(PacketType.C2S_TOWER_ATTACK, {
+            userId,
+            towerType,
+            towerId,
+            towerNumber: tower.towerNumber,
+            monsterIndexs: data.monsters,
+            isExistSpeed: data.isExistSpeed,
+            isExistPower: data.isExistPower,
+            time: data.now,
+          });
+        }
       }
     }
   }
@@ -374,7 +405,6 @@ function gameLoop() {
           towerNumber: growthTowers[towerId][i].towerNumber,
         });
         growthTowers[towerId][i].satisfied = false;
-        console.log('타워업');
       }
     }
   }
@@ -673,13 +703,32 @@ Promise.all([
 
   serverSocket.on('userTowerCreate', (data) => {
     const { towerId, towerCost, number, posX, posY } = data;
-    console.log(towerId);
+
+    let tower;
+    switch (TOWER_TYPE[towerId / 100 - 1]) {
+      case TOWER_TYPE[2]:
+        tower = new SpeedSupportTower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
+        break;
+      case TOWER_TYPE[3]:
+        tower = new AttackSupportTower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
+        break;
+      case TOWER_TYPE[5]:
+        tower = new SplashTower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
+        break;
+      case TOWER_TYPE[7]:
+        tower = new poisonTower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
+        break;
+      case TOWER_TYPE[8]:
+        tower = new growthTower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
+        break;
+      default:
+        tower = new Tower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
+        break;
+    }
 
     if (userId !== data.userId) {
-      const tower = new Tower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
       opponentTowers[TOWER_TYPE[towerId / 100 - 1]][towerId].push(tower);
     } else {
-      const tower = new Tower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
       towers[TOWER_TYPE[towerId / 100 - 1]][towerId].push(tower);
       userGold -= towerCost;
     }
@@ -711,9 +760,12 @@ Promise.all([
       case PacketType.S2C_ENEMY_TOWER_SPAWN:
         placeNewOpponentTower(packet.data.opponentTowers);
         break;
-      case PacketType.S2C_ENEMY_TOWER_ATTACK:
-        opponentTowerAttack(packet.data.attackedOpponentMonster, packet.data.attackedOpponentTower);
+      case PacketType.C2S_TOWER_ATTACK:
+        opponentTowerAttack(packet.data.attackedOpponentMonster);
         break;
+      // case PacketType.S2C_ENEMY_TOWER_ATTACK:
+      //   opponentTowerAttack(packet.data.attackedOpponentMonster, packet.data.attackedOpponentTower);
+      //   break;
       case PacketType.S2C_ENEMY_SPAWN_MONSTER:
         spawnOpponentMonster(packet.data.opponentMonsters);
         break;

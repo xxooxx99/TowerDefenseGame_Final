@@ -157,6 +157,7 @@ export class Monster {
 
   setHp(value) {
     this.hp = value;
+    return this.hp;
   }
 
   getHp() {
@@ -173,9 +174,6 @@ export class Monster {
   die() {
     console.log(`Monster ${this.monsterIndex} died`);
   }
-
-
-
 
   draw(ctx) {
     if (this.image) {
