@@ -23,7 +23,6 @@ export const towerSet = (userTower, towerType, towerId, newUserTowerData, upgrad
 export const towerDelete = (userTower, towerType, towerId, towerNumber) => {
   for (let i = 0; i < userTower[towerType][towerId].length; i++) {
     if (userTower[towerType][towerId][i].number == towerNumber)
-      console.log(userTower[towerType][towerId][i]);
-    return userTower[towerType][towerId].splice(i, 1);
+      return userTower[towerType][towerId].splice(i, 1);
   }
 };

@@ -11,8 +11,10 @@ import initSocket from './init/socket.js';
 import { registerHandler } from './handlers/account/register.handler.js';
 import { loginHandler } from './handlers/account/login.handler.js';
 import { messageSendHandler } from './handlers/account/messageAuth.handler.js';
+import { handleBaseAttackMonster } from './handlers/game/gameHandler.js';
 import { config } from 'dotenv';
 import { loadGameAssets } from './init/assets.js';
+import { db_data_add } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,6 +39,8 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, '../client')));
 app.use('/api', [messageSendHandler, registerHandler, loginHandler]); // /라는 경로를 통해 들어온 데이터는 해당 배열의 핸들러가 순차적으로 진행.
 
+app.post('/api/base-attack-monster', handleBaseAttackMonster);
+
 app.get('/api', (req, res) => {
   res.sendFile('index.html', { root: path.join(__dirname, '../client') });
 });
@@ -48,4 +52,8 @@ server.listen(process.env.PORT, async () => {
   const host = address.address === '::' ? 'localhost' : address.address;
   const port = address.port;
   console.log(`Server가 http://${host}:${port} 에서 열렸습니다.`);
+
+  // db가 로컬이기에 능력에 관한 데이터가 없으므로
+  // 능력에 관한 데이터를 수기로 입력해주는 함수
+  db_data_add();
 });

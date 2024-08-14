@@ -1,5 +1,3 @@
-import handlerMappings from './handlerMappings.js';
-
 export const handleConnection = (socket) => {
   console.log('클라이언트 연결 완료');
   //socket.emit('connection', { status: 'success', message: '연결 완료' });
@@ -18,7 +16,6 @@ export const handlerDisconnect = (socket) => {
 };
 
 export const handlerEvent = async (io, socket, packet) => {
-  console.log('@@@@@', packet);
   const handler = handlerMappings[packet.packetType];
   if (!handler) {
     socket.emit('response', { status: 'fail', message: '잘못된 요청입니다.' });

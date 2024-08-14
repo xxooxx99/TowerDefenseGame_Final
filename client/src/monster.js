@@ -3,6 +3,8 @@ export class Monster {
     if (!path || path.length <= 0) {
       throw new Error('몬스터가 이동할 경로가 필요합니다.');
     }
+    this.lastMoveTime = Date.now();
+    this.moveInterval = 1000 / 60;
 
     this.path = path;
     this.monsterImages = monsterImages;
@@ -15,6 +17,7 @@ export class Monster {
     this.width = 40;
     this.height = 40;
     this.image = this.getImageForLevel(level);
+
     this.init(level);
   }
 
@@ -104,6 +107,15 @@ export class Monster {
   }
 
   move() {
+    const now = Date.now();
+    const elapsedTime = now - this.lastMoveTime;
+
+    if (elapsedTime < this.moveInterval) {
+      return false; // 이동할 시간 아직 아님
+    }
+
+    this.lastMoveTime = now; // 마지막 이동 시간 갱신
+
     if (this.currentIndex < this.path.length - 1) {
       const nextPoint = this.path[this.currentIndex + 1];
       const deltaX = nextPoint.x - this.x;
@@ -113,10 +125,12 @@ export class Monster {
       if (distance < this.speed) {
         this.currentIndex++;
         if (this.currentIndex % 4 === 0) {
+          // 추가 로직 필요시
         }
       } else {
-        this.x += (deltaX / distance) * this.speed;
-        this.y += (deltaY / distance) * this.speed;
+        const moveDistance = this.speed * (elapsedTime / this.moveInterval);
+        this.x += (deltaX / distance) * moveDistance;
+        this.y += (deltaY / distance) * moveDistance;
       }
       return false;
     } else {
@@ -146,8 +160,22 @@ export class Monster {
   }
 
   getHp() {
-    this.hp = value;
+    this.hp;
   }
+
+  receiveDamage(damage) {
+    this.hp -= damage;
+    if (this.hp <= 0) {
+      this.die();
+    }
+  }
+
+  die() {
+    console.log(`Monster ${this.monsterIndex} died`);
+  }
+
+
+
 
   draw(ctx) {
     if (this.image) {
