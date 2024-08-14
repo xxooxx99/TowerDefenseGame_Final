@@ -636,6 +636,10 @@ Promise.all([
     if (data.PacketType === 111) {
       console.log('능력으로 인한 돈 추가');
     }
+    if (data.PacketType === 112) {
+      console.log('상대방의 능력으로 인한 몬스터 추가');
+      spawnMonster();
+    }
     // if (!isInitGame) {
     //   initGame(payload);
     // }
