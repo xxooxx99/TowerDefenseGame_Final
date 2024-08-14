@@ -1,5 +1,7 @@
 import { getGameAssets } from '../init/assets.js';
 
+const towers = {};
+
 export const userTowerDataInit = () => {
   let towerAsset = getGameAssets().towerData.towerType;
   let userTower = { length: 0 };
@@ -34,4 +36,8 @@ export const towerAttackTimeSet = (userTower, towerType, towerId, towerNumber, t
       tower.attackTime = time;
     }
   }
+};
+
+export const getTowers = (uuid) => {
+  return towers[uuid];
 };

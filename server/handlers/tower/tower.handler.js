@@ -5,6 +5,7 @@ import { getPlayData } from '../../models/playData.model.js';
 import { getOpponentInfo } from '../../models/playData.model.js';
 import { getMonsters, setDamagedMonsterHp } from '../../models/monster.model.js';
 import { sendGameSync } from '../game/gameSyncHandler.js';
+import { getTowers } from '../../models/tower.model.js';
 
 export const towerAddHandler = (socket, data) => {
   const towerAsset = getGameAssets().towerData.towerType;
@@ -239,11 +240,16 @@ export const towerAttackHandler = (socket, userId, payload) => {
   const { damage, monsterIndex, towerIndex } = payload;
 
   const attackedMonsters = getMonsters(userId);
-  const attackedTowers = getTowers(userId);
+  const attackedTowers = getTowers(userId) || [];
 
   const attackedMonster = attackedMonsters.find((monster) => monster.monsterIndex === monsterIndex);
 
   const attackedTower = attackedTowers.find((tower) => tower.towerIndex === towerIndex);
+
+  if (!attackedTower) {
+    console.log(`Tower with index ${towerIndex} not found for user ${userId}`);
+    return { status: 'fail', message: '해당 타워를 찾을 수 없습니다.' };
+  }
   setDamagedMonsterHp(userId, damage, monsterIndex);
 
   sendGameSync(socket, userId, PacketType.S2C_ENEMY_TOWER_ATTACK, {
