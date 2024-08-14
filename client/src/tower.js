@@ -124,6 +124,8 @@ export class Tower {
 
           if (this.killCount != null && monster.hp <= 0 && my) {
             this.killCount--;
+            onMonsterDie(); // 몬스터가 죽었을 때 onMonsterDie 호출
+
           }
         }
         if (attackCount != this.hits) {
