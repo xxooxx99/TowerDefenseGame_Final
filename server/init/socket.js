@@ -14,6 +14,9 @@ import { towerAddHandler, towerAttack, towerUpgrade } from '../handlers/tower/to
 import { handleMonsterBaseAttack, handleBaseAttackMonster } from '../handlers/game/gameHandler.js';
 import { baseAttackMonster } from '../models/baseUpgrade.js';
 import { add_count } from '../handlers/ability/ability_1.handler.js';
+// 보스 핸들러 가져오기
+import { handleSpawnBoss } from '../handlers/boss/bosshandlers.js';
+
 
 const initSocket = (server) => {
   const io = new SocketIO();
@@ -84,6 +87,11 @@ const initSocket = (server) => {
         case PacketType.C2S_KILL_MONSTER_EVENT:
           add_count(socket, packet);
           break;
+        case PacketType.C2S_SPAWN_BOSS:
+          handleSpawnBoss(socket, packet.payload.bossType);
+          break;  
+
+          
         default:
           console.log(`Unknown packet type: ${packet.packetType}`);
       }

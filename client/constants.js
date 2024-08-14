@@ -29,6 +29,9 @@ export const PacketType = {
   S2C_SEND_ABILITY_INFO: 101,
   C2S_KILL_MONSTER_EVENT: 110,
   S2C_GOLD_ABILITY_ACTIVE: 111,
+  C2S_SPAWN_BOSS: 120, // 클라이언트에서 서버로 보스 생성 요청
+  S2C_BOSS_SPAWN: 121, // 서버에서 클라이언트로 보스 생성 알림
+  S2C_BOSS_USE_SKILL: 122, // 서버에서 클라이언트로 보스 스킬 사용 알림
 };
 
 export const TOWER_TYPE = [
