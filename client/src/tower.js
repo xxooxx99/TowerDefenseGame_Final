@@ -12,27 +12,21 @@ export class Tower {
             this.y = y; // 타워 이미지 y 좌표
             this.width = 39; // 타워 이미지 가로 길이 (이미지 파일 길이에 따라 변경 필요하며 세로 길이와 비율을 맞춰주셔야 합니다!)
             this.height = 75; // 타워 이미지 세로 길이
-            this.cooldown = 0; // 타워 공격 쿨타임
             this.beamDuration = 0; // 타워 광선 지속 시간
             this.target = []; // 타워 광선의 목표
             this.towerNumber = towerNumber;
             this.hits = towerIdData.hits || 1;
             this.criticalPercent = towerIdData.criticalPercent || 10;
             this.criticalDamage = towerIdData.criticalDamage || 1.2;
-            this.splashRange = towerIdData.splashRange;
-            this.addDamage = towerIdData.addDamage || 0;
-            this.addSpeed = towerIdData.addSpeed || 0;
-            this.bufRange = towerIdData.bufRange;
-            this.image = new Image();
-            this.killCount = towerIdData.killCount || null;
-            this.satisfied = towerIdData.satisfied || undefined;
 
             this.towerId = towerIdData.id;
             this.towerType = towerType;
-            this.attackPower = 60;
+            this.attackPower = towerIdData.power;
             this.range = towerIdData.range;
             this.attackCycle = towerIdData.attackCycle;
-            this.imageNum = (Math.trunc(towerId / 100) - 1) * 2 + (towerId % 100); // 나중에 중간에 7 곱해야함
+            this.cooldown = towerIdData.attackCycle; // 타워 공격 쿨타임
+            this.imageNum = (Math.trunc(towerId / 100) - 1) * 3 + (towerId % 100); // 나중에 중간에 7 곱해야함
+            this.towerIdData = towerIdData;
           }
         }
       }
@@ -63,10 +57,11 @@ export class Tower {
       if (this.target.length !== 0) this.target = [];
 
       let attackCount = this.hits;
-      const critical = this.criticalPercent >= Math.floor(Math.random() * 101) ? true : false;
 
       let extraPower = 0;
+      let extraPowerTower = { towerId: null, towerNumber: null };
       let extraSpeed = 0;
+      let extraSpeedTower = { towerId: null, towerNumber: null };
 
       const attackAssistTowers = towers.attackSupportTower;
       for (let attack in attackAssistTowers) {
@@ -76,7 +71,10 @@ export class Tower {
             Math.pow(this.x - bufTower.x, 2) + Math.pow(this.y - bufTower.y, 2),
           );
 
-          if (bufTower.bufRange > distance) extraPower = bufTower.addDamage;
+          if (bufTower.bufRange > distance) {
+            extraPower = bufTower.addDamage;
+            extraPowerTower = { towerId: bufTower.towerId, towerNumber: bufTower.towerNumber };
+          }
           if (extraPower) break;
         }
         if (extraPower) break;
@@ -90,7 +88,10 @@ export class Tower {
             Math.pow(this.x - bufTower.x, 2) + Math.pow(this.y - bufTower.y, 2),
           );
 
-          if (bufTower.bufRange > distance) extraSpeed = bufTower.addSpeed;
+          if (bufTower.bufRange > distance) {
+            extraSpeed = bufTower.addSpeed;
+            extraSpeedTower = bufTower.towerNumber;
+          }
           if (extraSpeed) break;
         }
         if (extraSpeed) break;
@@ -104,11 +105,11 @@ export class Tower {
         );
 
         if (distance <= this.range) {
-          if (critical && my) monster.hp -= (this.attackPower + extraPower) * 1.2;
-          else if (my) monster.hp -= this.attackPower + extraPower;
           attackCount--;
           this.beamDuration = 30; // 광선 지속 시간 (0.5초)
           this.target.push(monster); // 광선의 목표 설정
+<<<<<<< HEAD
+=======
 
           //스플래쉬 데미지는 크리티컬이 터지지 않게끔 설정
           if (this.splashRange) {
@@ -127,10 +128,20 @@ export class Tower {
             onMonsterDie(); // 몬스터가 죽었을 때 onMonsterDie 호출
 
           }
+>>>>>>> b42f01bcf250697617bf9f2164aa52b7a21aabd4
         }
+
         if (attackCount != this.hits) {
           this.cooldown = this.attackCycle - extraSpeed;
-        } // 쿨타임, 만약 때렸다면 실행
+          console.log(this.cooldown, this.attackCycle, extraSpeed);
+          const time = new Date().getTime();
+          return {
+            monsters: this.target,
+            isExistSpeed: extraSpeedTower,
+            isExistPower: extraPowerTower,
+            now: time,
+          };
+        }
       }
     }
     return false;
@@ -152,5 +163,127 @@ export class Tower {
     if (this.cooldown > 0) {
       this.cooldown--;
     }
+  }
+}
+
+export class SplashTower extends Tower {
+  constructor(towerTypes, towerId, towerNumber, x, y) {
+    super(towerTypes, towerId, towerNumber, x, y);
+    this.splashRange = this.towerIdData.splashRange;
+  }
+
+  attack(monsters, towers, my = true) {
+    if (this.cooldown <= 0) {
+      if (this.target.length !== 0) this.target = [];
+
+      let attackCount = this.hits;
+
+      let extraPower = 0;
+      let extraPowerTower = { towerId: null, towerNumber: null };
+      let extraSpeed = 0;
+      let extraSpeedTower = { towerId: null, towerNumber: null };
+
+      const attackAssistTowers = towers.attackSupportTower;
+      for (let attack in attackAssistTowers) {
+        for (let i = attackAssistTowers[attack].length - 1; i >= 0; i--) {
+          const bufTower = attackAssistTowers[attack][i];
+          const distance = Math.sqrt(
+            Math.pow(this.x - bufTower.x, 2) + Math.pow(this.y - bufTower.y, 2),
+          );
+
+          if (bufTower.bufRange > distance) {
+            extraPower = bufTower.addDamage;
+            extraPowerTower = { towerId: bufTower.towerId, towerNumber: bufTower.towerNumber };
+          }
+          if (extraPower) break;
+        }
+        if (extraPower) break;
+      }
+
+      const speedAssistTowers = towers.speedSupportTower;
+      for (let speed in speedAssistTowers) {
+        for (let i = speedAssistTowers[speed].length - 1; i >= 0; i--) {
+          const bufTower = speedAssistTowers[speed][i];
+          const distance = Math.sqrt(
+            Math.pow(this.x - bufTower.x, 2) + Math.pow(this.y - bufTower.y, 2),
+          );
+
+          if (bufTower.bufRange > distance) {
+            extraSpeed = bufTower.addSpeed;
+            extraSpeedTower = bufTower.towerNumber;
+          }
+          if (extraSpeed) break;
+        }
+        if (extraSpeed) break;
+      }
+
+      for (let monster of monsters) {
+        if (attackCount <= 0) break;
+
+        const distance = Math.sqrt(
+          Math.pow(this.x - monster.x, 2) + Math.pow(this.y - monster.y, 2),
+        );
+
+        if (distance <= this.range) {
+          attackCount--;
+          this.beamDuration = 30; // 광선 지속 시간 (0.5초)
+          this.target.push(monster); // 광선의 목표 설정
+
+          for (let nighMonster of monsters) {
+            const nighDistance = Math.sqrt(
+              Math.pow(monster.x - nighMonster.x, 2) + Math.pow(monster.y - nighMonster.y, 2),
+            );
+            if (nighDistance <= this.splashRange) {
+              this.target.push(nighDistance);
+              console.log('스플래쉬 데미지 적중!');
+            }
+          }
+        }
+
+        if (attackCount != this.hits) {
+          this.cooldown = this.attackCycle - extraSpeed;
+          console.log(this.cooldown);
+          const time = new Date().getTime();
+          return {
+            monsters: this.target,
+            isExistSpeed: extraSpeedTower,
+            isExistPower: extraPowerTower,
+            now: time,
+          };
+        }
+      }
+    }
+    return false;
+  }
+}
+
+export class SpeedSupportTower extends Tower {
+  constructor(towerTypes, towerId, towerNumber, x, y) {
+    super(towerTypes, towerId, towerNumber, x, y);
+    this.addSpeed = this.towerIdData.addSpeed;
+    this.bufRange = this.towerIdData.bufRange;
+  }
+}
+
+export class AttackSupportTower extends Tower {
+  constructor(towerTypes, towerId, towerNumber, x, y) {
+    super(towerTypes, towerId, towerNumber, x, y);
+    this.addDamage = this.towerIdData.addDamage;
+    this.bufRange = this.towerIdData.bufRange;
+  }
+}
+
+export class growthTower extends Tower {
+  constructor(towerTypes, towerId, towerNumber, x, y) {
+    super(towerTypes, towerId, towerNumber, x, y);
+    this.killCount = this.towerIdData.killCount || null;
+    this.satisfied = this.towerIdData.satisfied || undefined;
+  }
+}
+
+export class poisonTower extends Tower {
+  constructor(towerTypes, towerId, towerNumber, x, y) {
+    super(towerTypes, towerId, towerNumber, x, y);
+    this.poisonDamage = this.towerIdData.poisonDamage;
   }
 }

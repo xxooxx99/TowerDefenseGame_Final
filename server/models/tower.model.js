@@ -26,3 +26,12 @@ export const towerDelete = (userTower, towerType, towerId, towerNumber) => {
       return userTower[towerType][towerId].splice(i, 1);
   }
 };
+
+export const towerAttackTimeSet = (userTower, towerType, towerId, towerNumber, time) => {
+  for (let i = 0; i < userTower[towerType][towerId].length; i++) {
+    if (userTower[towerType][towerId][i].number == towerNumber) {
+      const tower = userTower[towerType][towerId][i];
+      tower.attackTime = time;
+    }
+  }
+};

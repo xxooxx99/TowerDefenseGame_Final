@@ -40,11 +40,13 @@ export const initData = (user1, user2) => {
       posX: towerCoords1.x,
       posY: towerCoords1.y,
       number: i + 1,
+      attackTime: new Date().getTime(),
     });
     towerSet(opponentTowerInit, 'baseTower', 100, {
       posX: towerCoords2.x,
       posY: towerCoords2.y,
       number: i + 1,
+      attackTime: new Date().getTime(),
     });
   }
 

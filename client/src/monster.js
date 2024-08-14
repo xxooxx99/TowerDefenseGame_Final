@@ -158,6 +158,7 @@ export class Monster {
 
   setHp(value) {
     this.hp = value;
+    return this.hp;
   }
 
   getHp() {

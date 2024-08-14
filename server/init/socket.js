@@ -10,7 +10,7 @@ import { load_ability } from '../handlers/ability/ability.Handler.js';
 import connectHandler from '../handlers/index.js';
 import { handleDieMonster, handleSpawnMonster } from '../handlers/monster/monster.handler.js';
 import { towerAddOnHandler, towerAttackHandler } from '../handlers/towers/tower.handler.js';
-import { towerAddHandler, towerUpgrade } from '../handlers/tower/tower.handler.js';
+import { towerAddHandler, towerAttack, towerUpgrade } from '../handlers/tower/tower.handler.js';
 import { handleMonsterBaseAttack, handleBaseAttackMonster } from '../handlers/game/gameHandler.js';
 import { baseAttackMonster } from '../models/baseUpgrade.js';
 import { add_count } from '../handlers/ability/ability_1.handler.js';
@@ -28,9 +28,9 @@ const initSocket = (server) => {
     socket.emit('connection', { status: 'success', message: '연결 완료' });
 
     socket.on('event', (packet) => {
-      console.log(
-        `Received packet: ${JSON.stringify(`패킷 타입 : ${packet.packetType} 유저 아이디 : ${packet.userId}`)}`,
-      );
+      // console.log(
+      //   `Received packet: ${JSON.stringify(`패킷 타입 : ${packet.packetType} 유저 아이디 : ${packet.userId}`)}`,
+      // );
 
       if (!packet.userId) {
         console.error('Received packet without userId:', packet);
@@ -74,6 +74,9 @@ const initSocket = (server) => {
           break;
         case PacketType.C2S_TOWER_UPGRADE:
           towerUpgrade(socket, packet);
+          break;
+        case PacketType.S2C_TOWER_ATTACK:
+          towerAttack(socket, packet);
           break;
         case PacketType.C2S_BASE_ATTACK:
           baseAttackMonster(socket, uuid, payload);
