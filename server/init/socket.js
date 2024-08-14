@@ -17,7 +17,7 @@ import { handleDieMonster, handleSpawnMonster } from '../handlers/monster/monste
 import { towerAddHandler, towerAttack, towerUpgrade } from '../handlers/tower/tower.handler.js';
 import { handleMonsterBaseAttack, handleBaseAttackMonster } from '../handlers/game/gameHandler.js';
 import { baseAttackMonster } from '../models/baseUpgrade.js';
-import { add_count } from '../handlers/ability/ability_1.handler.js';
+import { add_count } from '../handlers/ability/gameAbilityActive.handler.js';
 // 보스 핸들러 가져오기
 import { handleSpawnBoss } from '../handlers/boss/bosshandlers.js';
 
