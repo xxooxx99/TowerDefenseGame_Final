@@ -9,6 +9,7 @@ import {
   Tower,
 } from './tower.js';
 import { Boss } from './boss.js'; // 보스 클래스 추가
+import { Tower } from './tower.js';
 import { CLIENT_VERSION, INITIAL_TOWER_NUMBER, PacketType, TOWER_TYPE } from '../constants.js';
 
 if (!localStorage.getItem('token')) {

@@ -108,6 +108,8 @@ export class Tower {
           attackCount--;
           this.beamDuration = 30; // 광선 지속 시간 (0.5초)
           this.target.push(monster); // 광선의 목표 설정
+<<<<<<< HEAD
+=======
 
           //스플래쉬 데미지는 크리티컬이 터지지 않게끔 설정
           if (this.splashRange) {
@@ -124,7 +126,9 @@ export class Tower {
           if (this.killCount != null && monster.hp <= 0 && my) {
             this.killCount--;
             onMonsterDie(); // 몬스터가 죽었을 때 onMonsterDie 호출
+
           }
+>>>>>>> b42f01bcf250697617bf9f2164aa52b7a21aabd4
         }
 
         if (attackCount != this.hits) {
