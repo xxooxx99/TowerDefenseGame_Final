@@ -2,33 +2,13 @@ import { PacketType } from '../../constants.js';
 import { getPlayData } from '../../models/playData.model.js';
 
 const abilityGold = 1;
-const abilityActiveNeedCount = 10;
 
-let ability_count_list = [];
-
-async function add_count(socket, data) {
-  const { userId } = data;
-  const existingUser = ability_count_list.find((user) => user.userId === userId);
-  if (!existingUser) {
-    ability_count_list.push({ socket: socket, userId: userId, count: 1 });
-  } else {
-    existingUser.count++;
-  }
-
-  for (let index = 0; index < ability_count_list.length; index++) {
-    if (ability_count_list[index].count >= abilityActiveNeedCount) {
-      ability_count_list[index].socket.emit('event', {
-        PacketType: PacketType.S2C_GOLD_ABILITY_ACTIVE,
-      });
-      const playerData = getPlayData(userId);
-      playerData.addGold(abilityGold);
-      ability_count_list.splice(index, 1);
-    }
-  }
-
-  socket.on('disconnect', () => {
-    ability_count_list = ability_count_list.filter((user) => user.userId !== userId);
+async function active_ability_1(socket, userId) {
+  socket.emit('event', {
+    PacketType: PacketType.S2C_GOLD_ABILITY_ACTIVE,
   });
+  const playerData = getPlayData(userId);
+  playerData.addGold(abilityGold);
 }
 
-export { add_count };
+export { active_ability_1 };

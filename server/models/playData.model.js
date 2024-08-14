@@ -45,7 +45,7 @@ export const getGameByUserId = (userId) => {
       const player1 = uuid === userId ? uuid : game.opponentUserInfo;
       const player2 = uuid === userId ? game.opponentUserInfo : uuid;
 
-      console.log(`Found game for user: ${userId}, player1: ${player1}, player2: ${player2}`);
+      //console.log(`Found game for user: ${userId}, player1: ${player1}, player2: ${player2}`);
 
       return {
         player1: { userId: player1, data: game },

@@ -60,7 +60,7 @@ let monsterSpawnInterval = 2000; // 몬스터 생성 주기
 let towerIndex = 1;
 let monsterIndex = 1;
 // 설정 데이터
-let acceptTime = 10000; // 수락 대기 시간
+let acceptTime = 1000000; // 수락 대기 시간
 
 // 인터벌 데이터
 let matchAcceptInterval;
@@ -691,9 +691,56 @@ Promise.all([
     if (data.PacketType === 111) {
       console.log('능력으로 인한 돈 추가');
     }
+    if (data.PacketType === 112) {
+      console.log('상대방의 능력으로 인한 몬스터 추가');
+      spawnMonster();
+    }
     // if (!isInitGame) {
     //   initGame(payload);
     // }
+  });
+
+  serverSocket.on('userTowerUpgrade', (data) => {
+    const { towerType, towerId, towerCost, towerData } = data;
+
+    if (userId !== data.userId) {
+      const arr = opponentTowers[towerType][towerId - 1];
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i].towerNumber == towerData.number) {
+          arr.splice(i, 1);
+          break;
+        }
+      }
+
+      const tower = new Tower(towerType, towerId, towerData.number, towerData.posX, towerData.posY);
+      opponentTowers[towerType][towerId].push(tower);
+    } else {
+      const arr = towers[towerType][towerId - 1];
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i].towerNumber == towerData.number) {
+          arr.splice(i, 1);
+          break;
+        }
+      }
+
+      const tower = new Tower(towerType, towerId, towerData.number, towerData.posX, towerData.posY);
+      towers[towerType][towerId].push(tower);
+      userGold -= towerCost;
+    }
+  });
+
+  serverSocket.on('userTowerCreate', (data) => {
+    const { towerId, towerCost, number, posX, posY } = data;
+    console.log(towerId);
+
+    if (userId !== data.userId) {
+      const tower = new Tower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
+      opponentTowers[TOWER_TYPE[towerId / 100 - 1]][towerId].push(tower);
+    } else {
+      const tower = new Tower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
+      towers[TOWER_TYPE[towerId / 100 - 1]][towerId].push(tower);
+      userGold -= towerCost;
+    }
   });
 
   serverSocket.on('userTowerUpgrade', (data) => {
