@@ -27,6 +27,18 @@ export const setDamagedMonsterHp = (uuid, damage, monsterIndex) => {
   return attackedMonster;
 };
 
+export const setPoisonMonster = (uuid, damage, stack, monsterIndex) => {
+  const attackedMonster = monsters[uuid].find((monster) => {
+    return monster.monsterIndex === monsterIndex;
+  });
+
+  if (!attackedMonster.poison) attackedMonster.poison = stack;
+  else attackedMonster.poison += stack;
+
+  attackedMonster.hp -= damage + attackedMonster.poison * 10;
+  return attackedMonster;
+};
+
 export const clearMonsters = (uuid) => {
   return (monsters[uuid] = []);
 };
