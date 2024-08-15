@@ -8,9 +8,18 @@
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
     <style>
       #chatContainer {
-        width: 400px;
-        margin: 0 auto;
-        padding: 20px;
+        position: fixed;
+        bottom: 10px; /* 화면의 아래에서 10px 위에 위치 */
+        left: 50%; /* 화면의 가로 중앙에 위치 */
+        transform: translateX(-50%); /* 가로 중앙으로 정렬 */
+        width: 500px; /* 원하는 너비 설정 */
+        max-height: 550px; /* 원하는 최대 높이 설정 */
+        overflow-y: auto; /* 내용이 넘칠 경우 스크롤바 표시 */
+        background-color: rgba(0, 0, 0, 0.7); /* 반투명 배경 */
+        color: white; /* 텍스트 색상 */
+        padding: 10px;
+        border-radius: 10px;
+        display: none; /* 게임 시작 전에는 숨겨져 있음 */
       }
       #chatLog {
         border: 1px solid #ddd;

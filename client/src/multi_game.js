@@ -685,6 +685,8 @@ Promise.all([
     if (!isInitGame) {
       initGame();
     }
+    const chatContainer = document.getElementById('chatContainer');
+    chatContainer.style.display = 'block';
     initializeChat();
   });
 
