@@ -13,11 +13,11 @@ async function updateWin() {
   try {
     const updatedUserInfo = await prisma.userInfo.update({
       where: {
-        userId: 'rhwjdgns15',
+        userId: '555',
       },
       data: {
-        win: 83,
-        lose: 63,
+        win: 1,
+        lose: 1,
       },
     });
     console.log('Updated UserInfo:', updatedUserInfo);

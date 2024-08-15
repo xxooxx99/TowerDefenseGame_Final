@@ -7,6 +7,22 @@
     <title>내일배움캠프 Node.js 트랙 타워 디펜스 게임 온라인</title>
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
     <style>
+      #chatContainer {
+        width: 400px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      #chatLog {
+        border: 1px solid #ddd;
+        height: 300px;
+        overflow-y: auto;
+        margin-bottom: 10px;
+      }
+      #chatInput {
+        width: 100%;
+        padding: 10px;
+        box-sizing: border-box;
+      }
       body {
         display: flex;
         justify-content: center;
@@ -194,6 +210,12 @@
       <progress id="progressBar" max="100" value="0" style="display: none"></progress>
       <button class="matchAcceptButton" id="matchAcceptButton" display="none">대결 수락하기</button>
     </div>
+
+    <div id="chatContainer">
+      <div id="chatLog"></div>
+      <input id="chatInput" type="text" placeholder="Type a message..." />
+    </div>
+    <!-- <script type="module" src="src/multi_game.js"></script> -->
 
     <div id="towers">
       <button id="baseTower" class="buttons-tower">

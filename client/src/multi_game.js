@@ -685,6 +685,7 @@ Promise.all([
     if (!isInitGame) {
       initGame();
     }
+    initializeChat();
   });
 
   serverSocket.on('response', (data) => {
@@ -922,6 +923,41 @@ Promise.all([
     }
   });
 });
+
+// 채팅 기능 함수
+function initializeChat() {
+  const chatLog = document.getElementById('chatLog');
+  const chatInput = document.getElementById('chatInput');
+  const chatContainer = document.getElementById('chatContainer');
+
+  // 채팅 UI 보이기
+  chatContainer.style.display = 'block';
+
+  // Socket.IO 연결 설정
+  const socket = io();
+
+  // 서버에서 채팅 메시지를 수신했을 때 UI에 표시
+  socket.on('chat message', (data) => {
+    if (data && data.userId && data.message) {
+      const messageElement = document.createElement('div');
+      messageElement.textContent = `${data.userId}: ${data.message}`;
+      chatLog.appendChild(messageElement);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    } else {
+      console.error('채팅 메시지 데이터 형식이 잘못되었습니다.', data);
+    }
+  });
+
+  // 입력 필드에서 Enter 키를 누르면 메시지를 서버로 전송
+  chatInput.addEventListener('keydown', (event) => {
+    const userId = localStorage.getItem('userId');
+    if (event.key === 'Enter') {
+      const message = chatInput.value;
+      chatInput.value = ''; // 입력 필드 비우기
+      socket.emit('chat message', { userId: userId, message });
+    }
+  });
+}
 
 function updateMonstersHp(updatedMonsters) {
   updatedMonsters.forEach((updatedMonster) => {

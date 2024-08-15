@@ -120,6 +120,8 @@ const initSocket = (server) => {
       }
     });
   });
+
+  return io;
 };
 
 export default initSocket;

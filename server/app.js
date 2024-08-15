@@ -45,6 +45,13 @@ app.get('/api', (req, res) => {
   res.sendFile('index.html', { root: path.join(__dirname, '../client') });
 });
 
+io.on('connection', (socket) => {
+  socket.on('chat message', (data) => {
+    console.log('Message received:', data);
+    io.emit('chat message', data);
+  });
+});
+
 loadGameAssets();
 
 server.listen(process.env.PORT, async () => {
