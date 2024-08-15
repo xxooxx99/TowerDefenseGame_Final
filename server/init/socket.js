@@ -17,7 +17,6 @@ import { add_count } from '../handlers/ability/ability_1.handler.js';
 // 보스 핸들러 가져오기
 import { handleSpawnBoss } from '../handlers/boss/bosshandlers.js';
 
-
 const initSocket = (server) => {
   const io = new SocketIO();
   io.attach(server);
@@ -89,9 +88,8 @@ const initSocket = (server) => {
           break;
         case PacketType.C2S_SPAWN_BOSS:
           handleSpawnBoss(socket, packet.payload.bossType);
-          break;  
+          break;
 
-          
         default:
           console.log(`Unknown packet type: ${packet.packetType}`);
       }
