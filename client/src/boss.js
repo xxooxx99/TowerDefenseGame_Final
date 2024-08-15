@@ -17,7 +17,7 @@ export class Boss extends Monster {
 
   init(level) {
     if (!this.socket) {
-      console.error("Socket is undefined in Boss init method");
+      console.error('Socket is undefined in Boss init method');
       return;
     }
     this.maxHp = 1000 + 1000 * level; // 보스의 최대 HP
@@ -96,23 +96,30 @@ export class Boss extends Monster {
         this.bossRoar();
         break;
       default:
-        console.log("Unknown skill.");
+        console.log('Unknown skill.');
     }
     this.updateUI(); // 스킬 사용 후 UI 업데이트
   }
 
   healSkill() {
-    this.hp = Math.min(this.maxHp, this.hp + this.maxHp * 0.10);
-    console.log("Boss healed 10% of max HP.");
+    this.hp = Math.min(this.maxHp, this.hp + this.maxHp * 0.1);
+    console.log('Boss healed 10% of max HP.');
   }
 
   spawnClone() {
     // 복제 보스 생성 로직
-    const clone = new Boss(this.path, this.images[0], this.level, this.socket, this.bgm, this.skillSounds);
+    const clone = new Boss(
+      this.path,
+      this.images[0],
+      this.level,
+      this.socket,
+      this.bgm,
+      this.skillSounds,
+    );
     clone.hp = this.hp * 0.5; // 복제 보스는 원래 보스의 50% HP로 생성
     clone.init(this.level);
     monsters.push(clone);
-    console.log("Boss spawned a clone with 50% of current HP.");
+    console.log('Boss spawned a clone with 50% of current HP.');
   }
 
   reduceDamage() {
@@ -120,7 +127,7 @@ export class Boss extends Monster {
     setTimeout(() => {
       this.damageReduction = 1.0; // 5초 후 원래 상태로 복구
     }, 5000);
-    console.log("Boss reduces incoming damage by 50% for 5 seconds.");
+    console.log('Boss reduces incoming damage by 50% for 5 seconds.');
   }
 
   absorbDamage() {
@@ -136,21 +143,21 @@ export class Boss extends Monster {
   placeMark() {
     // 필드에 표식을 남기고 5초 후 표식이 있는 위치의 타워를 파괴하는 로직
     const markPosition = this.getRandomPosition();
-    console.log("Placing mark on the field at position:", markPosition);
+    console.log('Placing mark on the field at position:', markPosition);
 
     setTimeout(() => {
       // 해당 좌표의 타워를 파괴하는 로직 추가
       const tower = this.getTowerAtPosition(markPosition);
       if (tower) {
         this.destroyTower(tower);
-        console.log("Mark exploded, destroying tower at:", markPosition);
+        console.log('Mark exploded, destroying tower at:', markPosition);
       }
     }, 5000);
   }
 
   getTowerAtPosition(position) {
     // 주어진 좌표에 있는 타워를 반환하는 로직
-    return towers.find(tower => tower.isAtPosition(position));
+    return towers.find((tower) => tower.isAtPosition(position));
   }
 
   destroyTower(tower) {
@@ -158,23 +165,23 @@ export class Boss extends Monster {
     const index = towers.indexOf(tower);
     if (index > -1) {
       towers.splice(index, 1);
-      console.log("Tower destroyed:", tower);
+      console.log('Tower destroyed:', tower);
     }
   }
 
   timeWave() {
     // 모든 타워의 공격속도를 5초 동안 50% 감소시키는 로직
-    towers.forEach(tower => {
+    towers.forEach((tower) => {
       tower.attackSpeed *= 0.5;
     });
 
     setTimeout(() => {
-      towers.forEach(tower => {
+      towers.forEach((tower) => {
         tower.attackSpeed *= 2; // 원래 속도로 복구
       });
     }, 5000);
 
-    console.log("Casting time wave to slow down all towers by 50% for 5 seconds.");
+    console.log('Casting time wave to slow down all towers by 50% for 5 seconds.');
   }
 
   rewindHealth() {
@@ -183,7 +190,7 @@ export class Boss extends Monster {
     setTimeout(() => {
       this.hp = oldHp; // HP를 5초 전으로 되돌림
       this.updateUI();
-      console.log("Health rewound to:", oldHp);
+      console.log('Health rewound to:', oldHp);
     }, rewindTime);
   }
 
@@ -194,7 +201,7 @@ export class Boss extends Monster {
     setTimeout(() => {
       this.speed = originalSpeed;
     }, 3000);
-    console.log("Boss accelerates time, increasing speed by 20% but taking more damage.");
+    console.log('Boss accelerates time, increasing speed by 20% but taking more damage.');
   }
 
   bossRoar() {
@@ -210,7 +217,7 @@ export class Boss extends Monster {
 
   decreaseBaseHealth() {
     // Base의 체력을 감소시키는 로직 추가
-    console.log("Decreasing base health by one.");
+    console.log('Decreasing base health by one.');
     // 실제로 base health를 감소시키는 로직을 여기에 구현해야 함
   }
 
@@ -236,7 +243,7 @@ export class Boss extends Monster {
   onDie() {
     this.isBossAlive = false; // 보스 상태를 죽음으로 변경
     this.stopBGM();
-    console.log("Boss has died, stopping BGM.");
+    console.log('Boss has died, stopping BGM.');
   }
 }
 

@@ -536,6 +536,24 @@ function matchFind(ownUserData, opponentUserData) {
     });
     return;
   }
+
+  if (
+    !progressBarMessage ||
+    !matchAcceptButton ||
+    !user_info ||
+    !opponentUser_name ||
+    !opponentUser_winRate ||
+    !ownUser_winRate ||
+    !progressBar ||
+    !loader ||
+    !towersBox ||
+    !canvas ||
+    !opponentCanvas
+  ) {
+    console.error('UI elements are missing.');
+    return;
+  }
+
   progressBarMessage.textContent = '게임을 찾았습니다.';
   matchAcceptButton.style.display = 'block';
 
@@ -553,15 +571,19 @@ function matchFind(ownUserData, opponentUserData) {
   progressBar.value = 0;
   progressBar.style.display = 'block';
   loader.style.display = 'none';
+
+  clearInterval(matchAcceptInterval); // 중복 타이머 방지
   matchAcceptInterval = setInterval(() => {
     progressValue += 10;
     progressBar.value = progressValue;
+
     // 일정 시간이 지나면 자동으로 거절을 하도록 한다
     if (progressValue >= 100) {
       clearInterval(matchAcceptInterval);
       progressBarContainer.style.display = 'none';
       progressBar.style.display = 'none';
       matchAcceptButton.disabled = false;
+
       serverSocket.emit('event', {
         packetType: 17,
         userId: localStorage.getItem('userId'),
