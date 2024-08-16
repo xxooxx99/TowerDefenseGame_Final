@@ -286,6 +286,7 @@ function placeBase(position, isPlayer) {
 }
 
 function spawnMonster() {
+  const socket = io();
   const monster = new Monster(monsterPath, monsterImages, monsterLevel);
   monster.setMonsterIndex(monsterIndex);
   monster.onDie = onMonsterDie; // 몬스터가 죽을 때 호출되는 콜백 설정
@@ -296,10 +297,18 @@ function spawnMonster() {
 
   if (monsterSpawnCount >= 20) {
     clearInterval(monsterintervalId);
+    /* socket.emit('chat message', {
+      userId: 'System',
+      message: `Level ${monsterLevel} Clear!`,
+    }); */
     monsterLevel++;
     monsterSpawnCount = 0;
     setTimeout(() => {
       startSpawning();
+      /* socket.emit('chat message', {
+        userId: 'System',
+        message: `Level ${monsterLevel} Start!`,
+      }); */
     }, 5000);
   }
 }
@@ -926,8 +935,16 @@ Promise.all([
   });
 });
 
+/* let chatInitialized = false;
+let lastSentMessage = '';
+const messageThrottle = 1000;
+let lastSentTime = 0;
+let isSendingMessage = false; */
+
 // 채팅 기능 함수
 function initializeChat() {
+  // if (chatInitialized) return;
+
   const chatLog = document.getElementById('chatLog');
   const chatInput = document.getElementById('chatInput');
   const chatContainer = document.getElementById('chatContainer');
@@ -942,6 +959,11 @@ function initializeChat() {
   socket.on('chat message', (data) => {
     if (data && data.userId && data.message) {
       const messageElement = document.createElement('div');
+
+      /* if (data.userId === 'System') {
+        messageElement.classList.add('system-message');
+      } */
+
       messageElement.textContent = `${data.userId}: ${data.message}`;
       chatLog.appendChild(messageElement);
       chatLog.scrollTop = chatLog.scrollHeight;
@@ -950,15 +972,32 @@ function initializeChat() {
     }
   });
 
+  const systemMessageElement = document.createElement('div');
+  systemMessageElement.textContent = 'System: 5초 후 게임이 시작됩니다.';
+  systemMessageElement.style.color = 'yellow';
+  chatLog.appendChild(systemMessageElement);
+  chatLog.scrollTop = chatLog.scrollHeight;
+
   // 입력 필드에서 Enter 키를 누르면 메시지를 서버로 전송
   chatInput.addEventListener('keydown', (event) => {
     const userId = localStorage.getItem('userId');
     if (event.key === 'Enter') {
       const message = chatInput.value;
       chatInput.value = ''; // 입력 필드 비우기
+      /* isSendingMessage = true; */
+
+      /* const currentTime = Date.now();
+      if (message !== lastSentMessage || currentTime - lastSentTime > messageThrottle) {
+        lastSentMessage = message;
+        lastSentTime = currentTime;
+        console.log(`Sending chat message: ${message}`); */
       socket.emit('chat message', { userId: userId, message });
+      /* setTimeout(() => (isSendingMessage = false), 500);
+      } */
     }
   });
+
+  /* chatInitialized = true; */
 }
 
 function updateMonstersHp(updatedMonsters) {

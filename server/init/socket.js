@@ -26,6 +26,8 @@ import { add_count } from '../handlers/ability/gameAbilityActive.handler.js';
 // 보스 핸들러 가져오기
 import { handleSpawnBoss } from '../handlers/boss/bosshandlers.js';
 
+/* let lastMessage = '';
+let isSendingMessage = false; */
 const initSocket = (server) => {
   const io = new SocketIO();
   io.attach(server);
@@ -34,6 +36,24 @@ const initSocket = (server) => {
   io.on('connection', (socket) => {
     console.log(`New user connected: ${socket.id}`);
     socket.emit('connection', { status: 'success', message: '연결 완료' });
+
+    socket.on('chat message', (data) => {
+      console.log(`Received chat message from ${data.userId}: ${data.message}`);
+
+      /* const currentTime = Date.now();
+      socket.emit('chat message', data); */
+    });
+
+    /* socket.on('chat message', (data) => {
+      if (data && data.userId && data.message) {
+        //중복 메시지 필터링
+        if (data.message !== lastMessage) {
+          lastMessage = data.message;
+        }
+      } else {
+        console.error('채팅 메시지 데이터 형식이 잘못되었습니다.', data);
+      }
+    }); */
 
     socket.on('event', (packet) => {
       // console.log(

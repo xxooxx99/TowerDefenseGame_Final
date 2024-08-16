@@ -47,8 +47,8 @@ app.get('/api', (req, res) => {
 
 io.on('connection', (socket) => {
   socket.on('chat message', (data) => {
-    console.log('Message received:', data);
     io.emit('chat message', data);
+    console.log(`Received chat message from ${data.userId}: ${data.message} from app.js`);
   });
 });
 
