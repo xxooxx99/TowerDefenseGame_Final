@@ -5,6 +5,7 @@ import { getPlayData } from '../../models/playData.model.js';
 import { getOpponentInfo } from '../../models/playData.model.js';
 import { getMonsters, setDamagedMonsterHp, setPoisonMonster } from '../../models/monster.model.js';
 import { sendGameSync } from '../game/gameSyncHandler.js';
+import { getTowers } from '../../models/tower.model.js';
 
 export const towerAddHandler = (socket, data) => {
   const { userId, towerType, towerId, posX, posY } = data.payload;
@@ -325,6 +326,7 @@ export const towerSale = (socket, data) => {
       console.log('플레이어가 존재하지 않습니다.');
       return;
     }
+
 
     let saleTower;
     const towers = userData.towerInit[towerType][towerId];

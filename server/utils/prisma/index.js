@@ -8,7 +8,7 @@ export const prisma = new PrismaClient({
   errorFormat: 'pretty',
 }); // PrismaClient 인스턴스를 생성합니다.
 
-/* // UserInfo 수정용
+/* // UserInfo 수정용 (활성화 시키고 서버 on)
 async function updateWin() {
   try {
     const updatedUserInfo = await prisma.userInfo.update({

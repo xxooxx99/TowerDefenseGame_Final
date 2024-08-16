@@ -51,7 +51,14 @@ export const PacketType = {
   C2S_SPAWN_BOSS: 200, // 클라이언트가 보스를 스폰 요청할 때 사용
   S2C_BOSS_SPAWN: 201, // 서버가 보스 스폰을 클라이언트에 알릴 때 사용
   S2C_BOSS_SKILL: 202, // 서버가 보스의 스킬 사용을 클라이언트에 알릴 때 사용
+  C2S_GAMEOVER_SIGNAL: 300, // 본인이 게임을 졌다고 신호를 보냄
+  S2C_GAME_LOSE_SIGNAL: 310, //  너는 게임을 졌다고 신호를 보냄
+  S2C_GAME_WIN_SIGNAL: 311, // 너는 게임을 이겼다고 신호를 보냄
   C2S_ABILITY_EQUIP_REQUEST: 500,
   S2C_ABILITY_EQUIP_SUCCESS: 501,
   S2C_ABILITY_EQUIP_FAILED: 502,
+  C2S_RECORD_RECENT_GAME: 700, // 최근 게임을 저장하라는 신호
+  C2S_RECENT_GAME_LOAD: 701, // 최근 게임의 정보를 보내달라는 신호
+  S2C_LOAD_RECENT_GAME_INFO: 702, // 최근 게임의 정보를 보냈다는 신호
+  S2C_FAILED_LOAD_RECENT_GAME: 703, // 최근 게임 정보를 불러오지 못했다는 신호
 };
