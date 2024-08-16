@@ -35,20 +35,6 @@ async function recordRecentGame(socket, packet) {
       userId: userId,
     },
   });
-
-  // 유저 데이터가 존재하고 하이스코어를 넘겼다면 하이스코어를 갱신 시켜줌
-  if (userData) {
-    if (userData.highScore < score) {
-      const newRecord = await prisma.UserInfo.update({
-        where: {
-          userId: userId,
-        },
-        data: {
-          highScore: score,
-        },
-      });
-    }
-  }
 }
 
 async function sendRecentGameInfo(socket, packet) {
@@ -78,6 +64,20 @@ async function sendRecentGameInfo(socket, packet) {
       payload: recentRecord,
       isHighScore: isHighScore,
     });
+  }
+
+  // 유저 데이터가 존재하고 하이스코어를 넘겼다면 하이스코어를 갱신 시켜줌
+  if (userData) {
+    if (userData.highScore < recentRecord.score) {
+      const newRecord = await prisma.UserInfo.update({
+        where: {
+          userId: userId,
+        },
+        data: {
+          highScore: recentRecord.score,
+        },
+      });
+    }
   }
 }
 
