@@ -36,6 +36,9 @@ export const registerHandler = router.post('/register', async (req, res) => {
         UserInfo: {
           create: { highScore: 0, win: 0, lose: 0, money: 0 },
         },
+        UserRecentGame: {
+          create: { isWin: false, score: 0 },
+        },
       },
     });
 

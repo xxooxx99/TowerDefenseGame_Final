@@ -12,22 +12,22 @@ import {
   ability_upgrade,
   ability_equip,
 } from '../handlers/ability/ability.handler.js';
-import connectHandler from '../handlers/index.js';
+// import connectHandler from '../handlers/index.js';
 import { handleDieMonster, handleSpawnMonster } from '../handlers/monster/monster.handler.js';
 import {
   towerAddHandler,
   towerAttack,
   towerUpgrade,
-  towerAttackHandler,
+  towerSale,
 } from '../handlers/tower/tower.handler.js';
 import { handleMonsterBaseAttack, handleBaseAttackMonster } from '../handlers/game/gameHandler.js';
 import { baseAttackMonster } from '../models/baseUpgrade.js';
 import { add_count } from '../handlers/ability/gameAbilityActive.handler.js';
 // 보스 핸들러 가져오기
 import { handleSpawnBoss } from '../handlers/boss/bosshandlers.js';
+import { gameoverSignalReceive } from '../handlers/game/gameEnd.handler.js';
+import { recordRecentGame, sendRecentGameInfo } from '../handlers/user/userGameRecord.handler.js';
 
-/* let lastMessage = '';
-let isSendingMessage = false; */
 const initSocket = (server) => {
   const io = new SocketIO();
   io.attach(server);
@@ -74,9 +74,9 @@ const initSocket = (server) => {
         case PacketType.C2S_MATCH_ACCEPT:
           handlerMatchAcceptRequest(socket, packet);
           break;
-        case PacketType.C2S_TOWER_ATTACK:
+        /* case PacketType.C2S_TOWER_ATTACK:
           towerAttackHandler(socket, packet.userId, packet.payload);
-          break;
+          break; */
         case PacketType.C2S_MATCH_DENIED:
           handlerMatchDeniedRequest(socket, packet);
           break;
@@ -113,6 +113,9 @@ const initSocket = (server) => {
         case PacketType.S2C_TOWER_ATTACK:
           towerAttack(socket, packet);
           break;
+        case PacketType.S2C_TOWER_SALE:
+          towerSale(socket, packet);
+          break;
         case PacketType.C2S_BASE_ATTACK:
           baseAttackMonster(socket, uuid, payload);
           break;
@@ -125,7 +128,15 @@ const initSocket = (server) => {
         case PacketType.C2S_SPAWN_BOSS:
           handleSpawnBoss(socket, packet.payload.bossType);
           break;
-
+        case PacketType.C2S_GAMEOVER_SIGNAL:
+          gameoverSignalReceive(socket, packet);
+          break;
+        case PacketType.C2S_RECORD_RECENT_GAME:
+          recordRecentGame(socket, packet);
+          break;
+        case PacketType.C2S_RECENT_GAME_LOAD:
+          sendRecentGameInfo(socket, packet);
+          break;
         default:
           console.log(`Unknown packet type: ${packet.packetType}`);
       }

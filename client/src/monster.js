@@ -18,7 +18,7 @@ export class Monster {
     this.height = 40;
     this.image = this.getImageForLevel(level);
     this.onDie = null; // 몬스터가 죽을 때 호출되는 콜백 추가
-    
+
     this.init(level);
   }
 
@@ -176,10 +176,9 @@ export class Monster {
     }
   }
 
-
   die() {
     console.log(`Monster ${this.monsterIndex} died`);
-    if (typeof this.onDie === "function") {
+    if (typeof this.onDie === 'function') {
       this.onDie(); // 몬스터가 죽을 때 호출되는 콜백
     }
   }
@@ -211,7 +210,6 @@ export class Monster {
 
       ctx.font = '12px Arial';
       ctx.fillStyle = 'white';
-
       const textWidth = ctx.measureText(text).width;
 
       const textX = this.x + this.width / 2 - textWidth / 2;

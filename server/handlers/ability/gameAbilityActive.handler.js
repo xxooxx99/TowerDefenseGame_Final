@@ -111,6 +111,25 @@ async function add_matching(user1_id, user1_socket, user2_id, user2_socket) {
     user2_id: user2_id,
     user2_socket: user2_socket,
   });
+
+  user1_socket.on('disconnect', () => {
+    matchingList = matchingList.filter(
+      (matching) => matching.user1_id !== user1_id && matching.user2_id !== user1_id,
+    );
+  });
+
+  user2_socket.on('disconnect', () => {
+    matchingList = matchingList.filter(
+      (matching) => matching.user1_id !== user2_id && matching.user2_id !== user2_id,
+    );
+  });
 }
 
-export { add_count, add_matching };
+function getMatchingList(userId) {
+  let result = matchingList.filter(
+    (matching) => matching.user1_id === userId || matching.user2_id === userId,
+  );
+  return result[0];
+}
+
+export { add_count, add_matching, getMatchingList };

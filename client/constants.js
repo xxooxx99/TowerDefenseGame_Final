@@ -12,6 +12,11 @@ export const PacketType = {
   C2S_MATCH_ACCEPT: 16,
   C2S_MATCH_DENIED: 17,
   S2C_MATCH_START: 18,
+  S2C_USER_GOLD_INIT: 25,
+  C2S_TOWER_CREATE: 55,
+  C2S_TOWER_UPGRADE: 56,
+  C2S_TOWER_ATTACK: 57,
+  C2S_TOWER_SALE: 58,
   C2S_SPAWN_MONSTER: 21,
   S2C_ENEMY_SPAWN_MONSTER: 22,
   C2S_DIE_MONSTER: 23,
@@ -19,8 +24,6 @@ export const PacketType = {
   S2C_USER_GOLD_INIT: 25,
   C2S_MONSTER_ATTACK_BASE: 40,
   S2C_UPDATE_BASE_HP: 41,
-  C2S_TOWER_CREATE: 55,
-  C2S_TOWER_UPGRADE: 56,
   C2S_BASE_ATTACK: 60,
   S2C_UPDATE_MONSTER_HP: 62,
   S2C_GAMESYNC: 99,
@@ -37,9 +40,16 @@ export const PacketType = {
   C2S_SPAWN_BOSS: 120, // 클라이언트에서 서버로 보스 생성 요청
   S2C_BOSS_SPAWN: 121, // 서버에서 클라이언트로 보스 생성 알림
   S2C_BOSS_USE_SKILL: 122, // 서버에서 클라이언트로 보스 스킬 사용 알림
+  C2S_GAMEOVER_SIGNAL: 300, // 본인이 게임을 졌다고 신호를 보냄
+  S2C_GAME_LOSE_SIGNAL: 310, //  너는 게임을 졌다고 신호를 보냄
+  S2C_GAME_WIN_SIGNAL: 311, // 너는 게임을 이겼다고 신호를 보냄
   C2S_ABILITY_EQUIP_REQUEST: 500,
   S2C_ABILITY_EQUIP_SUCCESS: 501,
   S2C_ABILITY_EQUIP_FAILED: 502,
+  C2S_RECORD_RECENT_GAME: 700, // 최근 게임을 저장하라는 신호
+  C2S_RECENT_GAME_LOAD: 701, // 최근 게임의 정보를 보내달라는 신호
+  S2C_LOAD_RECENT_GAME_INFO: 702, // 최근 게임의 정보를 보냈다는 신호
+  S2C_FAILED_LOAD_RECENT_GAME: 703, // 최근 게임 정보를 불러오지 못했다는 신호
 };
 
 export const TOWER_TYPE = [
