@@ -12,7 +12,6 @@ import {
   ability_upgrade,
   ability_equip,
 } from '../handlers/ability/ability.handler.js';
-// import connectHandler from '../handlers/index.js';
 import { handleDieMonster, handleSpawnMonster } from '../handlers/monster/monster.handler.js';
 import {
   towerAddHandler,

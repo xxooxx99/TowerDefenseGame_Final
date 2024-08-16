@@ -22,6 +22,13 @@
         font-size: 30px;
         display: none; /* 게임 시작 전에는 숨겨져 있음 */
       }
+      #cursor {
+        position: absolute;
+        z-index: 2;
+        display: none;
+        opacity: 0;
+        pointer-events: none;
+      }
       #chatLog {
         border: 1px solid #ddd;
         height: 300px;
@@ -66,7 +73,9 @@
         object-fit: cover; /* 이미지가 버튼에 맞게 조정됨 */
       }
       #gameCanvas {
+        cursor: none;
         border: 2px solid #000;
+        overflow: hidden;
         display: none;
       }
       #opponentCanvas {
@@ -265,8 +274,11 @@
         <img title="타워 판매" src="./images/towerSale.png" />
       </button>
     </div>
-    <canvas id="gameCanvas" width="1500" height="680"></canvas>
+    <canvas id="gameCanvas" width="1500" height="680"> </canvas>
     <canvas id="opponentCanvas" width="1500" height="680"></canvas>
+    <div id="cursor">
+      <img id="cursorImage" height="75px" width="40px" src="./images/cursor.png" />
+    </div>
 
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
     <script type="module">

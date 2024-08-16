@@ -221,10 +221,12 @@ function towerBuilderCheck(towerType, button) {
     towerBuilderId = towerType;
     towerBuilderType = TOWER_TYPE[towerBuilderId / 100];
     button.style.backgroundColor = 'red';
+    cursorImage.src = `./images/tower${towerType}.png`;
   } else if (towerBuilderId === towerType) {
     button.style.backgroundColor = 'white';
     towerBuilderId = null;
     towerBuilderType = null;
+    cursorImage.src = `./images/cursor.png`;
   } else console.log('build를 취소해주세요!');
 }
 
@@ -388,20 +390,8 @@ function gameSync(data) {
     loseGame();
   }
 
-  let myTower;
-  const towerType = data.towerType || null;
-  const towerId = data.towerType || null;
-  const towerNumber = data.towerType || null;
-
   if (data.attackedMonster === undefined) {
     return;
-  }
-
-  if (towerType && towerId && towerNumber) {
-    for (let tower of towers[towerType][towerId]) {
-      if (tower.towerNumber == towerNumber) myTower = tower;
-    }
-    if (data.attackedMonster.hp <= 0 && towerType == TOWER_TYPE[8]) myTower.killCount--;
   }
 
   const attackedMonster = monsters.find((monster) => {
@@ -671,6 +661,7 @@ function matchStart() {
       towersBox.style.display = 'block';
       towersBox.style.justifyContent = 'center';
       towersBox.style.textAlign = 'center';
+      cursor.style.display = 'block';
       canvas.style.display = 'block';
       opponentCanvas.style.display = 'block';
       showGameElements(); // 게임 시작 시 요소 표시
@@ -1100,6 +1091,7 @@ const buttons = [
   buyTowerButton9,
 ];
 
+const cursorImage = document.getElementById('cursorImage');
 for (let i = 0; i < buttons.length; i++) {
   buttons[i].addEventListener('click', (event) => {
     towerBuilderCheck((i + 1) * 100, buttons[i]);
@@ -1121,14 +1113,28 @@ saleTowerButton.addEventListener('click', (event) => {
 const mousePos = (event) => {
   posX = event.offsetX;
   posY = event.offsetY;
-  console.log(posX, posY);
+
   if (towerBuilderId) towerRequest();
   if (towerUpgrade) towerUpgrades();
   if (towerSale) towerSales();
 };
 
 const gameCanvas = document.getElementById('gameCanvas');
+const cursor = document.getElementById('cursor');
 gameCanvas.addEventListener('click', mousePos);
+
+gameCanvas.addEventListener('mousemove', (e) => {
+  let mouseX = e.clientX;
+  let mouseY = e.clientY;
+
+  cursor.style.left = mouseX + 'px';
+  cursor.style.top = mouseY + 'px';
+  cursor.style.opacity = 0.8;
+});
+
+gameCanvas.addEventListener('mouseout', (e) => {
+  cursor.style.opacity = 0;
+});
 
 //보스 출현 로직
 

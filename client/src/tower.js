@@ -10,7 +10,7 @@ export class Tower {
           if (towerIdData.id == towerId) {
             this.x = x; // 타워 이미지 x 좌표
             this.y = y; // 타워 이미지 y 좌표
-            this.width = 39; // 타워 이미지 가로 길이 (이미지 파일 길이에 따라 변경 필요하며 세로 길이와 비율을 맞춰주셔야 합니다!)
+            this.width = 40; // 타워 이미지 가로 길이 (이미지 파일 길이에 따라 변경 필요하며 세로 길이와 비율을 맞춰주셔야 합니다!)
             this.height = 75; // 타워 이미지 세로 길이
             this.beamDuration = 0; // 타워 광선 지속 시간
             this.target = []; // 타워 광선의 목표
