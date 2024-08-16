@@ -66,7 +66,7 @@ async function sendRecentGameInfo(socket, packet) {
     },
   });
 
-  let isHighScore = userData.highScore <= recentRecord.score;
+  let isHighScore = userData.highScore < recentRecord.score;
 
   if (!recentRecord) {
     socket.emit('event', {

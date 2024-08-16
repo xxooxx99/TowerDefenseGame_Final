@@ -27,7 +27,6 @@ function loadGameInfo(data, isHighScore) {
 
   score_record.textContent = '점수 : ' + data.score;
 
-  console.log(isHighScore);
   if (isHighScore) {
     high_score_record.style.visibility = 'visible';
   } else {
@@ -41,7 +40,6 @@ function failedLoadGameInfo() {
 }
 
 serverSocket.on('event', (packet) => {
-  console.log(packet);
   switch (packet.packetType) {
     case PacketType.S2C_FAILED_LOAD_RECENT_GAME:
       failedLoadGameInfo();
