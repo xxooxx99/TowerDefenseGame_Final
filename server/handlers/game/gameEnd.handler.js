@@ -2,6 +2,9 @@ import { PacketType } from '../../constants.js';
 import { prisma } from '../../utils/prisma/index.js';
 import { getMatchingList } from '../ability/gameAbilityActive.handler.js';
 
+const winGold = 100;
+const loseGold = 20;
+
 async function gameoverSignalReceive(socket, data) {
   const { userId } = data;
   let matchingInfo = getMatchingList(userId);
@@ -34,6 +37,7 @@ async function addRecord(userId, isWin) {
 
   let win = userData.win;
   let lose = userData.lose;
+  let userMoney = userData.money;
 
   if (isWin) {
     const newUser = await prisma.UserInfo.update({
@@ -42,6 +46,7 @@ async function addRecord(userId, isWin) {
       },
       data: {
         win: win + 1,
+        money: userMoney + winGold,
       },
     });
   } else {
@@ -51,6 +56,7 @@ async function addRecord(userId, isWin) {
       },
       data: {
         lose: lose + 1,
+        money: userMoney + loseGold,
       },
     });
   }
