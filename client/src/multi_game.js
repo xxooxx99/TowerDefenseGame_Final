@@ -332,6 +332,9 @@ function gameSync(data) {
   userGold = data.gold;
   baseHp = data.baseHp;
   base.updateHp(baseHp);
+  if (baseHp <= 0) {
+    loseGame();
+  }
 
   let myTower;
   const towerType = data.towerType || null;
@@ -817,7 +820,7 @@ Promise.all([
 
   // 항복하기 버튼 클릭 시 게임 종료 및 패배 처리
   surrenderButton.addEventListener('click', () => {
-    endGame(false); // 플레이어가 항복한 경우 패배 처리
+    loseGame(); // 플레이어가 항복한 경우 패배 처리
   });
 
   // 게임 종료 로직
@@ -851,23 +854,28 @@ Promise.all([
   }
 
   serverSocket.on('gameOver', (data) => {
+    console.log('신호받음');
     bgm.pause();
     const { isWin } = data;
     const winSound = new Audio('sounds/win.wav');
     const loseSound = new Audio('sounds/lose.wav');
-    winSound.volume = 0.3;
-    loseSound.volume = 0.3;
+    winSound.volume = 0.2;
+    loseSound.volume = 0.2;
+    sendEvent(PacketType.C2S_RECORD_RECENT_GAME, {
+      isWin: isWin,
+      score: score,
+    });
     if (isWin) {
       winSound.play().then(() => {
         alert('당신이 게임에서 승리했습니다!');
         // TODO. 게임 종료 이벤트 전송
-        location.reload();
+        window.location.href = 'resultWindow.html';
       });
     } else {
       loseSound.play().then(() => {
         alert('아쉽지만 대결에서 패배하셨습니다! 다음 대결에서는 꼭 이기세요!');
         // TODO. 게임 종료 이벤트 전송
-        location.reload();
+        window.location.href = 'resultWindow.html';
       });
     }
   });
@@ -900,6 +908,11 @@ Promise.all([
     }
   });
 });
+
+// 게임을 졌다는 신호를 보내는 함수
+function loseGame() {
+  sendEvent(PacketType.C2S_GAMEOVER_SIGNAL, {});
+}
 
 function updateMonstersHp(updatedMonsters) {
   updatedMonsters.forEach((updatedMonster) => {

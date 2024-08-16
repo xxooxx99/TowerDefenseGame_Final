@@ -25,6 +25,8 @@ import { baseAttackMonster } from '../models/baseUpgrade.js';
 import { add_count } from '../handlers/ability/gameAbilityActive.handler.js';
 // 보스 핸들러 가져오기
 import { handleSpawnBoss } from '../handlers/boss/bosshandlers.js';
+import { gameoverSignalReceive } from '../handlers/game/gameEnd.handler.js';
+import { recordRecentGame, sendRecentGameInfo } from '../handlers/user/userGameRecord.handler.js';
 
 const initSocket = (server) => {
   const io = new SocketIO();
@@ -105,7 +107,15 @@ const initSocket = (server) => {
         case PacketType.C2S_SPAWN_BOSS:
           handleSpawnBoss(socket, packet.payload.bossType);
           break;
-
+        case PacketType.C2S_GAMEOVER_SIGNAL:
+          gameoverSignalReceive(socket, packet);
+          break;
+        case PacketType.C2S_RECORD_RECENT_GAME:
+          recordRecentGame(socket, packet);
+          break;
+        case PacketType.C2S_RECENT_GAME_LOAD:
+          sendRecentGameInfo(socket, packet);
+          break;
         default:
           console.log(`Unknown packet type: ${packet.packetType}`);
       }
