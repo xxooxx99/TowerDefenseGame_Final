@@ -14,7 +14,6 @@ import {
 } from '../handlers/ability/ability.handler.js';
 // import connectHandler from '../handlers/index.js';
 import { handleDieMonster, handleSpawnMonster } from '../handlers/monster/monster.handler.js';
-//import { towerAddOnHandler, towerAttackHandler } from '../handlers/towers/tower.handler.js';
 import {
   towerAddHandler,
   towerAttack,
@@ -38,6 +37,24 @@ const initSocket = (server) => {
     console.log(`New user connected: ${socket.id}`);
     socket.emit('connection', { status: 'success', message: '연결 완료' });
 
+    socket.on('chat message', (data) => {
+      console.log(`Received chat message from ${data.userId}: ${data.message}`);
+
+      /* const currentTime = Date.now();
+      socket.emit('chat message', data); */
+    });
+
+    /* socket.on('chat message', (data) => {
+      if (data && data.userId && data.message) {
+        //중복 메시지 필터링
+        if (data.message !== lastMessage) {
+          lastMessage = data.message;
+        }
+      } else {
+        console.error('채팅 메시지 데이터 형식이 잘못되었습니다.', data);
+      }
+    }); */
+
     socket.on('event', (packet) => {
       // console.log(
       //   `Received packet: ${JSON.stringify(`패킷 타입 : ${packet.packetType} 유저 아이디 : ${packet.userId}`)}`,
@@ -57,9 +74,9 @@ const initSocket = (server) => {
         case PacketType.C2S_MATCH_ACCEPT:
           handlerMatchAcceptRequest(socket, packet);
           break;
-        case PacketType.C2S_TOWER_ATTACK:
+        /* case PacketType.C2S_TOWER_ATTACK:
           towerAttackHandler(socket, packet.userId, packet.payload);
-          break;
+          break; */
         case PacketType.C2S_MATCH_DENIED:
           handlerMatchDeniedRequest(socket, packet);
           break;
@@ -134,6 +151,8 @@ const initSocket = (server) => {
       }
     });
   });
+
+  return io;
 };
 
 export default initSocket;

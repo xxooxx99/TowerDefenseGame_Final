@@ -327,7 +327,6 @@ export const towerSale = (socket, data) => {
       return;
     }
 
-
     let saleTower;
     const towers = userData.towerInit[towerType][towerId];
     for (let tower of towers) {

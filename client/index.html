@@ -7,6 +7,35 @@
     <title>내일배움캠프 Node.js 트랙 타워 디펜스 게임 온라인</title>
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
     <style>
+      #chatContainer {
+        position: fixed;
+        bottom: 10px; /* 화면의 아래에서 10px 위에 위치 */
+        left: 50%; /* 화면의 가로 중앙에 위치 */
+        transform: translateX(-50%); /* 가로 중앙으로 정렬 */
+        width: 500px; /* 원하는 너비 설정 */
+        max-height: 550px; /* 원하는 최대 높이 설정 */
+        overflow-y: auto; /* 내용이 넘칠 경우 스크롤바 표시 */
+        background-color: rgba(0, 0, 0, 0.7); /* 반투명 배경 */
+        color: white; /* 텍스트 색상 */
+        padding: 10px;
+        border-radius: 10px;
+        font-size: 30px;
+        display: none; /* 게임 시작 전에는 숨겨져 있음 */
+      }
+      #chatLog {
+        border: 1px solid #ddd;
+        height: 300px;
+        overflow-y: auto;
+        margin-bottom: 10px;
+      }
+      #chatInput {
+        width: 100%;
+        padding: 10px;
+        box-sizing: border-box;
+      }
+      .system-message {
+        color: yellow;
+      }
       body {
         display: flex;
         justify-content: center;
@@ -194,6 +223,12 @@
       <progress id="progressBar" max="100" value="0" style="display: none"></progress>
       <button class="matchAcceptButton" id="matchAcceptButton" display="none">대결 수락하기</button>
     </div>
+
+    <div id="chatContainer">
+      <div id="chatLog"></div>
+      <input id="chatInput" type="text" placeholder="Type a message..." />
+    </div>
+    <!-- <script type="module" src="src/multi_game.js"></script> -->
 
     <div id="towers">
       <button id="baseTower" class="buttons-tower">

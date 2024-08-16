@@ -329,6 +329,7 @@ function placeBase(position, isPlayer) {
 }
 
 function spawnMonster() {
+  const socket = io();
   const monster = new Monster(monsterPath, monsterImages, monsterLevel);
   monster.setMonsterIndex(monsterIndex);
   monster.onDie = onMonsterDie; // 몬스터가 죽을 때 호출되는 콜백 설정
@@ -339,10 +340,18 @@ function spawnMonster() {
 
   if (monsterSpawnCount >= 20) {
     clearInterval(monsterintervalId);
+    /* socket.emit('chat message', {
+      userId: 'System',
+      message: `Level ${monsterLevel} Clear!`,
+    }); */
     monsterLevel++;
     monsterSpawnCount = 0;
     setTimeout(() => {
       startSpawning();
+      /* socket.emit('chat message', {
+        userId: 'System',
+        message: `Level ${monsterLevel} Start!`,
+      }); */
     }, 5000);
   }
 }
@@ -567,6 +576,24 @@ function matchFind(ownUserData, opponentUserData) {
     });
     return;
   }
+
+  if (
+    !progressBarMessage ||
+    !matchAcceptButton ||
+    !user_info ||
+    !opponentUser_name ||
+    !opponentUser_winRate ||
+    !ownUser_winRate ||
+    !progressBar ||
+    !loader ||
+    !towersBox ||
+    !canvas ||
+    !opponentCanvas
+  ) {
+    console.error('UI elements are missing.');
+    return;
+  }
+
   progressBarMessage.textContent = '게임을 찾았습니다.';
   matchAcceptButton.style.display = 'block';
 
@@ -584,15 +611,19 @@ function matchFind(ownUserData, opponentUserData) {
   progressBar.value = 0;
   progressBar.style.display = 'block';
   loader.style.display = 'none';
+
+  clearInterval(matchAcceptInterval); // 중복 타이머 방지
   matchAcceptInterval = setInterval(() => {
     progressValue += 10;
     progressBar.value = progressValue;
+
     // 일정 시간이 지나면 자동으로 거절을 하도록 한다
     if (progressValue >= 100) {
       clearInterval(matchAcceptInterval);
       progressBarContainer.style.display = 'none';
       progressBar.style.display = 'none';
       matchAcceptButton.disabled = false;
+
       serverSocket.emit('event', {
         packetType: 17,
         userId: localStorage.getItem('userId'),
@@ -694,6 +725,9 @@ Promise.all([
     if (!isInitGame) {
       initGame();
     }
+    const chatContainer = document.getElementById('chatContainer');
+    chatContainer.style.display = 'block';
+    initializeChat();
   });
 
   serverSocket.on('response', (data) => {
@@ -945,6 +979,71 @@ Promise.all([
 // 게임을 졌다는 신호를 보내는 함수
 function loseGame() {
   sendEvent(PacketType.C2S_GAMEOVER_SIGNAL, {});
+}
+
+/* let chatInitialized = false;
+let lastSentMessage = '';
+const messageThrottle = 1000;
+let lastSentTime = 0;
+let isSendingMessage = false; */
+
+// 채팅 기능 함수
+function initializeChat() {
+  // if (chatInitialized) return;
+
+  const chatLog = document.getElementById('chatLog');
+  const chatInput = document.getElementById('chatInput');
+  const chatContainer = document.getElementById('chatContainer');
+
+  // 채팅 UI 보이기
+  chatContainer.style.display = 'block';
+
+  // Socket.IO 연결 설정
+  const socket = io();
+
+  // 서버에서 채팅 메시지를 수신했을 때 UI에 표시
+  socket.on('chat message', (data) => {
+    if (data && data.userId && data.message) {
+      const messageElement = document.createElement('div');
+
+      /* if (data.userId === 'System') {
+        messageElement.classList.add('system-message');
+      } */
+
+      messageElement.textContent = `${data.userId}: ${data.message}`;
+      chatLog.appendChild(messageElement);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    } else {
+      console.error('채팅 메시지 데이터 형식이 잘못되었습니다.', data);
+    }
+  });
+
+  const systemMessageElement = document.createElement('div');
+  systemMessageElement.textContent = 'System: 5초 후 게임이 시작됩니다.';
+  systemMessageElement.style.color = 'yellow';
+  chatLog.appendChild(systemMessageElement);
+  chatLog.scrollTop = chatLog.scrollHeight;
+
+  // 입력 필드에서 Enter 키를 누르면 메시지를 서버로 전송
+  chatInput.addEventListener('keydown', (event) => {
+    const userId = localStorage.getItem('userId');
+    if (event.key === 'Enter') {
+      const message = chatInput.value;
+      chatInput.value = ''; // 입력 필드 비우기
+      /* isSendingMessage = true; */
+
+      /* const currentTime = Date.now();
+      if (message !== lastSentMessage || currentTime - lastSentTime > messageThrottle) {
+        lastSentMessage = message;
+        lastSentTime = currentTime;
+        console.log(`Sending chat message: ${message}`); */
+      socket.emit('chat message', { userId: userId, message });
+      /* setTimeout(() => (isSendingMessage = false), 500);
+      } */
+    }
+  });
+
+  /* chatInitialized = true; */
 }
 
 function updateMonstersHp(updatedMonsters) {
