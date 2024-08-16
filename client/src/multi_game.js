@@ -54,7 +54,7 @@ let monsterSpawnInterval = 2000; // 몬스터 생성 주기
 let towerIndex = 1;
 let monsterIndex = 1;
 // 설정 데이터
-let acceptTime = 10000; // 수락 대기 시간
+let acceptTime = 1000000; // 수락 대기 시간
 
 // 인터벌 데이터
 let matchAcceptInterval;
@@ -718,6 +718,10 @@ Promise.all([
     }
     if (data.PacketType === 111) {
       console.log('능력으로 인한 돈 추가');
+    }
+    if (data.PacketType === 112) {
+      console.log('상대방의 능력으로 인한 몬스터 추가');
+      spawnMonster();
     }
     // if (!isInitGame) {
     //   initGame(payload);

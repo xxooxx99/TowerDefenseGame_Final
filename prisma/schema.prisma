@@ -21,10 +21,27 @@ model UserInfo {
     highScore       Int         @default(0)
     win             Int         @default(0)
     lose            Int         @default(0)
+    money           Int         @default(0)
     user            User        @relation(fields: [userId], references: [userId])
 
     @@map("UserInfo")
 } 
+
+model UserAbilityList{
+  userId        String      @id
+  equipAbilityId  Int
+  userAbilityInfo UserAbilityInfo[]
+}
+
+model UserAbilityInfo{
+  userId      String    
+  abilityId       Int 
+  currentUpgrade         Int
+  hashId        Int       @unique  @default(autoincrement())
+  userAbilityList       UserAbilityList    @relation(fields:[userId], references: [userId])
+  
+   @@id([userId, abilityId])
+}
 
 model AbilityInfo {
   id                Int         @id
@@ -40,5 +57,10 @@ model AbilityInfo {
   costTo_2          Int         
   costTo_3          Int         
   costTo_4          Int         
-  costTo_5          Int         
+  costTo_5          Int     
+  needCount_1       Int
+  needCount_2       Int
+  needCount_3       Int
+  needCount_4       Int
+  needCount_5       Int
 }

@@ -34,8 +34,30 @@ export const registerHandler = router.post('/register', async (req, res) => {
         userPassword: hashedPassword,
         userPhoneNumber: userPhoneNumber,
         UserInfo: {
-          create: { highScore: 0, win: 0, lose: 0 },
+          create: { highScore: 0, win: 0, lose: 0, money: 0 },
         },
+      },
+    });
+
+    const newUserAbility = await prisma.UserAbilityList.create({
+      data: {
+        userId: userId,
+        equipAbilityId: 1,
+        userAbilityInfo: {
+          create: [
+            {
+              abilityId: 1,
+              currentUpgrade: 1,
+            },
+            {
+              abilityId: 2,
+              currentUpgrade: 0,
+            },
+          ],
+        },
+      },
+      include: {
+        userAbilityInfo: true,
       },
     });
 
