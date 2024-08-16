@@ -1,13 +1,6 @@
 import { Base } from './base.js';
 import { Monster } from './monster.js';
-import {
-  AttackSupportTower,
-  growthTower,
-  poisonTower,
-  SpeedSupportTower,
-  SplashTower,
-  Tower,
-} from './tower.js';
+import { AttackSupportTower, poisonTower, SpeedSupportTower, SplashTower, Tower } from './tower.js';
 import { Boss } from './boss.js'; // 보스 클래스 추가
 import { CLIENT_VERSION, INITIAL_TOWER_NUMBER, PacketType, TOWER_TYPE } from '../constants.js';
 
@@ -42,6 +35,7 @@ const opponentUser_winRate = document.getElementById('opponentUser-winRate');
 const ownUser_winRate = document.getElementById('ownUser-winRate');
 
 // 게임 데이터
+let towerSale = null;
 let towerUpgrade = null;
 let towerBuilderId = null;
 let towerBuilderType = null;
@@ -92,6 +86,17 @@ backgroundImage.src = 'images/bg.webp';
 const opponentBackgroundImage = new Image();
 opponentBackgroundImage.src = 'images/bg.webp';
 export const towerImages = [];
+export const towerStroke = [
+  'lightgray',
+  'skyblue',
+  'lightcoral',
+  'lightgreen',
+  'lightsalmon',
+  'lightseagreen',
+  'lightgoldenrodyellow',
+  'lightcyan',
+  'lavender',
+];
 for (let i = 0; i < 9; i++) {
   for (let k = 0; k <= 2; k++) {
     const image = new Image();
@@ -187,8 +192,19 @@ function placeInitialTowers(initialTowerCoords, initialTowers) {
   }
 }
 
+function towerSaleCheck() {
+  if (towerBuilderId || towerBuilderType || towerUpgrade) return;
+  if (towerSale) {
+    towerSale = null;
+    saleTowerButton.style.backgroundColor = 'white';
+  } else {
+    towerSale = 'ok';
+    saleTowerButton.style.backgroundColor = 'red';
+  }
+}
+
 function towerUpgradeCheck() {
-  if (towerBuilderId || towerBuilderType) return;
+  if (towerBuilderId || towerBuilderType || towerSale) return;
   if (towerUpgrade) {
     towerUpgrade = null;
     upgradeTowerButton.style.backgroundColor = 'white';
@@ -200,7 +216,7 @@ function towerUpgradeCheck() {
 
 //건물 건설 활성화 및 비활성화 버튼
 function towerBuilderCheck(towerType, button) {
-  if (towerUpgrade) return;
+  if (towerUpgrade || towerSale) return;
   if (!towerBuilderId) {
     towerBuilderId = towerType;
     towerBuilderType = TOWER_TYPE[towerBuilderId / 100];
@@ -246,6 +262,33 @@ function towerUpgrades() {
 
   if (min < 50) {
     sendEvent(PacketType.C2S_TOWER_UPGRADE, {
+      userId,
+      towerType: selectTower.towerType,
+      towerId: selectTower.towerId,
+      towerNumber: selectTower.towerNumber,
+    });
+  }
+}
+
+function towerSales() {
+  let min = Infinity;
+  let selectTower = null;
+  for (let towerType in towers) {
+    for (let towerId in towers[towerType]) {
+      for (let i = 0; i < towers[towerType][towerId].length; i++) {
+        const tower = towers[towerType][towerId][i];
+        const distance = Math.sqrt(Math.pow(posX - tower.x, 2) + Math.pow(posY - tower.y, 2));
+
+        if (min > distance) {
+          min = distance;
+          selectTower = tower;
+        }
+      }
+    }
+  }
+
+  if (min < 50) {
+    sendEvent(PacketType.C2S_TOWER_SALE, {
       userId,
       towerType: selectTower.towerType,
       towerId: selectTower.towerId,
@@ -395,6 +438,8 @@ function gameLoop() {
             monsterIndexs: data.monsters,
             isExistSpeed: data.isExistSpeed,
             isExistPower: data.isExistPower,
+            monstersSplash: data.monstersSplash,
+            poisonDamage: data.poisonDamage,
             time: data.now,
           });
         }
@@ -492,26 +537,9 @@ function opponentBaseAttacked(value) {
   opponentBase.updateHp(opponentBaseHp);
 }
 function initGame() {
-  // if (!payload) {
-  //   console.log('Received payload:', payload);
-  //   return;
-  // }
   if (isInitGame) {
     return;
   }
-
-  // userGold = payload.userGold;
-  // baseHp = payload.baseHp;
-  // monsterPath = payload.monsterPath;
-  // initialTowerCoords = payload.initialTowerCoords;
-  // basePosition = payload.basePosition;
-  // opponentMonsterPath = payload.opponentMonsterPath;
-  // opponentInitialTowerCoords = payload.opponentInitialTowerCoords;
-  // opponentBasePosition = payload.opponentBasePosition;
-  // opponentBaseHp = payload.opponentBaseHp;
-  // opponentBase = new Base(opponentBasePosition.x, opponentBasePosition.y, baseHp);
-  // opponentBase.draw(opponentCtx, baseImage, true);
-  // opponentBaseHp = payload.baseHp;
 
   bgm = new Audio('sounds/bgm.mp3');
   bgm.loop = true;
@@ -703,52 +731,63 @@ Promise.all([
     // }
   });
 
-  serverSocket.on('userTowerUpgrade', (data) => {
-    const { towerType, towerId, towerCost, towerData } = data;
-
+  serverSocket.on('towerAttack', (data) => {
+    const { towerType, towerId, towerNumber, attackedmonsters, killCount } = data;
     if (userId !== data.userId) {
-      const arr = opponentTowers[towerType][towerId - 1];
-      for (let i = 0; i < arr.length; i++) {
-        if (arr[i].towerNumber == towerData.number) {
-          arr.splice(i, 1);
-          break;
+      for (let attackedMonsterData of attackedmonsters) {
+        for (let clientMonster of opponentMonsters) {
+          if (attackedMonsterData.monsterIndex == clientMonster.monsterIndex) {
+            clientMonster.setHp(attackedMonsterData.hp);
+            break;
+          }
+        }
+      }
+    } else {
+      for (let attackedMonsterData of attackedmonsters) {
+        for (let clientMonster of monsters) {
+          if (attackedMonsterData.monsterIndex == clientMonster.monsterIndex) {
+            clientMonster.setHp(attackedMonsterData.hp);
+            break;
+          }
         }
       }
 
-      const tower = new Tower(towerType, towerId, towerData.number, towerData.posX, towerData.posY);
-      opponentTowers[towerType][towerId].push(tower);
-    } else {
-      const arr = towers[towerType][towerId - 1];
-      for (let i = 0; i < arr.length; i++) {
-        if (arr[i].towerNumber == towerData.number) {
-          arr.splice(i, 1);
-          break;
+      if (killCount != 0) {
+        console.log(`killCount: ${killCount}`);
+        for (let tower of towers[towerType][towerId]) {
+          if (tower.towerNumber == towerNumber) {
+            tower.killCount -= killCount;
+            break;
+          }
         }
       }
-
-      const tower = new Tower(towerType, towerId, towerData.number, towerData.posX, towerData.posY);
-      towers[towerType][towerId].push(tower);
-      userGold -= towerCost;
     }
   });
 
-  serverSocket.on('userTowerCreate', (data) => {
-    const { towerId, towerCost, number, posX, posY } = data;
-    console.log(towerId);
-
+  serverSocket.on('towerSale', (data) => {
+    const { towerType, towerId, towerNumber, saledGold } = data;
     if (userId !== data.userId) {
-      const tower = new Tower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
-      opponentTowers[TOWER_TYPE[towerId / 100 - 1]][towerId].push(tower);
+      const towersList = opponentTowers[towerType][towerId];
+      for (let i = 0; i < towersList.length; i++) {
+        if (towersList[i].towerNumber == towerNumber) {
+          towersList.splice(i, 1);
+          break;
+        }
+      }
     } else {
-      const tower = new Tower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
-      towers[TOWER_TYPE[towerId / 100 - 1]][towerId].push(tower);
-      userGold -= towerCost;
+      const towersList = towers[towerType][towerId];
+      for (let i = 0; i < towersList.length; i++) {
+        if (towersList[i].towerNumber == towerNumber) {
+          towersList.splice(i, 1);
+          userGold += saledGold;
+          break;
+        }
+      }
     }
   });
 
   serverSocket.on('userTowerUpgrade', (data) => {
     const { towerType, towerId, towerCost, towerData } = data;
-    console.log(`받은 업그레이드 데이터:${towerId}`);
     if (userId !== data.userId) {
       const arr = opponentTowers[towerType][towerId - 1];
       for (let i = 0; i < arr.length; i++) {
@@ -791,9 +830,6 @@ Promise.all([
         break;
       case TOWER_TYPE[7]:
         tower = new poisonTower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
-        break;
-      case TOWER_TYPE[8]:
-        tower = new growthTower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
         break;
       default:
         tower = new Tower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
@@ -884,9 +920,6 @@ Promise.all([
       case PacketType.S2C_ENEMY_TOWER_SPAWN:
         placeNewOpponentTower(packet.data.opponentTowers);
         break;
-      case PacketType.C2S_TOWER_ATTACK:
-        opponentTowerAttack(packet.data.attackedOpponentMonster);
-        break;
       // case PacketType.S2C_ENEMY_TOWER_ATTACK:
       //   opponentTowerAttack(packet.data.attackedOpponentMonster, packet.data.attackedOpponentTower);
       //   break;
@@ -954,6 +987,7 @@ const buyTowerButton7 = document.getElementById('multiShotTower');
 const buyTowerButton8 = document.getElementById('poisonTower');
 const buyTowerButton9 = document.getElementById('growthTower');
 const upgradeTowerButton = document.getElementById('towerUpgrade');
+const saleTowerButton = document.getElementById('towerSale');
 
 const buttons = [
   buyTowerButton1,
@@ -980,34 +1014,22 @@ upgradeTowerButton.addEventListener('click', (event) => {
   event.stopPropagation();
 });
 
+saleTowerButton.addEventListener('click', (event) => {
+  towerSaleCheck();
+  event.stopPropagation();
+});
+
 const mousePos = (event) => {
   posX = event.offsetX;
   posY = event.offsetY;
   console.log(posX, posY);
   if (towerBuilderId) towerRequest();
-  if (towerUpgrade) {
-    towerUpgrades();
-  }
+  if (towerUpgrade) towerUpgrades();
+  if (towerSale) towerSales();
 };
+
 const gameCanvas = document.getElementById('gameCanvas');
 gameCanvas.addEventListener('click', mousePos);
-
-// function decycle(obj, stack = []) {
-//   if (!obj || typeof obj !== 'object') {
-//     return obj;
-//   }
-//   if (stack.includes(obj)) {
-//     return null;
-//   }
-//   const newStack = stack.concat([obj]);
-//   if (Array.isArray(obj)) {
-//     return obj.map((item) => decycle(item, newStack));
-//   }
-//   return Object.keys(obj).reduce((acc, key) => {
-//     acc[key] = decycle(obj[key], newStack);
-//     return acc;
-//   }, {});
-// }
 
 //보스 출현 로직
 
