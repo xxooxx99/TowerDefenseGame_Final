@@ -35,6 +35,7 @@ const opponentUser_winRate = document.getElementById('opponentUser-winRate');
 const ownUser_winRate = document.getElementById('ownUser-winRate');
 
 // 게임 데이터
+let towerSale = null;
 let towerUpgrade = null;
 let towerBuilderId = null;
 let towerBuilderType = null;
@@ -85,6 +86,17 @@ backgroundImage.src = 'images/bg.webp';
 const opponentBackgroundImage = new Image();
 opponentBackgroundImage.src = 'images/bg.webp';
 export const towerImages = [];
+export const towerStroke = [
+  'lightgray',
+  'skyblue',
+  'lightcoral',
+  'lightgreen',
+  'lightsalmon',
+  'lightseagreen',
+  'lightgoldenrodyellow',
+  'lightcyan',
+  'lavender',
+];
 for (let i = 0; i < 9; i++) {
   for (let k = 0; k <= 2; k++) {
     const image = new Image();
@@ -180,8 +192,19 @@ function placeInitialTowers(initialTowerCoords, initialTowers) {
   }
 }
 
+function towerSaleCheck() {
+  if (towerBuilderId || towerBuilderType || towerUpgrade) return;
+  if (towerSale) {
+    towerSale = null;
+    saleTowerButton.style.backgroundColor = 'white';
+  } else {
+    towerSale = 'ok';
+    saleTowerButton.style.backgroundColor = 'red';
+  }
+}
+
 function towerUpgradeCheck() {
-  if (towerBuilderId || towerBuilderType) return;
+  if (towerBuilderId || towerBuilderType || towerSale) return;
   if (towerUpgrade) {
     towerUpgrade = null;
     upgradeTowerButton.style.backgroundColor = 'white';
@@ -193,7 +216,7 @@ function towerUpgradeCheck() {
 
 //건물 건설 활성화 및 비활성화 버튼
 function towerBuilderCheck(towerType, button) {
-  if (towerUpgrade) return;
+  if (towerUpgrade || towerSale) return;
   if (!towerBuilderId) {
     towerBuilderId = towerType;
     towerBuilderType = TOWER_TYPE[towerBuilderId / 100];
@@ -239,6 +262,33 @@ function towerUpgrades() {
 
   if (min < 50) {
     sendEvent(PacketType.C2S_TOWER_UPGRADE, {
+      userId,
+      towerType: selectTower.towerType,
+      towerId: selectTower.towerId,
+      towerNumber: selectTower.towerNumber,
+    });
+  }
+}
+
+function towerSales() {
+  let min = Infinity;
+  let selectTower = null;
+  for (let towerType in towers) {
+    for (let towerId in towers[towerType]) {
+      for (let i = 0; i < towers[towerType][towerId].length; i++) {
+        const tower = towers[towerType][towerId][i];
+        const distance = Math.sqrt(Math.pow(posX - tower.x, 2) + Math.pow(posY - tower.y, 2));
+
+        if (min > distance) {
+          min = distance;
+          selectTower = tower;
+        }
+      }
+    }
+  }
+
+  if (min < 50) {
+    sendEvent(PacketType.C2S_TOWER_SALE, {
       userId,
       towerType: selectTower.towerType,
       towerId: selectTower.towerId,
@@ -707,6 +757,28 @@ Promise.all([
     }
   });
 
+  serverSocket.on('towerSale', (data) => {
+    const { towerType, towerId, towerNumber, saledGold } = data;
+    if (userId !== data.userId) {
+      const towersList = opponentTowers[towerType][towerId];
+      for (let i = 0; i < towersList.length; i++) {
+        if (towersList[i].towerNumber == towerNumber) {
+          towersList.splice(i, 1);
+          break;
+        }
+      }
+    } else {
+      const towersList = towers[towerType][towerId];
+      for (let i = 0; i < towersList.length; i++) {
+        if (towersList[i].towerNumber == towerNumber) {
+          towersList.splice(i, 1);
+          userGold += saledGold;
+          break;
+        }
+      }
+    }
+  });
+
   serverSocket.on('userTowerUpgrade', (data) => {
     const { towerType, towerId, towerCost, towerData } = data;
     if (userId !== data.userId) {
@@ -898,6 +970,7 @@ const buyTowerButton7 = document.getElementById('multiShotTower');
 const buyTowerButton8 = document.getElementById('poisonTower');
 const buyTowerButton9 = document.getElementById('growthTower');
 const upgradeTowerButton = document.getElementById('towerUpgrade');
+const saleTowerButton = document.getElementById('towerSale');
 
 const buttons = [
   buyTowerButton1,
@@ -924,14 +997,18 @@ upgradeTowerButton.addEventListener('click', (event) => {
   event.stopPropagation();
 });
 
+saleTowerButton.addEventListener('click', (event) => {
+  towerSaleCheck();
+  event.stopPropagation();
+});
+
 const mousePos = (event) => {
   posX = event.offsetX;
   posY = event.offsetY;
   console.log(posX, posY);
   if (towerBuilderId) towerRequest();
-  if (towerUpgrade) {
-    towerUpgrades();
-  }
+  if (towerUpgrade) towerUpgrades();
+  if (towerSale) towerSales();
 };
 
 const gameCanvas = document.getElementById('gameCanvas');

@@ -10,7 +10,12 @@ import { load_ability } from '../handlers/ability/ability.Handler.js';
 import connectHandler from '../handlers/index.js';
 import { handleDieMonster, handleSpawnMonster } from '../handlers/monster/monster.handler.js';
 import { towerAddOnHandler, towerAttackHandler } from '../handlers/towers/tower.handler.js';
-import { towerAddHandler, towerAttack, towerUpgrade } from '../handlers/tower/tower.handler.js';
+import {
+  towerAddHandler,
+  towerAttack,
+  towerUpgrade,
+  towerSale,
+} from '../handlers/tower/tower.handler.js';
 import { handleMonsterBaseAttack, handleBaseAttackMonster } from '../handlers/game/gameHandler.js';
 import { baseAttackMonster } from '../models/baseUpgrade.js';
 import { add_count } from '../handlers/ability/ability_1.handler.js';
@@ -76,6 +81,9 @@ const initSocket = (server) => {
           break;
         case PacketType.S2C_TOWER_ATTACK:
           towerAttack(socket, packet);
+          break;
+        case PacketType.S2C_TOWER_SALE:
+          towerSale(socket, packet);
           break;
         case PacketType.C2S_BASE_ATTACK:
           baseAttackMonster(socket, uuid, payload);

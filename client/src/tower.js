@@ -1,4 +1,4 @@
-import { towersData, towerImages } from './multi_game.js';
+import { towersData, towerImages, towerStroke } from './multi_game.js';
 
 export class Tower {
   constructor(towerTypes, towerId, towerNumber, x, y) {
@@ -45,7 +45,7 @@ export class Tower {
           this.target[i].x + this.target[i].width / 2,
           this.target[i].y + this.target[i].height / 2,
         );
-        ctx.strokeStyle = 'skyblue';
+        ctx.strokeStyle = towerStroke[Math.floor(this.towerId / 100 - 1)];
         ctx.lineWidth = 10;
         ctx.stroke();
         ctx.closePath();

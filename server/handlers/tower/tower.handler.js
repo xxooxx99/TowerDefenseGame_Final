@@ -255,7 +255,13 @@ export const towerAttack = (socket, data) => {
           (monster) => monster.monsterIndex == monsterData.monsterIndex,
         );
         attackedmonsters.push(
-          setPoisonMonster(userId, damage, (towerId % 100) + 1, monsterData.monsterIndex),
+          setPoisonMonster(
+            userId,
+            damage,
+            (towerId % 100) + 1,
+            monsterData.monsterIndex,
+            poisonDamage,
+          ),
         );
       }
     } else {
@@ -308,11 +314,46 @@ export const towerAttack = (socket, data) => {
   }
 };
 
-export const towerDestroy = (socket, data) => {};
+export const towerSale = (socket, data) => {
+  try {
+    const { userId, towerType, towerId, towerNumber } = data.payload;
+    const towerAsset = getGameAssets().towerData.towerType;
+    const userData = getPlayData(userId);
+    const index = towerId % 100;
 
-// let attackedTower = { towerType, towerId, towerNumber };
-// attackedMonster = setDamagedMonsterHp(userId, damage, monsterData.monsterIndex);
-// sendGameSync(socket, userId, PacketType.S2C_TOWER_ATTACK, {
-//   attackedMonster,
-//   attackedTower,
-// });
+    if (!userData) {
+      console.log('플레이어가 존재하지 않습니다.');
+      return;
+    }
+
+    let saleTower;
+    const towers = userData.towerInit[towerType][towerId];
+    for (let tower of towers) {
+      if (tower.number == towerNumber) {
+        saleTower = towerDelete(userData.towerInit, towerType, towerId, towerNumber);
+        break;
+      }
+    }
+
+    let gold;
+    if (saleTower) {
+      gold = Math.ceil(towerAsset[towerType][index].cost / 2);
+      userData.addGold(gold);
+    }
+
+    let packet = {
+      packetType: PacketType.S2C_TOWER_SALE,
+      userId: userId,
+      towerType: towerType,
+      towerId: towerId,
+      towerNumber: towerNumber,
+      saledGold: gold,
+    };
+
+    const opponentSocket = getOpponentInfo(userId);
+    socket.emit('towerSale', packet);
+    opponentSocket.emit('towerSale', packet);
+  } catch (err) {
+    console.log(err);
+  }
+};

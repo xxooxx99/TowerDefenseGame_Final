@@ -177,12 +177,12 @@
     "poisonTower": [
       {
         "id": 800,
-        "power": 40,
+        "power": 10,
         "cost": 50,
         "UpgradeCost": 100,
         "attackCycle": 200,
         "range": 300,
-        "poisonDamage": 500
+        "poisonDamage": 5
       },
       {
         "id": 801,
@@ -207,7 +207,7 @@
       {
         "id": 900,
         "power": 9000,
-        "cost": 0,
+        "cost": 50,
         "UpgradeCost": 100,
         "attackCycle": 200,
         "range": 300,
@@ -217,7 +217,7 @@
       {
         "id": 901,
         "power": 50,
-        "cost": 0,
+        "cost": 50,
         "UpgradeCost": 90,
         "attackCycle": 200,
         "range": 300,
@@ -227,7 +227,7 @@
       {
         "id": 902,
         "power": 60,
-        "cost": 0,
+        "cost": 50,
         "UpgradeCost": 80,
         "attackCycle": 200,
         "range": 300,
