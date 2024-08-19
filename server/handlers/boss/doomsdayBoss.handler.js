@@ -2,7 +2,7 @@ import EventEmitter from 'events';
 import { PacketType } from '../../constants.js';
 
 export default class DoomsdayBoss extends EventEmitter {
-    constructor() {
+    constructor(socket) {
         super();  // EventEmitter 생성자 호출
         this.hp = 1200;
         this.maxHp = 1200;
@@ -11,6 +11,7 @@ export default class DoomsdayBoss extends EventEmitter {
         this.skills = ['placeMark', 'cryOfDoom', 'absorbDamage'];
         this.currentSkill = '';
         this.bgm = 'doomsdayBossBGM.mp3';
+        this.socket = socket;
         this.cryOfDoomStack = 0;
     }
 
@@ -23,13 +24,13 @@ export default class DoomsdayBoss extends EventEmitter {
 
         switch (randomSkill) {
             case 'placeMark':
-                this.placeMark(socket, towers);  // 타워가 존재하는지 확인하고 파괴
+                this.placeMark(this.socket, towers);  
                 break;
             case 'cryOfDoom':
-                this.cryOfDoom(socket, base);
+                this.cryOfDoom(this.socket, base);
                 break;
             case 'absorbDamage':
-                this.absorbDamage(socket);
+                this.absorbDamage(this.socket);
                 break;
         }
     }
@@ -73,7 +74,7 @@ export default class DoomsdayBoss extends EventEmitter {
     }
 
     isWithinRange(tower, x, y) {
-        const tolerance = 20;  // 좌표 비교에 사용할 허용 범위
+        const tolerance = 20;  
         return Math.abs(tower.posX - x) < tolerance && Math.abs(tower.posY - y) < tolerance;
     }
 
@@ -111,13 +112,13 @@ export default class DoomsdayBoss extends EventEmitter {
         console.log(`Boss took ${damage} damage. Remaining HP: ${this.hp}`);
 
         if (this.hp <= 0) {
-            this.die();  // 보스가 사망했을 때 die 메서드 호출
+            this.die();  
         }
     }
 
     die() {
         console.log('DoomsdayBoss has been defeated.');
-        this.emit('die');  // 'die' 이벤트 발생
+        this.emit('die');  
     }
 
     getRandomSkill() {

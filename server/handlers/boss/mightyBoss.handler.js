@@ -36,23 +36,18 @@ export default class MightyBoss extends EventEmitter {
 
     healSkill() {
         this.hp = Math.min(this.maxHp, this.hp + this.maxHp * 0.1);
-        console.log('보스가 최대 체력의 10%를 회복하였습니다.');
-
-        // 클라이언트에 보스 체력 정보 전송
+        console.log('Boss healed 10% of max HP.');
         this.socket.emit('updateBossHp', { hp: this.hp });
-
-        // 스킬 사용 후 이벤트 발생
         this.emit('skillUsed', { skill: 'healSkill', hp: this.hp });
     }
 
     spawnClone() {
         const cloneHp = this.hp * 0.5;
-        console.log(`보스가 클론을 소환하였습니다.`);
+        console.log('Boss spawned a clone.');
 
         const clone = new MightyBoss(this.socket);
         clone.hp = cloneHp;
 
-        // 클론 정보 클라이언트에 전송
         this.socket.emit('bossSpawn', {
             bossType: 'Clone',
             hp: clone.hp,
@@ -60,29 +55,19 @@ export default class MightyBoss extends EventEmitter {
             speed: clone.speed,
         });
 
-        // 스킬 사용 후 이벤트 발생
         this.emit('skillUsed', { skill: 'spawnClone', cloneHp: clone.hp });
     }
 
     reduceDamage() {
         this.defense *= 0.5;
-        console.log('보스가 5초동안 받는 피해를 50%로 감소시킵니다.');
-
-        // 클라이언트에 방어력 감소 정보 전송
+        console.log('Boss reduces incoming damage by 50% for 5 seconds.');
         this.socket.emit('updateBossDefense', { defense: this.defense });
-
-        // 스킬 사용 후 이벤트 발생
         this.emit('skillUsed', { skill: 'reduceDamage', defense: this.defense });
 
         setTimeout(() => {
             this.defense *= 2;
-            console.log('보스의 방어력 스킬의 지속시간이 종료되었습니다.');
-
-            // 클라이언트에 방어력 복원 정보 전송
-            socket.emit('updateBossDefense', { defense: this.defense });
-
-            // 방어력 복원 후 이벤트 발생
-            this.socket.emit('skillRestored', { defense: this.defense });
+            console.log('Boss defense restored.');
+            this.socket.emit('updateBossDefense', { defense: this.defense });
         }, 5000);
     }
 
