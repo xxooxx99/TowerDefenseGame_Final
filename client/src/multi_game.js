@@ -714,61 +714,172 @@ Promise.all([
     console.log('client checking: ', userId);
   });
 
-// 보스 소환 이벤트 리스너 등록
-serverSocket.on('bossSpawned', (data) => {
-  if (!data.success) {
-    console.error('Failed to spawn boss');
-    return;
-  }
-
-  const { bossType, hp } = data.boss;
-  console.log(`${bossType} successfully spawned with HP: ${hp}`);
-
-  let bossImage = new Image();
-  switch (bossType) {
-    case 'MightyBoss':
-      bossImage.src = 'images/MightyBoss.png';
-      break;
-    case 'TowerControlBoss':
-      bossImage.src = 'images/TowerControlBoss.png';
-      break;
-    case 'TimeRifter':
-      bossImage.src = 'images/TimeRifter.png';
-      break;
-    case 'DoomsdayBoss':
-      bossImage.src = 'images/DoomsdayBoss.png';
-      break;
-    case 'FinaleBoss':
-      bossImage.src = 'images/FinaleBoss.png';
-      break;
-    default:
-      console.error('Invalid boss type');
+  // 보스 소환 이벤트 리스너 등록
+  serverSocket.on('bossSpawned', (data) => {
+    console.log('Received bossSpawned event:', data);
+  
+    if (!data.success) {
+      console.error('Failed to spawn boss - Success flag is false.');
       return;
-  }
+    }
+  
+    const { bossType, hp } = data;  // 수정: data.boss에서 data로 변경
+  
+    if (!bossType || !hp) {
+      console.error('Error: No boss data found in bossSpawned event.');
+      return;
+    }
+  
+    console.log(`Spawning ${bossType} with HP: ${hp}`);
+  
+    let bossImage = new Image();
+    switch (bossType) {
+      case 'MightyBoss':
+        bossImage.src = 'images/MightyBoss.png';
+        break;
+      case 'TowerControlBoss':
+        bossImage.src = 'images/TowerControlBoss.png';
+        break;
+      case 'TimeRifter':
+        bossImage.src = 'images/TimeRifter.png';
+        break;
+      case 'DoomsdayBoss':
+        bossImage.src = 'images/DoomsdayBoss.png';
+        break;
+      case 'FinaleBoss':
+        bossImage.src = 'images/FinaleBoss.png';
+        break;
+      default:
+        console.error('Invalid boss type:', bossType);
+        return;
+    }
+  
+    // 이미지 로딩 시작 로그
+    console.log(`Loading image for ${bossType} from path: ${bossImage.src}`);
+  
+    bossImage.onload = () => {
+      console.log(`${bossType} image loaded successfully`);
+  
+      // Ensure these variables are defined and valid
+      console.log('Creating boss with monsterPath:', monsterPath, 'monsterLevel:', monsterLevel);
+  
+      if (!monsterPath || !monsterLevel) {
+        console.error('Error: monsterPath or monsterLevel is not defined.');
+        return;
+      }
+  
+      const boss = new Boss(monsterPath, bossImage, monsterLevel);
+  
+      // Check if boss and monsters array are correctly initialized
+      console.log('Boss created:', boss);
+  
+      if (!Array.isArray(monsters)) {
+        console.error('Error: monsters array is not defined or not an array.');
+        return;
+      }
+  
+      boss.setMonsterIndex(monsterIndex);
+      monsters.push(boss);
+      console.log('Boss created and pushed to monsters array:', boss);
 
-  bossImage.onload = () => {
-    const boss = new Boss(monsterPath, bossImage, monsterLevel);
-    boss.setMonsterIndex(monsterIndex);
-    monsters.push(boss);
-
-    sendEvent(PacketType.C2S_SPAWN_BOSS, {
-      hp: boss.getMaxHp(),
-      monsterIndex,
-      monsterLevel,
-      isBoss: true,
-    });
-
-    console.log(`${bossType} spawned`);
-
-    bossSpawned = true;
-    currentBossStage = monsterLevel;  // 현재 스테이지 기록
-    monsterIndex++;
-  };
-
-  bossImage.onerror = () => {
-    console.error(`Failed to load boss image for ${bossType}`);
-  };
-});
+  
+      // 추가적인 데이터 검증
+      console.log('Boss details:', {
+        maxHp: boss.getMaxHp(),
+        monsterIndex,
+        monsterLevel,
+        isBoss: true,
+      });
+  
+      sendEvent(PacketType.C2S_SPAWN_BOSS, {
+        hp: boss.getMaxHp(), // 최대 HP 전달
+        monsterIndex: boss.getMonsterIndex(),
+        monsterLevel: boss.level,
+        isBoss: true
+      });
+      
+      boss.draw(ctx);  // 예시로 보스를 직접 그리는 함수 호출
+      console.log(`${bossType} successfully spawned in game`);
+  
+      bossSpawned = true;
+      currentBossStage = monsterLevel;
+      monsterIndex++;
+    };
+  
+    bossImage.onerror = () => {
+      console.error(`Failed to load boss image for ${bossType}`);
+    };
+  });
+  
+  // 서버에서 보스 소환 이벤트를 수신했을 때 처리
+  serverSocket.on('event', (data) => {
+    console.log('Received event data:', data);
+  
+    if (data.packetType === PacketType.S2C_BOSS_SPAWN) {
+      console.log('Boss spawn event received:', data);
+  
+      const bossData = data.bossData;
+  
+      if (!bossData || !bossData.bossType || !bossData.monsterLevel || !bossData.monsterIndex) {
+        console.error('Error: Missing bossData or required properties.');
+        return;
+      }
+  
+      let bossImage = new Image();
+      switch (bossData.bossType) {
+        case 'MightyBoss':
+          bossImage.src = 'images/MightyBoss.png';
+          break;
+        case 'TowerControlBoss':
+          bossImage.src = 'images/TowerControlBoss.png';
+          break;
+        case 'TimeRifter':
+          bossImage.src = 'images/TimeRifter.png';
+          break;
+        case 'DoomsdayBoss':
+          bossImage.src = 'images/DoomsdayBoss.png';
+          break;
+        case 'FinaleBoss':
+          bossImage.src = 'images/FinaleBoss.png';
+          break;
+        default:
+          console.error('Invalid boss type:', bossData.bossType);
+          return;
+      }
+  
+      // 이미지 로딩 시작 로그
+      console.log(`Loading image for ${bossData.bossType} from path: ${bossImage.src}`);
+  
+      bossImage.onload = () => {
+        console.log(`${bossData.bossType} image loaded successfully`);
+  
+        // Ensure these variables are defined and valid
+        console.log('Creating boss with monsterPath:', monsterPath, 'monsterLevel:', bossData.monsterLevel);
+  
+        if (!monsterPath || !bossData.monsterLevel) {
+          console.error('Error: monsterPath or monsterLevel is not defined.');
+          return;
+        }
+  
+        const boss = new Boss(monsterPath, bossImage, bossData.monsterLevel);
+        console.log('Boss created:', boss);
+  
+        if (!Array.isArray(monsters)) {
+          console.error('Error: monsters array is not defined or not an array.');
+          return;
+        }
+  
+        boss.setMonsterIndex(bossData.monsterIndex);
+        monsters.push(boss);
+  
+        console.log(`Boss spawned with HP: ${bossData.hp}`);
+      };
+  
+      bossImage.onerror = () => {
+        console.error(`Failed to load boss image for ${bossData.bossType}`);
+      };
+    }
+  });
 
 // 서버에서 보스 소환 이벤트를 수신했을 때 처리
 serverSocket.on('event', (data) => {
@@ -1301,24 +1412,37 @@ function onMonsterDie() {
     updateBossAttempt();
     if (monsterDeathCount <= 0) {
       bossAttemptElement.innerText = 'WARNING : Watch out for the boss';
-      spawnBoss();
     }
   }
 }
 
-function spawnBoss() {
-  if (bossSpawned && currentBossStage === monsterLevel) {
-    console.log(`Boss already spawned for Level ${monsterLevel}`);
-    return;
+function moveToStage(stage) {
+  clearInterval(monsterintervalId);  // 현재 몬스터 스폰 인터벌을 중지
+  monsterLevel = stage;  // 스테이지 변경
+  bossSpawned = false;  // 보스 소환 상태 초기화
+  monsterSpawnCount = 0;  // 몬스터 스폰 카운트 초기화
+
+  console.log(`Moved to Stage ${stage}`);  // 스테이지 이동 확인 로그
+  startSpawning();  // 새로운 스테이지에서 몬스터 소환 시작
+
+  // 보스가 등장하는 스테이지인지 확인
+  if (stages.includes(stage)) {
+    console.log(`Stage ${stage} is a boss stage. Spawning boss...`);  // 보스 소환 여부 확인 로그
+    spawnBoss();  // 보스 소환 요청
+  } else {
+    console.log(`Stage ${stage} is not a boss stage.`);  // 보스가 소환되지 않음을 알리는 로그
   }
 
-  const bossType = getBossTypeForLevel(monsterLevel);  // monsterLevel에 따른 보스 타입 결정
+  // 스테이지 변경 메시지
   serverSocket.emit('chat message', {
-    userId: 'System',
-    message: `Level ${monsterLevel} Boss has appeared!`,
+      userId: 'System',
+      message: `Moved to Stage ${stage}`,
   });
+}
 
-  serverSocket.emit('spawnBoss', { bossType });  // 보스 타입을 포함하여 서버로 전송
+function spawnBoss() {
+  console.log("Spawning boss... Sending request to server.");  // 보스 소환 요청 로그 추가
+  serverSocket.emit('spawnBoss', { stage: monsterLevel });  // 서버로 보스 소환 요청 전송
 }
 
 function getBossTypeForLevel(level) {
@@ -1393,25 +1517,3 @@ stages.forEach(stage => {
 
   stageButtonsContainer.appendChild(stageButton);
 });
-
-// 스테이지로 이동하는 함수
-function moveToStage(stage) {
-  clearInterval(monsterintervalId);  // 현재 몬스터 스폰 인터벌을 중지
-  monsterLevel = stage;  // 스테이지 변경
-  bossSpawned = false;  // 보스 소환 상태 초기화
-  monsterSpawnCount = 0;  // 몬스터 스폰 카운트 초기화
-
-  console.log(`Moved to Stage ${stage}`);
-  startSpawning();  // 새로운 스테이지에서 몬스터 소환 시작
-
-  // 보스가 등장하는 스테이지인 경우 보스 소환
-  if (stages.includes(stage)) {
-    spawnBoss();
-  }
-
-  // 스테이지 변경 메시지
-  serverSocket.emit('chat message', {
-    userId: 'System',
-    message: `Moved to Stage ${stage}`,
-  });
-}

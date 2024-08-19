@@ -1,5 +1,9 @@
-export default class TimeRifter {
+import EventEmitter from 'events';
+import { PacketType } from '../../constants.js';
+
+export default class TimeRifter extends EventEmitter {
     constructor() {
+        super();  // EventEmitter 생성자 호출
         this.hp = 700;
         this.defense = 10;
         this.speed = 3;
@@ -9,12 +13,13 @@ export default class TimeRifter {
         this.rememberedHp = this.hp;  // 체력 되돌리기 스킬용 변수
     }
 
-    useSkill(socket, towers) {
+    useSkill(io, towers) {
         const randomSkill = this.getRandomSkill();
         this.currentSkill = randomSkill;
 
         // 스킬 효과음을 클라이언트에 전송
-        socket.emit('playSkillSound', { sound: 'bossskill.mp3' });
+        io.emit('playSkillSound', { sound: 'bossskill.mp3' });
+        io.emit(PacketType.S2C_BOSS_SKILL, { skill: randomSkill });
 
         switch (randomSkill) {
             case 'rewindHealth':
@@ -27,6 +32,9 @@ export default class TimeRifter {
                 this.timeWave(socket, towers);
                 break;
         }
+
+        // 스킬 사용 후 이벤트 발생
+        this.emit('skillUsed', { skill: randomSkill, bossHp: this.hp });
     }
 
     rewindHealth(socket) {
@@ -40,6 +48,9 @@ export default class TimeRifter {
 
             // 체력 정보 클라이언트에 전송
             socket.emit('updateBossHp', { hp: this.hp });
+
+            // 체력 회복 후 이벤트 발생
+            this.emit('healthRewinded', { hp: this.hp });
         }, 5000);
     }
 
@@ -58,6 +69,9 @@ export default class TimeRifter {
 
             // 복원된 속도 클라이언트에 전송
             socket.emit('updateBossSpeed', { speed: this.speed });
+
+            // 속도 복원 후 이벤트 발생
+            this.emit('speedRestored', { speed: this.speed });
         }, 3000);
     }
 
@@ -89,6 +103,9 @@ export default class TimeRifter {
             // 클라이언트에 타워 공격 속도 복원 정보 전송
             socket.emit('timeWaveEffectEnd', { effect: 'attackSpeedRestored' });
             console.log('Tower attack speeds restored to normal.');
+
+            // 공격 속도 복원 후 이벤트 발생
+            this.emit('attackSpeedRestored');
         }, 5000);
     }
 

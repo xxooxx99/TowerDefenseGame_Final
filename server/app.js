@@ -16,6 +16,7 @@ import { config } from 'dotenv';
 import { loadGameAssets } from './init/assets.js';
 import { db_data_add } from './db.js';
 import { handleSpawnBoss } from './handlers/boss/bosshandlers.js';
+import * as bosshandler from './handlers/boss/bosshandlers.js';  // bosshandler를 올바르게 import
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -53,7 +54,8 @@ io.on('connection', (socket) => {
   });
 
   socket.on('spawnBoss', (data) => {
-    handleSpawnBoss(io, socket, data.bossType);  // 보스 소환을 모든 클라이언트에게 브로드캐스트
+    console.log("Received boss spawn request from client:", socket.id, "for stage:", data.stage);  // 클라이언트 요청 수신 로그
+    bosshandler.handleSpawnBoss(io, socket, data.stage);  // 보스 소환 요청 처리
 });
 });
 

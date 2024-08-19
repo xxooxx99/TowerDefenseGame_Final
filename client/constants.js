@@ -37,9 +37,9 @@ export const PacketType = {
   C2S_KILL_MONSTER_EVENT: 110,
   S2C_GOLD_ABILITY_ACTIVE: 111,
   S2C_SPAWN_ABILITY_ACTIVE: 112,
-  C2S_SPAWN_BOSS: 120, // 클라이언트에서 서버로 보스 생성 요청
-  S2C_BOSS_SPAWN: 121, // 서버에서 클라이언트로 보스 생성 알림
-  S2C_BOSS_USE_SKILL: 122, // 서버에서 클라이언트로 보스 스킬 사용 알림
+  C2S_SPAWN_BOSS: 200, // 클라이언트가 보스를 스폰 요청할 때 사용
+  S2C_BOSS_SPAWN: 201, // 서버가 보스 스폰을 클라이언트에 알릴 때 사용
+  S2C_BOSS_SKILL: 202, // 서버가 보스의 스킬 사용을 클라이언트에 알릴 때 사용
   C2S_GAMEOVER_SIGNAL: 300, // 본인이 게임을 졌다고 신호를 보냄
   S2C_GAME_LOSE_SIGNAL: 310, //  너는 게임을 졌다고 신호를 보냄
   S2C_GAME_WIN_SIGNAL: 311, // 너는 게임을 이겼다고 신호를 보냄

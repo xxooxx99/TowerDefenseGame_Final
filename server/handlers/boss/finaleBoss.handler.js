@@ -1,8 +1,12 @@
-export default class FinaleBoss {
+import EventEmitter from 'events';
+import { PacketType } from '../../constants.js';
+
+export default class FinaleBoss extends EventEmitter {
     constructor() {
-        this.hp = 99999999;  
-        this.armor = 0;  
-        this.speed = 1;  
+        super();  // EventEmitter 생성자 호출
+        this.hp = 99999999;
+        this.armor = 0;
+        this.speed = 1;
         this.playerDamage = {};  // 각 플레이어가 가한 데미지를 저장
     }
 
@@ -34,6 +38,14 @@ export default class FinaleBoss {
 
             // 결과 발표
             console.log(`Player ${losingPlayer} dealt the least damage: ${minDamage}. They lose.`);
+
+            // 'finaleComplete' 이벤트 발생 - 패배자 정보 포함
+            this.emit('finaleComplete', {
+                loser: losingPlayer,
+                damage: this.playerDamage
+            });
+
+            // 패배자에게 게임 오버 메시지 전송
             socket.emit('gameOver', { loser: losingPlayer, damage: this.playerDamage });
 
         }, 60000);

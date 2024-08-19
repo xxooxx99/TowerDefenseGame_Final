@@ -7,76 +7,104 @@ import FinaleBoss from './finaleBoss.handler.js';
 let bossSpawned = false;  // 보스 소환 상태 관리
 let bossSkillInterval = null;  // 보스 스킬 사용 인터벌
 
-export function handleSpawnBoss(io, socket, bossType) {
-    if (bossSpawned) {
-        console.log('Boss already spawned.');
-        return;
-    }
+function handleSpawnBoss(io, socket, stage, towers, base) {
+  console.log("Boss spawn request received for stage:", stage);
 
-    console.log('Boss spawn request received for:', bossType);
+  // Check if a boss is already spawned
+  if (bossSpawned) {
+      console.error(`Invalid boss spawn request: A boss is already spawned for stage ${stage}`);
+      io.emit('bossSpawned', {
+          success: false,
+          message: 'A boss is already spawned'
+      });
+      return;  // Stop further execution
+  }
 
-    // 보스를 소환하는 로직
-    const boss = spawnBoss(bossType);
+  // Determine the boss type based on the stage
+  const bossType = determineBossType(stage);
+  if (!bossType) {
+      console.error(`Invalid boss spawn request: No boss type found for stage ${stage}`);
+      io.emit('bossSpawned', {
+          success: false,
+          message: `No boss type found for stage ${stage}`
+      });
+      return;  // Stop further execution
+  }
 
-    if (!boss) {
-        console.error('Failed to spawn boss:', bossType);
-        return;
-    }
+  // Spawn the boss
+  const boss = spawnBoss(bossType, socket);
+  if (boss) {
+      bossSpawned = true;  // Mark the boss as spawned
+      io.emit('bossSpawned', {
+          success: true,
+          bossType: bossType,
+          hp: boss.hp
+      });
+      console.log(`Boss spawned: ${bossType} with HP: ${boss.hp}`);
 
-    bossSpawned = true;
+      // Set up the boss to periodically use skills
+      bossSkillInterval = setInterval(() => {
+          boss.useSkill(io, towers, base);  
+      }, 5000);
 
-    // 클라이언트에게 보스 소환 성공 알림 - 브로드캐스팅
-    io.emit('bossSpawned', {
-        success: true,
-        boss: {
-            bossType: bossType,
-            hp: boss.hp,
-            armor: boss.armor,
-            speed: boss.speed,
-            bgm: boss.bgm, // 보스 전용 BGM 전송
-        }
-    });
-
-    // 보스 스킬 사용 주기 설정
-    bossSkillInterval = setInterval(() => {
-        const skill = boss.useSkill(socket);  // 보스 스킬 사용
-        io.emit('bossSkill', {
-            bossType: bossType,
-            skill: skill,
-        });
-    }, 10000);
-
-    // 보스 사망 시 인터벌 정지
-    boss.on('die', () => {
-        clearInterval(bossSkillInterval);
-        bossSkillInterval = null;
-        bossSpawned = false;
-        console.log(`${bossType} has been defeated.`);
-    });
+      // Set up an event listener for the boss's death
+      boss.on('die', () => {
+          clearBossSkillInterval();  // Stop the boss skill interval
+          io.emit('bossDied', { bossType: bossType });
+          bossSpawned = false;  // Mark the boss as not spawned
+          console.log(`${bossType} has died.`);
+      });
+  } else {
+      io.emit('bossSpawned', {
+          success: false,
+          message: 'Failed to spawn boss'
+      });
+      console.error("Failed to spawn boss for stage:", stage);
+  }
 }
 
-// 보스를 생성하는 함수
-function spawnBoss(bossType) {
-    let boss;
-    switch (bossType) {
-        case 'MightyBoss':
-            boss = new MightyBoss();
-            break;
-        case 'TowerControlBoss':
-            boss = new TowerControlBoss();
-            break;
-        case 'DoomsdayBoss':
-            boss = new DoomsdayBoss();
-            break;
-        case 'TimeRifter':
-            boss = new TimeRifter();
-            break;
-        case 'FinaleBoss':
-            boss = new FinaleBoss();
-            break;
-        default:
-            console.error('Unknown boss type:', bossType);
-            return null;
-    }
-    return boss;
+// Determines which boss should spawn based on the stage number
+function determineBossType(stage) {
+  switch(stage) {
+    case 3:
+      return 'MightyBoss';
+    case 6:
+      return 'TowerControlBoss';
+    case 9:
+      return 'DoomsdayBoss';
+    case 12:
+      return 'TimeRifter';
+    case 15:
+      return 'FinaleBoss';
+    default:
+      return null;  // Return null if the stage is invalid
+  }
 }
+
+// Creates and returns a new boss instance based on the boss type
+function spawnBoss(bossType, socket) {
+  switch (bossType) {
+      case 'MightyBoss':
+          return new MightyBoss(socket);
+      case 'TowerControlBoss':
+          return new TowerControlBoss(socket);
+      case 'DoomsdayBoss':
+          return new DoomsdayBoss(socket);
+      case 'TimeRifter':
+          return new TimeRifter(socket);
+      case 'FinaleBoss':
+          return new FinaleBoss(socket);
+      default:
+          return null;  // Return null if the boss type is invalid
+  }
+}
+
+// Clears the boss skill interval when the boss dies or when needed
+function clearBossSkillInterval() {
+  if (bossSkillInterval) {
+      clearInterval(bossSkillInterval);
+      bossSkillInterval = null;
+  }
+}
+
+export { handleSpawnBoss, clearBossSkillInterval };

@@ -1,5 +1,9 @@
-export default class DoomsdayBoss {
+import EventEmitter from 'events';
+import { PacketType } from '../../constants.js';
+
+export default class DoomsdayBoss extends EventEmitter {
     constructor() {
+        super();  // EventEmitter 생성자 호출
         this.hp = 1200;
         this.maxHp = 1200;
         this.defense = 40;
@@ -10,11 +14,12 @@ export default class DoomsdayBoss {
         this.cryOfDoomStack = 0;
     }
 
-    useSkill(socket, towers, base) {
+    useSkill(io, towers, base) {
         const randomSkill = this.getRandomSkill();
         this.currentSkill = randomSkill;
 
-        socket.emit('playSkillSound', { sound: 'bossskill.mp3' });
+        io.emit('playSkillSound', { sound: 'bossskill.mp3' });
+        io.emit(PacketType.S2C_BOSS_SKILL, { skill: randomSkill });
 
         switch (randomSkill) {
             case 'placeMark':
@@ -99,6 +104,20 @@ export default class DoomsdayBoss {
             console.log(`Boss absorbed ${damageAbsorbed * 0.5} HP and healed to ${this.hp}.`);
             socket.emit('updateBossHp', { hp: this.hp });
         }, 5000);
+    }
+
+    takeDamage(damage) {
+        this.hp -= damage;
+        console.log(`Boss took ${damage} damage. Remaining HP: ${this.hp}`);
+
+        if (this.hp <= 0) {
+            this.die();  // 보스가 사망했을 때 die 메서드 호출
+        }
+    }
+
+    die() {
+        console.log('DoomsdayBoss has been defeated.');
+        this.emit('die');  // 'die' 이벤트 발생
     }
 
     getRandomSkill() {

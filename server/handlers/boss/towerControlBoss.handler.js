@@ -1,5 +1,9 @@
-export default class TowerControlBoss {
+import EventEmitter from 'events';
+import { PacketType } from '../../constants.js';
+
+export default class TowerControlBoss extends EventEmitter {
     constructor() {
+        super();  // EventEmitter 생성자 호출
         this.hp = 700;
         this.defense = 0;
         this.speed = 5;
@@ -9,11 +13,12 @@ export default class TowerControlBoss {
         this.ignoredTowerId = null;  // 무시된 타워 ID 저장
     }
 
-    useSkill(socket, towers) {
+    useSkill(io, towers) {
         const randomSkill = this.getRandomSkill();
         this.currentSkill = randomSkill;
 
-        socket.emit('playSkillSound', { sound: 'bossskill.mp3' });
+        io.emit('playSkillSound', { sound: 'bossskill.mp3' });
+        io.emit(PacketType.S2C_BOSS_SKILL, { skill: randomSkill });
 
         switch (randomSkill) {
             case 'ignoreTowerDamage':
@@ -26,10 +31,12 @@ export default class TowerControlBoss {
                 this.downgradeTower(socket, towers);
                 break;
         }
+
+        // 스킬 사용 후 이벤트 발생
+        this.emit('skillUsed', { skill: randomSkill });
     }
 
     ignoreTowerDamage(socket, towers) {
-        // 랜덤한 타워 선택
         const randomTower = this.getRandomTower(towers);
         if (randomTower) {
             this.ignoredTowerId = randomTower.towerId;
@@ -42,12 +49,14 @@ export default class TowerControlBoss {
             setTimeout(() => {
                 console.log(`Boss stops ignoring damage from tower ID: ${this.ignoredTowerId}.`);
                 this.ignoredTowerId = null;
+
+                // 무시 해제 이벤트 발생
+                this.emit('ignoreEnd', { towerId: this.ignoredTowerId });
             }, 10000);
         }
     }
 
     changeTowerType(socket, towers) {
-        // 랜덤한 타워 선택
         const randomTower = this.getRandomTower(towers);
         if (randomTower) {
             const newType = this.getRandomTowerType();
@@ -56,11 +65,13 @@ export default class TowerControlBoss {
 
             // 클라이언트에 타워 유형 변경 정보 전송
             socket.emit('changeTowerType', { towerId: randomTower.towerId, newType: newType });
+
+            // 타워 변경 이벤트 발생
+            this.emit('towerTypeChanged', { towerId: randomTower.towerId, newType: newType });
         }
     }
 
     downgradeTower(socket, towers) {
-        // 랜덤한 타워 선택
         const randomTower = this.getRandomTower(towers);
         if (randomTower && randomTower.level > 1) {
             randomTower.level -= 1;
@@ -68,6 +79,9 @@ export default class TowerControlBoss {
 
             // 클라이언트에 타워 레벨 감소 정보 전송
             socket.emit('downgradeTower', { towerId: randomTower.towerId, newLevel: randomTower.level });
+
+            // 타워 다운그레이드 이벤트 발생
+            this.emit('towerDowngraded', { towerId: randomTower.towerId, newLevel: randomTower.level });
         } else {
             console.log('No eligible tower to downgrade.');
         }
