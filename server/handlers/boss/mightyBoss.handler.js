@@ -1,37 +1,75 @@
-// server/handlers/boss/mightyBoss.handler.js
 export default class MightyBoss {
     constructor() {
-        this.hp = 1000;
-        this.armor = 30;
+        this.maxHp = 1000;
+        this.hp = this.maxHp;
+        this.defense = 30;
         this.speed = 5;
-        this.skills = [
-            this.healSkill.bind(this),
-            this.spawnClone.bind(this),
-            this.reduceDamage.bind(this),
-        ];
+        this.skills = ['healSkill', 'spawnClone', 'reduceDamage'];
+        this.currentSkill = '';
+        this.bgm = 'mightyBossBGM.mp3';
     }
 
-    // 체력 회복 스킬
-    healSkill() {
-        const healAmount = this.hp * 0.10;
-        this.hp += healAmount;
-        return `Boss heals for ${healAmount}`;
+    useSkill(socket) {
+        const randomSkill = this.getRandomSkill();
+        this.currentSkill = randomSkill;
+
+        socket.emit('playSkillSound', { sound: 'bossskill.mp3' });
+
+        switch (randomSkill) {
+            case 'healSkill':
+                this.healSkill(socket);
+                break;
+            case 'spawnClone':
+                this.spawnClone(socket);
+                break;
+            case 'reduceDamage':
+                this.reduceDamage(socket);
+                break;
+        }
     }
 
-    // 분신 소환 스킬
-    spawnClone() {
-        const cloneHp = this.hp * 0.30;
-        return `Boss spawns a clone with ${cloneHp} HP`;
+    healSkill(socket) {
+        this.hp = Math.min(this.maxHp, this.hp + this.maxHp * 0.1);
+        console.log('Boss healed 10% of max HP.');
+
+        // 클라이언트에 보스 체력 정보 전송
+        socket.emit('updateBossHp', { hp: this.hp });
     }
 
-    // 피해 감소 스킬
-    reduceDamage() {
-        return `Boss takes 50% reduced damage for 5 seconds`;
+    spawnClone(socket) {
+        const cloneHp = this.hp * 0.5;
+        console.log(`Boss spawned a clone with ${cloneHp} HP.`);
+
+        const clone = new MightyBoss();
+        clone.hp = cloneHp;
+
+        // 클론 정보 클라이언트에 전송
+        socket.emit('bossSpawn', {
+            bossType: 'Clone',
+            hp: clone.hp,
+            defense: clone.defense,
+            speed: clone.speed,
+        });
     }
 
-    // 스킬 실행
-    useSkill() {
-        const skill = this.skills[Math.floor(Math.random() * this.skills.length)];
-        return skill();
+    reduceDamage(socket) {
+        this.defense *= 0.5;
+        console.log('Boss reduces incoming damage by 50% for 5 seconds.');
+
+        // 클라이언트에 방어력 감소 정보 전송
+        socket.emit('updateBossDefense', { defense: this.defense });
+
+        setTimeout(() => {
+            this.defense *= 2;
+            console.log('Boss defense restored to normal.');
+
+            // 클라이언트에 방어력 복원 정보 전송
+            socket.emit('updateBossDefense', { defense: this.defense });
+        }, 5000);
+    }
+
+    getRandomSkill() {
+        const randomIndex = Math.floor(Math.random() * this.skills.length);
+        return this.skills[randomIndex];
     }
 }

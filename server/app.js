@@ -15,6 +15,7 @@ import { handleBaseAttackMonster } from './handlers/game/gameHandler.js';
 import { config } from 'dotenv';
 import { loadGameAssets } from './init/assets.js';
 import { db_data_add } from './db.js';
+import { handleSpawnBoss } from './handlers/boss/bosshandlers.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -50,6 +51,10 @@ io.on('connection', (socket) => {
     io.emit('chat message', data);
     console.log(`Received chat message from ${data.userId}: ${data.message} from app.js`);
   });
+
+  socket.on('spawnBoss', (data) => {
+    handleSpawnBoss(io, socket, data.bossType);  // 보스 소환을 모든 클라이언트에게 브로드캐스트
+});
 });
 
 loadGameAssets();
