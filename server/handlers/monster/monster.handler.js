@@ -5,21 +5,21 @@ import { sendGameSync } from '../game/gameSyncHandler.js';
 
 // 각 스테이지의 몬스터 수 설정
 const stageMonsterCounts = {
-  1: 5,  // 일반 라운드
-  2: 5,  // 일반 라운드
-  3: 0,   // 보스 라운드 - MightyBoss
-  4: 5,  // 일반 라운드
-  5: 5,  // 일반 라운드
-  6: 0,   // 보스 라운드 - TowerControlBoss
-  7: 5,  // 일반 라운드
-  8: 5,  // 일반 라운드
-  9: 0,   // 보스 라운드 - TimeRifter
+  1: 5, // 일반 라운드
+  2: 5, // 일반 라운드
+  3: 0, // 보스 라운드 - MightyBoss
+  4: 5, // 일반 라운드
+  5: 5, // 일반 라운드
+  6: 0, // 보스 라운드 - TowerControlBoss
+  7: 5, // 일반 라운드
+  8: 5, // 일반 라운드
+  9: 0, // 보스 라운드 - TimeRifter
   10: 5, // 일반 라운드
   11: 5, // 일반 라운드
-  12: 0,  // 보스 라운드 - Doomsday
+  12: 0, // 보스 라운드 - Doomsday
   13: 5, // 일반 라운드
   14: 5, // 일반 라운드
-  15: 0   // 보스 라운드 - FinaleBoss
+  15: 0, // 보스 라운드 - FinaleBoss
 };
 
 let currentStage = 1;
@@ -45,7 +45,10 @@ function handleDieMonster(socket, userId, payload) {
 
   // 남은 몬스터 수가 0이면 스테이지를 넘김
   if (monstersRemainingInStage <= 0) {
-    socket.emit('system', `system) ${currentStage}라운드 종료. 잠시 후 ${currentStage + 1}라운드가 시작됩니다.`);
+    socket.emit(
+      'system',
+      `system) ${currentStage}라운드 종료. 잠시 후 ${currentStage + 1}라운드가 시작됩니다.`,
+    );
 
     setTimeout(() => {
       currentStage++;
@@ -75,7 +78,6 @@ function handleDieMonster(socket, userId, payload) {
       } else {
         socket.emit('system', `system) ${currentStage}라운드 시작`);
       }
-
     }, 5000); // 5초 대기 후 다음 스테이지 시작
   }
 
@@ -88,7 +90,7 @@ function handleSpawnMonster(socket, userId, payload) {
   const mainMonsters = getMonsters(userId);
 
   sendGameSync(socket, userId, PacketType.S2C_ENEMY_SPAWN_MONSTER, { mainMonsters });
-  console.log('몬스터 생성', JSON.stringify(`Create Monster: ${monsterIndex}`));
+  //console.log('몬스터 생성', JSON.stringify(`Create Monster: ${monsterIndex}`));
   return { status: 'success', message: 'Monster created' };
 }
 

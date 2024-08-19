@@ -54,19 +54,6 @@ export class Monster {
         this.healingAmount = 1 * level;
         this.startHealing();
         break;
-      /* (더미)
-      case 'speedBoost':
-        this.maxHp = 100 + 10 * level;
-        this.speed = 2;
-        this.attackPower = 10 + 1 * level;
-        this.speedBoost = 1.5;
-        break;
-      case 'defenseBoost':
-        this.maxHp = 100 + 10 * level;
-        this.speed = 2;
-        this.attackPower = 10 + 1 * level;
-        this.defenseBoost = 1.5;
-        break; */
       default:
         this.maxHp = 100 + 10 * level;
         this.speed = 2;
@@ -136,6 +123,7 @@ export class Monster {
       return false;
     } else {
       this.hp = 0;
+      console.log('Monster reached the ned of path and is marked as dead');
       return true;
     }
   }
@@ -162,24 +150,23 @@ export class Monster {
   }
 
   getHp() {
-    this.hp;
+    return this.hp;
   }
 
   receiveDamage(damage) {
     this.hp -= damage;
     console.log(`Monster HP after damage: ${this.hp}`);
     if (this.hp <= 0) {
-      if (this.onDie) {
-        console.log('Monster is dead. Triggering onDie callback.');
-        this.onDie(); // 몬스터가 죽으면 콜백 호출
-      }
+      console.log('Monster HP is 0 or less, calling die method');
+      this.die(); // hp가 0 이하로 떨어지면 die 메서드 호출
     }
   }
 
   die() {
     console.log(`Monster ${this.monsterIndex} died`);
     if (typeof this.onDie === 'function') {
-      this.onDie(); // 몬스터가 죽을 때 호출되는 콜백
+      console.log('Monster is dead. Triggering onDie callback.');
+      this.onDie(this); // 몬스터가 죽을 때 콜백 호출
     }
   }
 

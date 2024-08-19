@@ -124,13 +124,13 @@ const initSocket = (server) => {
         case PacketType.C2S_KILL_MONSTER_EVENT:
           add_count(socket, packet);
           break;
-          case PacketType.C2S_SPAWN_BOSS:
-            if (!packet.payload || !packet.payload.bossType) {
-              console.error('Invalid boss spawn request', packet);
-              return;
-            }
-            handleSpawnBoss(socket, packet.payload.bossType);
-            break;
+        case PacketType.C2S_SPAWN_BOSS:
+          if (!packet.payload || !packet.payload.bossType) {
+            console.error('Invalid boss spawn request', packet);
+            return;
+          }
+          handleSpawnBoss(socket, packet.payload.bossType);
+          break;
         case PacketType.C2S_GAMEOVER_SIGNAL:
           gameoverSignalReceive(socket, packet);
           break;
