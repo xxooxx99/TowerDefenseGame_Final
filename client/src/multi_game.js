@@ -325,7 +325,7 @@ function placeBase(position, isPlayer) {
   }
 }
 
-let monsterLevel = 0;
+let monsterLevel = 1;
 const maxStages = 15;
 let monsters = [];
 let monsterIndex = 0;
@@ -335,7 +335,7 @@ const monsterSpawnInterval = 1000;
 let monstersToSpawn = 5; // 라운드당 몬스터 소환 수
 
 // 몬스터가 죽었을 때 호출되는 콜백 함수
-function onMonsterDie(monster) {
+/* function onMonsterDie(monster) {
   monsters = monsters.filter((m) => m !== monster);
   console.log(`Monster died. Remaining monsters: ${monsters.length}`);
   if (monsters.length === 0 && monsterSpawnCount >= 5) {
@@ -362,7 +362,7 @@ function onMonsterDie(monster) {
       console.log('All stages completed!');
     }
   }
-}
+} */
 
 function spawnMonster() {
   // 보스가 소환되지 않았고, 현재 스테이지가 보스 스테이지인 경우 보스를 소환합니다.
@@ -374,7 +374,7 @@ function spawnMonster() {
   if (monsterSpawnCount < monstersToSpawn) {
     const monster = new Monster(monsterPath, monsterImages, monsterLevel);
     monster.setMonsterIndex(monsterIndex);
-    monster.onDie = onMonsterDie;
+    /* monster.onDie = onMonsterDie; */
     monsters.push(monster);
 
     sendEvent(PacketType.C2S_SPAWN_MONSTER, { hp: monster.getMaxHp(), monsterIndex, monsterLevel });
@@ -528,17 +528,22 @@ function gameLoop() {
       });
       killCount++;
 
-      if (
-        killCount === monstersToSpawn &&
-        monsterLevel !== 2 &&
-        monsterLevel !== 5 &&
-        monsterLevel !== 8 &&
-        monsterLevel !== 11 &&
-        monsterLevel !== 14
-      ) {
+      if (killCount === monstersToSpawn) {
         monsterLevel++;
         killCount = 0;
-        startSpawning();
+
+        if (
+          monsterLevel === 3 ||
+          monsterLevel === 6 ||
+          monsterLevel === 9 ||
+          monsterLevel === 12 ||
+          monsterLevel === 15
+        ) {
+          clearInterval(monsterintervalId);
+          // 이 부분에 보스 소환 넣으시면 됩니다!
+        } else {
+          startSpawning();
+        }
       }
     }
   }
