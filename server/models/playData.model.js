@@ -1,13 +1,3 @@
-const opponentData = {};
-
-export const setOpponentData = (userId, opponentSocket) => {
-  opponentData[userId] = opponentSocket;
-};
-
-export const getOpponentInfo = (userId) => {
-  return opponentData[userId];
-};
-
 const playData = {};
 
 export const createPlayData = (uuid, initData) => {
