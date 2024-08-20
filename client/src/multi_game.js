@@ -34,7 +34,7 @@ const user_info = document.getElementById('user-info');
 const opponentUser_winRate = document.getElementById('opponentUser-winRate');
 const ownUser_winRate = document.getElementById('ownUser-winRate');
 
-// 게임 데이터
+// 타워 데이터
 let towerSale = null;
 let towerUpgrade = null;
 let towerBuilderId = null;
@@ -97,10 +97,10 @@ export const towerStroke = [
   'lightcyan',
   'lavender',
 ];
-for (let i = 0; i < 9; i++) {
-  for (let k = 0; k <= 2; k++) {
+for (let towerTypes = 0; towerTypes < TOWER_TYPE.length; towerTypes++) {
+  for (let towerUpgrade = 0; towerUpgrade <= 2; towerUpgrade++) {
     const image = new Image();
-    image.src = `images/tower${100 * (i + 1) + k}.png`;
+    image.src = `images/tower${100 * (towerTypes + 1) + towerUpgrade}.png`;
     towerImages.push(image);
   }
 }
@@ -117,6 +117,12 @@ for (let i = 1; i <= NUM_OF_MONSTERS; i++) {
 }
 
 let bgm;
+
+let audioOfTowerAddAndUpgrade = new Audio('sounds/TowerAddAndUpgrade.wav');
+audioOfTowerAddAndUpgrade.volume = 0.05;
+
+let audioOfTowerSale = new Audio('sounds/TowerSale.wav');
+audioOfTowerSale.volume = 0.8;
 
 function initMap() {
   ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height); // 배경 이미지 그리기
@@ -296,23 +302,6 @@ function towerSales() {
       towerId: selectTower.towerId,
       towerNumber: selectTower.towerNumber,
     });
-  }
-}
-// function placeNewOpponentTower(value) {
-//   const newTowerCoords = value[value.length - 1];
-//   const newTower = new Tower(newTowerCoords.tower.X, newTowerCoords.tower.Y);
-//   newTower.setTowerIndex(newTowerCoords.towerIndex);
-//   opponentTowers.push(newTower);
-// }
-
-function opponentTowerAttack(monsterValue) {
-  try {
-    const attackedMonster = opponentMonsters.find((monster) => {
-      return monster.getMonsterIndex() === monsterValue.monsterIndex;
-    });
-    attackedMonster.setHp(monsterValue.hp);
-  } catch (err) {
-    console.log('이미 사망한 몬스터입니다.');
   }
 }
 
@@ -804,6 +793,8 @@ Promise.all([
       for (let i = 0; i < towersList.length; i++) {
         if (towersList[i].towerNumber == towerNumber) {
           towersList.splice(i, 1);
+          audioOfTowerSale.currentTime = 0;
+          audioOfTowerSale.play();
           userGold += saledGold;
           break;
         }
@@ -835,6 +826,8 @@ Promise.all([
 
       const tower = new Tower(towerType, towerId, towerData.number, towerData.posX, towerData.posY);
       towers[towerType][towerId].push(tower);
+      audioOfTowerAddAndUpgrade.currentTime = 0;
+      audioOfTowerAddAndUpgrade.play();
       userGold -= towerCost;
     }
   });
@@ -865,6 +858,8 @@ Promise.all([
       opponentTowers[TOWER_TYPE[towerId / 100 - 1]][towerId].push(tower);
     } else {
       towers[TOWER_TYPE[towerId / 100 - 1]][towerId].push(tower);
+      audioOfTowerAddAndUpgrade.currentTime = 0;
+      audioOfTowerAddAndUpgrade.play();
       userGold -= towerCost;
     }
   });
@@ -945,9 +940,6 @@ Promise.all([
       case PacketType.S2C_ENEMY_TOWER_SPAWN:
         placeNewOpponentTower(packet.data.opponentTowers);
         break;
-      // case PacketType.S2C_ENEMY_TOWER_ATTACK:
-      //   opponentTowerAttack(packet.data.attackedOpponentMonster, packet.data.attackedOpponentTower);
-      //   break;
       case PacketType.S2C_ENEMY_SPAWN_MONSTER:
         spawnOpponentMonster(packet.data.opponentMonsters);
         break;

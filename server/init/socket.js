@@ -73,9 +73,6 @@ const initSocket = (server) => {
         case PacketType.C2S_MATCH_ACCEPT:
           handlerMatchAcceptRequest(socket, packet);
           break;
-        /* case PacketType.C2S_TOWER_ATTACK:
-          towerAttackHandler(socket, packet.userId, packet.payload);
-          break; */
         case PacketType.C2S_MATCH_DENIED:
           handlerMatchDeniedRequest(socket, packet);
           break;
