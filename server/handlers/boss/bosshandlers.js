@@ -63,13 +63,6 @@ function handleSpawnBoss(socket, stage, io, towers, base) {
             });
             console.log(`Server: Boss type ${bossType} spawned for user ${userId} at stage ${stage}`);
 
-            // Set a timeout to trigger the boss skill after 10 seconds
-            setTimeout(() => {
-                if (activeBosses[userId]) {
-                    console.log(`Server: Triggering ${bossType} skill for user ${userId}`);
-                    boss.useSkill(io, towers, base);  // 보스 스킬 사용 시작
-                }
-            }, 100000); // 10 seconds delay
             resolve(); // 작업 성공 시 Promise를 성공적으로 종료
         } else {
             console.error(`Failed to create boss instance for user ${userId} at stage ${stage}`);
@@ -80,6 +73,23 @@ function handleSpawnBoss(socket, stage, io, towers, base) {
             reject(new Error(`Failed to create boss instance for user ${userId}`)); // 작업 실패 시 Promise를 실패로 종료
         }
     });
+}
+
+// 클라이언트로부터 보스 스킬 사용 요청을 처리하고 상대방에게 전달
+function handleBossSkill(socket, io, skillData) {
+    const userId = socket.id;
+    const { skill, bossType, stage } = skillData;
+    console.log(`Server: Boss skill ${skill} used by client ${userId} for stage ${stage}`);
+
+    // 현재 활성화된 보스에 대해 스킬 사용 요청을 상대 클라이언트에게 전달
+    if (activeBosses[userId]) {
+        io.emit('opponentBossSkillUsed', {
+            bossType,
+            skill,
+            stage,
+            userId
+        });
+    }
 }
 
 // 스테이지에 따라 보스 타입 결정
@@ -143,4 +153,4 @@ function handleBossDefeated(socket) {
     });
 }
 
-export { handleStageUpdate, handleSpawnBoss, handleBossDefeated, resetBossState };
+export { handleStageUpdate, handleSpawnBoss, handleBossSkill, handleBossDefeated, resetBossState };

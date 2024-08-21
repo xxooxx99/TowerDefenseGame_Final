@@ -1,7 +1,7 @@
 import { Base } from './base.js';
 import { Monster } from './monster.js';
 import { AttackSupportTower, poisonTower, SpeedSupportTower, SplashTower, Tower } from './tower.js';
-import { MightyBoss, TowerControlBoss, DoomsdayBoss, TimeRifter, FinaleBoss } from './boss.js'; // 각 보스 클래스가 정의된 파일
+import {Boss, MightyBoss, TowerControlBoss, DoomsdayBoss, TimeRifter, FinaleBoss } from './boss.js'; // 각 보스 클래스가 정의된 파일
 import { CLIENT_VERSION, INITIAL_TOWER_NUMBER, PacketType, TOWER_TYPE } from '../constants.js';
 
 if (!localStorage.getItem('token')) {
@@ -336,11 +336,23 @@ let monstersToSpawn = 5; // 라운드당 몬스터 소환 수
 
 // 몬스터가 죽었을 때 호출되는 콜백 함수
 function onMonsterDie(monster) {
+  // 몬스터 배열에서 사망한 몬스터를 제거
   monsters = monsters.filter((m) => m !== monster);
   console.log(`Monster died. Remaining monsters: ${monsters.length}`);
-  if (monsters.length === 0 && monsterSpawnCount >= 5) {
+
+  // 보스가 죽었을 때의 처리
+  if (monster instanceof Boss) {
+    bossDefeated = true;
+    console.log(`Boss defeated at stage ${monsterLevel}. Moving to next stage.`);
+    startNextStage(); // 보스가 죽으면 다음 스테이지로 이동
+    return; // 보스가 죽었으므로 나머지 로직은 실행되지 않음
+  }
+
+  // 일반 몬스터가 모두 제거되었을 때 처리
+  if (monsters.length === 0 && monsterSpawnCount >= monstersToSpawn) {
     console.log('All monsters cleared for this level.');
-    clearInterval(monsterintervalId);
+    clearInterval(monsterintervalId); // 일반 몬스터 소환 중단
+
     serverSocket.emit('chat message', {
       userId: 'System',
       message: `Level ${monsterLevel} Clear!`,
@@ -366,15 +378,28 @@ function onMonsterDie(monster) {
 }
 
 function spawnMonster() {
-  // 보스가 소환된 상태라면 몬스터 소환을 중단
-  if (bossSpawned) {
-    console.log('해당 스테이지에서 보스는 이미 소환되었습니다.');
-    clearInterval(monsterintervalId); // 추가로 몬스터 소환을 중단
-    return;
+  // 보스 소환 라운드인지 확인
+  if ([3, 6, 9, 12, 15].includes(monsterLevel) && !bossSpawned) {
+    const bossType = getBossTypeForLevel(monsterLevel);
+    if (bossType) {
+      const boss = getBossInstance(bossType, monsterPath, null, towers, bgm, {}); // 서버 소켓을 null로 설정
+      if (boss) {
+        boss.init(); // 보스 초기화
+        monsters.push(boss); // 보스를 몬스터 배열에 추가
+        boss.onDie = onMonsterDie; // 보스 사망 콜백 설정
+        boss.draw(ctx); // 캔버스에 보스 그리기
+        console.log(`${bossType} spawned and ready!`);
+        
+        bossSpawned = true; // 보스 소환 상태 기록
+        currentBossStage = monsterLevel;
+        clearInterval(monsterintervalId); // 일반 몬스터 소환을 중단
+        return; // 보스가 소환된 후 더 이상 몬스터를 소환하지 않음
+      }
+    }
   }
 
-  // 몬스터 소환 제한
-  if (monsterSpawnCount < monstersToSpawn) {
+  // 보스가 아닌 경우, 일반 몬스터 소환
+  if (!bossSpawned && monsterSpawnCount < monstersToSpawn) {
     const monster = new Monster(monsterPath, monsterImages, monsterLevel);
     monster.setMonsterIndex(monsterIndex);
     monster.onDie = onMonsterDie;
@@ -393,6 +418,7 @@ function spawnMonster() {
     console.log('라운드 몬스터 최대 소환');
   }
 }
+
 
 function startSpawning() {
   // 기존 인터벌을 중복해서 실행하지 않도록 방지
@@ -451,9 +477,6 @@ function gameSync(data) {
 }
 
 let killCount = 0;
-let bossSpawned = false; // 보스가 출현한 상태를 관리
-let currentBossStage = 0; // 현재 보스가 소환된 스테이지
-let bossDefeated = false; // 보스 처치 여부
 let isGameLoopRunning = false;
 
 function gameLoop() {
@@ -629,46 +652,81 @@ function getBossTypeForLevel(level) {
 }
 // 보스 소환 여부를 체크하는 함수
 let isBossRequestSent = false; // 이미 보스 소환 요청을 보냈는지 여부를 추적하는 플래그
+let bossSpawned = false; // 보스가 출현한 상태를 관리
+let currentBossStage = 0; // 현재 보스가 소환된 스테이지
+let bossDefeated = false; // 보스 처치 여부
 
+// 스테이지 진입 시 보스 생성 확인
 function checkForBossSpawn() {
-  // 현재 레벨에 대한 보스가 이미 소환된 경우 중단
+  console.log(`Checking for boss spawn at level: ${monsterLevel}`);
+
+  // 이미 보스가 소환된 경우나 해당 스테이지에서 처리된 경우, 추가 소환 방지
   if (bossSpawned || currentBossStage === monsterLevel) {
-    console.log(`Boss has already been spawned for level ${monsterLevel}, skipping spawn.`);
-    return;
+      console.log(`Boss already spawned or stage already processed. bossSpawned: ${bossSpawned}, currentBossStage: ${currentBossStage}`);
+      return;
   }
 
-  // 이미 보스 소환 요청이 발송된 경우 중단
-  if (isBossRequestSent) {
-    console.log('Boss spawn request already sent.');
-    return;
-  }
-
-
-
-  // 해당 레벨에서 보스를 소환해야 한다면 소환
   if ([3, 6, 9, 12, 15].includes(monsterLevel)) {
-    const bossType = getBossTypeForLevel(monsterLevel);
-    if (bossType) {
-      console.log(`Spawning ${bossType} for level ${monsterLevel}`);
-      spawnBoss(bossType);  // 서버에 보스 소환 요청
-      bossSpawned = true;   // 보스 소환 후 플래그 설정
-      currentBossStage = monsterLevel;  // 현재 보스 스테이지 설정
-      isBossRequestSent = true;  // 보스 요청이 보내졌음을 기록
-    }
+      const bossType = getBossTypeForLevel(monsterLevel);
+      if (bossType) {
+          console.log(`Attempting to spawn boss of type: ${bossType} for level ${monsterLevel}`);
+
+          const boss = getBossInstance(bossType, monsterPath, null, towers, bgm, {}); // 서버 소켓을 null로 설정
+          if (boss) {
+              boss.init(); // 보스 초기화
+              monsters.push(boss); // 보스를 몬스터 배열에 추가
+              boss.onDie = onMonsterDie; // 보스 사망 콜백 설정
+              boss.draw(ctx); // 캔버스에 보스 그리기
+              bossSpawned = true;
+              currentBossStage = monsterLevel;
+              console.log(`${bossType} spawned and ready!`);
+              clearInterval(monsterintervalId); // 보스가 소환된 이후, 일반 몬스터 소환 중단
+          } else {
+              console.error('Failed to create boss instance');
+          }
+      } else {
+          console.log(`No boss type found for level: ${monsterLevel}`);
+      }
   } else {
-    // 보스가 필요 없는 경우 몬스터를 소환
-    console.log(`No boss for this level (${monsterLevel}), starting monster spawn.`);
-    startSpawning();
+      console.log(`No boss spawn required for this level: ${monsterLevel}, starting regular spawning.`);
+      startSpawning(); // 보스가 없는 스테이지에서 일반 몬스터 소환
   }
 }
 
-// 보스 소환 처리 함수
+// 서버로 보스 생성 요청
 function spawnBoss(bossType) {
-  console.log(`Requesting server to spawn boss: ${bossType} at level ${monsterLevel}`);
+  console.log(`Sending boss spawn request to server for ${bossType}`); // 디버깅 로그 추가
+  // serverSocket.emit('requestBossSpawn', { bossType, stage: monsterLevel });
+  console.log(`Boss spawn request sent successfully for ${bossType} at level ${monsterLevel}`); // 디버깅 로그 추가
+}
+
+function getBossInstance(bossType, path, socket, towers, bgm, skillSounds) {
+  console.log(`Creating boss instance for type: ${bossType}`); // 디버깅 로그 추가
   
-  // 보스가 성공적으로 소환된 경우에만 상태 업데이트
-  serverSocket.emit('spawnBoss', { bossType, stage: monsterLevel });
-  bossSpawned = true;  // 보스가 소환되었음을 기록
+  switch (bossType) {
+    case 'MightyBoss':
+      console.log('Creating MightyBoss'); // 디버깅 로그 추가
+      return new MightyBoss(socket, path, towers, bgm, skillSounds);
+    case 'TowerControlBoss':
+      console.log('Creating TowerControlBoss'); // 디버깅 로그 추가
+      return new TowerControlBoss(socket, path, towers, bgm, skillSounds);
+    case 'DoomsdayBoss':
+      console.log('Creating DoomsdayBoss'); // 디버깅 로그 추가
+      return new DoomsdayBoss(socket, path, towers, bgm, skillSounds);
+    case 'TimeRifter':
+      console.log('Creating TimeRifter'); // 디버깅 로그 추가
+      return new TimeRifter(socket, path, towers, bgm, skillSounds);
+    case 'FinaleBoss':
+      console.log('Creating FinaleBoss'); // 디버깅 로그 추가
+      return new FinaleBoss(socket, path, towers, bgm, skillSounds);
+    default:
+      console.error(`Unknown boss type: ${bossType}`); // 디버깅 로그 추가
+      return null;
+  }
+}
+
+// 상대방 보스 인스턴스 가져오기 (상대 클라이언트)
+function getOpponentBossInstance(bossType) {
 }
 
 function opponentBaseAttacked(value) {
@@ -848,62 +906,52 @@ Promise.all([
   });
 
 // 서버로부터 보스가 성공적으로 소환되었는지 확인
-serverSocket.on('bossSpawned', (data) => {
-  const { success, bossType, stage } = data;
-  
-  if (!success || (bossSpawned && currentBossStage === stage)) {
-    console.error('Failed to spawn boss or boss already spawned:', data.message);
-    return;
-  }
+// serverSocket.on('bossSpawned', (data) => {
+//   const { bossType, success, stage } = data;
+//   if (!success) {
+//       console.error(`Failed to spawn boss: ${data.message || "Unknown error"}`);
+//       return;
+//   }
 
-  console.log(`Client: Spawning ${bossType} for stage ${stage}`);
-  bossSpawned = true;  // 보스가 성공적으로 소환되었음을 기록
-  currentBossStage = stage;  // 현재 스테이지 업데이트
-  isBossRequestSent = false;  // 보스 소환 요청 플래그 초기화
+//   console.log(`Client: Boss ${bossType} spawned successfully at stage ${stage}`);
 
+//   // skillSounds가 제대로 초기화되었는지 확인
+//   let skillSounds = null;
+//   if (typeof SKILL_SOUNDS !== 'undefined' && SKILL_SOUNDS[bossType]) {
+//       skillSounds = SKILL_SOUNDS[bossType];
+//   } else {
+//       skillSounds = {}; // 기본값으로 빈 객체를 설정하여 오류 방지
+//       console.warn(`No skill sounds found for ${bossType}, using default empty object.`);
+//   }
 
+//   // bossInstance 생성
+//   const boss = getBossInstance(bossType, monsterPath, serverSocket, towers, bgm, skillSounds);
 
-    // 보스 소환 로직
-    let boss;
-    switch (bossType) {
-        case 'MightyBoss':
-            boss = new MightyBoss(monsterPath, serverSocket, towers);
-            break;
-        case 'TowerControlBoss':
-            boss = new TowerControlBoss(monsterPath, serverSocket, towers);
-            break;
-        case 'DoomsdayBoss':
-            boss = new DoomsdayBoss(monsterPath, serverSocket, towers);
-            break;
-        case 'TimeRifter':
-            boss = new TimeRifter(monsterPath, serverSocket, towers);
-            break;
-        case 'FinaleBoss':
-            boss = new FinaleBoss(monsterPath, serverSocket, towers);
-            break;
-        default:
-            console.error('Invalid boss type received');
-            return;
-    }
+//   if (boss) {
+//       boss.init(); // 보스 초기화
+//       monsters.push(boss); // 보스를 몬스터 배열에 추가
+//       boss.onDie = onMonsterDie; // 보스 사망 콜백 설정
+//       boss.draw(ctx); // 캔버스에 보스 그리기
+//       console.log(`${bossType} spawned and ready!`);
 
-    // 보스가 성공적으로 소환된 경우에만 추가 작업 진행
-    if (boss) {
-        boss.init();  // 보스 초기화
-        monsters.push(boss);  // 보스를 몬스터 배열에 추가
-        boss.draw(ctx);  // 캔버스에 보스 그리기
-        // boss.startSkills();  // 보스 스킬 시작
-        console.log(`${bossType} spawned and ready!`);
+//       bossSpawned = true; // 보스가 성공적으로 소환되었음을 기록
+//       currentBossStage = stage; // 현재 보스가 소환된 스테이지 업데이트
+//   } else {
+//       console.error('Invalid boss type received or failed to create boss instance');
+//   }
+// });
 
-        // 보스 상태 업데이트
-        bossSpawned = true;  // 보스가 소환되었음을 기록
-        currentBossStage = stage;  // 현재 보스가 소환된 스테이지 업데이트
-        // ACK 이벤트 서버로 전송 (보스가 정상적으로 소환되었음을 서버에 알림)
-        serverSocket.emit('bossSpawnAck', {
-          userId: localStorage.getItem('userId'),
-          stage: stage,
-    });
-    }
-});
+// // 상대 클라이언트로부터 보스 스킬 사용 동기화
+// serverSocket.on('opponentBossSkillUsed', (data) => {
+//   const { bossType, skill, stage } = data;
+//   console.log(`Opponent Boss Skill Used: ${bossType}, Skill: ${skill}, Stage: ${stage}`);
+
+//   // 상대 클라이언트 보스가 스킬을 사용하도록 처리
+//   const opponentBoss = getOpponentBossInstance(bossType);
+//   if (opponentBoss) {
+//       opponentBoss.useSkill(skill);
+//   }
+// });
 
   serverSocket.on('gameInit', (packetType, data) => {
     towersData = data.towersData;
@@ -1410,33 +1458,29 @@ function updateStageOnServer(stage) {
 }
 
 function startNextStage() {
+  if (bossSpawned || bossDefeated) {
+      console.log(`Boss or stage transition already in progress for level ${monsterLevel}`);
+      return;
+  }
+
   monsterLevel++;
   bossSpawned = false;  // 보스 상태 초기화
+  bossDefeated = false; // 보스가 사망했다고 명시
   console.log(`Starting next stage: ${monsterLevel}`);
 
   updateStageOnServer(monsterLevel);
 
+  // 일정 시간 후 다음 스테이지로 이동 준비
   setTimeout(() => {
-    if (!bossSpawned) {
-      checkForBossSpawn();
-      console.log("보스가 소환되었는지 확인합니다")
-    }
-  }, 1000);
+      if (!bossSpawned) {
+          checkForBossSpawn();  // 보스가 필요한지 확인하고, 필요하면 소환
+          console.log("Checking if boss needs to be spawned");
+      } else {
+          console.log("Starting spawning for regular monsters");
+          startSpawning();  // 보스가 없을 경우에만 몬스터 소환 시작
+      }
+  }, 1000); // 1초 딜레이 후 보스 확인 및 몬스터 소환 시작
 }
-
-// //보스 생성은 클라이언트가 아니라 서버에서 관리함
-// function spawnBoss() {
-//   if (bossSpawned && currentBossStage === monsterLevel) {
-//     console.log(`Boss has already spawned for level ${monsterLevel}`);
-//     return;  // 이미 보스가 소환되었으면 추가 소환을 막음
-//   }
-
-//   bossSpawned = true;
-//   console.log(`Boss is spawning for the first time at level ${monsterLevel}`);
-
-//   // 실제 보스 소환 로직 처리
-// }
-
 
 function sendEvent(handlerId, payload) {
   const userId = localStorage.getItem('userId');
@@ -1468,29 +1512,3 @@ document.body.appendChild(backButton);
 backButton.addEventListener('click', () => {
   location.href = 'http://localhost:8080/index.html'; // 홈 화면 경로로 이동
 });
-
-// // 스테이지 이동 버튼 추가
-// const stageButtonsContainer = document.createElement('div');
-// stageButtonsContainer.style.position = 'absolute';
-// stageButtonsContainer.style.top = '300px';
-// stageButtonsContainer.style.left = '10px';
-// stageButtonsContainer.style.padding = '10px';
-// document.body.appendChild(stageButtonsContainer);
-
-// const stages = [3, 6, 9, 12, 15];
-
-// stages.forEach((stage) => {
-//   const stageButton = document.createElement('button');
-//   stageButton.textContent = `Go to Stage ${stage}`;
-//   stageButton.style.margin = '5px';
-//   stageButton.style.padding = '10px 20px';
-//   stageButton.style.fontSize = '16px';
-//   stageButton.style.cursor = 'pointer';
-
-//   // 스테이지 변경 버튼 클릭 이벤트
-//   stageButton.addEventListener('click', () => {
-//     moveToStage(stage);
-//   });
-
-//   stageButtonsContainer.appendChild(stageButton);
-// });

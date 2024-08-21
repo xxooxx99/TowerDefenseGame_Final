@@ -16,6 +16,7 @@ export class Monster {
     this.y = path[0].y;
     this.width = 40;
     this.height = 40;
+    console.log(`monster spawned at x: ${this.x}, y: ${this.y}`);
     this.image = this.getImageForLevel(level);
     this.onDie = null; // 몬스터가 죽을 때 호출되는 콜백 추가
 
