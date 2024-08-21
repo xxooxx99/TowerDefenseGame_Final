@@ -206,7 +206,7 @@ export class Monster {
           break;
       }
 
-      const text = `${monsterName} (레벨 ${this.level}) ${this.hp}/${this.maxHp}`;
+      const text = `${monsterName} (레벨 ${this.level}) ${Math.ceil(this.hp)}/${this.maxHp}`;
 
       ctx.font = '12px Arial';
       ctx.fillStyle = 'white';
