@@ -252,9 +252,6 @@ export const towerAttack = (socket, data) => {
     if (data.payload.poisonDamage) {
       const poisonDamage = data.payload.poisonDamage;
       for (let monsterData of monsterIndexs) {
-        let attackedMonster = monsters.find(
-          (monster) => monster.monsterIndex == monsterData.monsterIndex,
-        );
         attackedmonsters.push(
           setPoisonMonster(
             userId,
@@ -267,9 +264,6 @@ export const towerAttack = (socket, data) => {
       }
     } else {
       for (let monsterData of monsterIndexs) {
-        let attackedMonster = monsters.find(
-          (monster) => monster.monsterIndex == monsterData.monsterIndex,
-        );
         attackedmonsters.push(setDamagedMonsterHp(userId, damage, monsterData.monsterIndex));
       }
     }

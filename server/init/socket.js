@@ -26,6 +26,7 @@ import { add_count } from '../handlers/ability/gameAbilityActive.handler.js';
 import { handleSpawnBoss } from '../handlers/boss/bosshandlers.js';
 import { gameoverSignalReceive } from '../handlers/game/gameEnd.handler.js';
 import { recordRecentGame, sendRecentGameInfo } from '../handlers/user/userGameRecord.handler.js';
+import { getRankList } from '../handlers/rank/rank.handler.js';
 
 const initSocket = (server) => {
   const io = new SocketIO();
@@ -132,6 +133,9 @@ const initSocket = (server) => {
           break;
         case PacketType.C2S_RECENT_GAME_LOAD:
           sendRecentGameInfo(socket, packet);
+          break;
+        case PacketType.S2C_GET_RANK:
+          getRankList(socket);
           break;
         default:
           console.log(`Unknown packet type: ${packet.packetType}`);
