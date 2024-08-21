@@ -11,7 +11,7 @@ class Boss {
         this.towers = towers;
         this.bgm = bgm;
         this.skillSounds = skillSounds;
-        this.bossSkills = new BossSkills(this, this.towers, this.socket); 
+        // this.bossSkills = new BossSkills(this, this.towers, this.socket);  // 보스 스킬 관련 주석 처리
         this.monsterIndex = null;
 
         // path가 undefined일 경우 에러 처리 및 경고 메시지 추가
@@ -39,12 +39,12 @@ class Boss {
         this.skillElement = document.getElementById('boss-skill');
     }
 
-    startSkills() {
-        setInterval(() => {
-            const randomSkill = this.skills[Math.floor(Math.random() * this.skills.length)];
-            this.bossSkills.useSkill(randomSkill);  // 랜덤 스킬 사용
-        }, 10000);  // 10초마다 스킬 사용
-    }
+    // startSkills() {
+    //     setInterval(() => {
+    //         const randomSkill = this.skills[Math.floor(Math.random() * this.skills.length)];
+    //         this.bossSkills.useSkill(randomSkill);  // 스킬 사용 관련 주석 처리
+    //     }, 10000);  // 10초마다 스킬 사용
+    // }
 
     draw(ctx) {
         if (!this.image) return;
@@ -70,10 +70,10 @@ class Boss {
     }
 
     init() {
-        this.socket.on('bossSkill', (data) => {
-            console.log(`Boss is using skill: ${data.skill}`);
-            this.bossSkills.useSkill(data.skill);
-        });
+        // this.socket.on('bossSkill', (data) => {  // 스킬 이벤트 수신 관련 주석 처리
+        //     console.log(`Boss is using skill: ${data.skill}`);
+        //     this.bossSkills.useSkill(data.skill);
+        // });
 
         this.socket.on('updateBossHp', (data) => {
             this.hp = data.hp;

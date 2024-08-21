@@ -15,8 +15,7 @@ import { handleBaseAttackMonster } from './handlers/game/gameHandler.js';
 import { config } from 'dotenv';
 import { loadGameAssets } from './init/assets.js';
 import { db_data_add } from './db.js';
-import { handleSpawnBoss } from './handlers/boss/bosshandlers.js';
-import * as bosshandler from './handlers/boss/bosshandlers.js';  // bosshandler를 올바르게 import
+import * as bossHandlers from './handlers/boss/bosshandlers.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -47,17 +46,47 @@ app.get('/api', (req, res) => {
   res.sendFile('index.html', { root: path.join(__dirname, '../client') });
 });
 
-io.on('connection', (socket) => {
-  socket.on('chat message', (data) => {
-    io.emit('chat message', data);
-    console.log(`Received chat message from ${data.userId}: ${data.message} from app.js`);
-  });
+let clientBossSpawned = {}; // 클라이언트별 보스 소환 상태 관리
+let towers = {};  // towers 객체 초기화
+let base = {};    // base 객체 초기화
 
+io.on('connection', (socket) => {
+  console.log(`New client connected: ${socket.id}`);
+
+  socket.on('stageUpdate', (data) => {
+    console.log('Stage Update received from client: ', data.stage);
+    bossHandlers.handleStageUpdate(socket, data.stage, io, towers, base);
+});
+  
   socket.on('spawnBoss', (data) => {
-    console.log("Received boss spawn request from client:", socket.id, "for stage:", data.stage);  // 클라이언트 요청 수신 로그
-    bosshandler.handleSpawnBoss(io, socket, data.stage);  // 보스 소환 요청 처리
+    const { bossType, stage } = data;
+    console.log(`Boss spawn requested by client ${socket.id}`);
+    
+
+    bossHandlers.handleSpawnBoss(socket, stage, io, towers, base)
+    .then(() => {
+      socket.emit('bossSpawned', { success: true, bossType, stage });
+      console.log(`${bossType} spawned successfully at stage ${stage}`);
+
+
+      // 클라이언트로부터 ACK를 기다림
+      socket.once('bossSpawnAck', (ackData) => {
+        if (ackData && ackData.stage === stage) {
+          console.log(`Boss spawn ACK received from client ${socket.id} for stage ${stage}`);
+        } else {
+          console.error(`Boss spawn ACK failed or invalid for client ${socket.id}`);
+        }
+      });
+
+    })
+    .catch((err) => {
+      console.error(`Error spawning ${bossType} at stage ${stage}:`, err);
+      socket.emit('bossSpawned', { success: false, message: 'Failed to spawn boss' });
+    });
+  });
 });
-});
+
+io.sockets.setMaxListeners(100); // 최대 리스너 개수를 30개로 설정
 
 loadGameAssets();
 

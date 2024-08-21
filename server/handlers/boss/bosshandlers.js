@@ -1,139 +1,88 @@
-// import MightyBoss from './mightyBoss.handler.js';
-// import TowerControlBoss from './towerControlBoss.handler.js';
-// import DoomsdayBoss from './doomsdayBoss.handler.js';
-// import TimeRifter from './timeRifter.handler.js';
-// import FinaleBoss from './finaleBoss.handler.js';
+import { PacketType } from '../../constants.js'; 
+import MightyBoss from './mightyBoss.handler.js';
+import TowerControlBoss from './towerControlBoss.handler.js';
+import DoomsdayBoss from './doomsdayBoss.handler.js';
+import TimeRifter from './timeRifter.handler.js';
+import FinaleBoss from './finaleBoss.handler.js';
 
-// let bossSpawned = false;  
-// let bossSkillInterval = null;  
+let clientStages = {}; 
+let clientBossSpawned = {}; 
+let activeBosses = {}; // 현재 활성화된 보스 관리
 
-// function handleSpawnBoss(io, socket, stage, towers, base) {
-//   console.log("Boss spawn request received for stage:", stage);
+// 클라이언트가 스테이지 변경을 서버에 보고할 때 처리하는 함수
+function handleStageUpdate(socket, stage, io, towers, base) {
+    const userId = socket.id;
 
-//   if (bossSpawned) {
-//       io.emit('bossSpawned', {
-//           success: false,
-//           message: 'A boss is already spawned'
-//       });
-//       return;
-//   }
-
-//   const bossType = determineBossType(stage);
-//   if (!bossType) {
-//       io.emit('bossSpawned', {
-//           success: false,
-//           message: `No boss type found for stage ${stage}`
-//       });
-//       return;
-//   }
-
-//   const boss = spawnBoss(bossType, socket);
-//   if (boss) {
-//       bossSpawned = true;  
-//       io.emit('bossSpawned', {
-//           success: true,
-//           bossType: bossType,
-//           hp: boss.hp
-//       });
-//       console.log(`Boss spawned: ${bossType} with HP: ${boss.hp}`);
-
-//       bossSkillInterval = setInterval(() => {
-//           boss.useSkill(io, towers, base);  
-//       }, 5000);
-
-//       boss.on('die', () => {
-//           clearBossSkillInterval();  
-//           io.emit('bossDied', { bossType: bossType });
-//           bossSpawned = false;  
-//       });
-//   } else {
-//       io.emit('bossSpawned', {
-//           success: false,
-//           message: 'Failed to spawn boss'
-//       });
-//   }
-// }
-
-// function determineBossType(stage) {
-//   switch(stage) {
-//     case 3:
-//       return 'MightyBoss';
-//     case 6:
-//       return 'TowerControlBoss';
-//     case 9:
-//       return 'DoomsdayBoss';
-//     case 12:
-//       return 'TimeRifter';
-//     case 15:
-//       return 'FinaleBoss';
-//     default:
-//       return null;
-//   }
-// }
-
-// function spawnBoss(bossType, socket) {
-//   switch (bossType) {
-//       case 'MightyBoss':
-//           return new MightyBoss(socket);
-//       case 'TowerControlBoss':
-//           return new TowerControlBoss(socket);
-//       case 'DoomsdayBoss':
-//           return new DoomsdayBoss(socket);
-//       case 'TimeRifter':
-//           return new TimeRifter(socket);
-//       case 'FinaleBoss':
-//           return new FinaleBoss(socket);
-//       default:
-//           return null;
-//   }
-// }
-
-// function clearBossSkillInterval() {
-//   if (bossSkillInterval) {
-//       clearInterval(bossSkillInterval);
-//       bossSkillInterval = null;
-//   }
-// }
-
-// export { handleSpawnBoss, clearBossSkillInterval };
-
-
-// bosshandlers.js
-
-import { PacketType } from '../../constants.js'; // 패킷 타입 상수 정의
-
-let bossSpawned = false; // 보스 스폰 여부 체크
-
-function handleSpawnBoss(io, socket, stage) {
-    console.log("Boss spawn request received for stage:", stage);
-
-    if (bossSpawned) {
-        socket.emit('bossSpawned', {
-            success: false,
-            message: 'A boss is already spawned'
-        });
-        return;
-    }
-
-    const bossType = determineBossType(stage); // 스테이지에 따른 보스 타입 결정
-
-    if (!bossType) {
-        socket.emit('bossSpawned', {
-            success: false,
-            message: `No boss type found for stage ${stage}`
-        });
-        return;
-    }
-
-    bossSpawned = true;
-    io.emit('bossSpawned', {
-        success: true,
-        bossType: bossType // 보스 타입 정보만 클라이언트에 전달
-    });
+    // 클라이언트의 현재 스테이지 업데이트
+    clientStages[userId] = stage;
+    console.log(`Stage Update received from client: ${stage} (user: ${userId})`);
     
-    console.log(`Boss ${bossType} spawned on stage: ${stage}`);
+    // 보스가 소환되어야 할 스테이지인지 확인
+    if ([3, 6, 9, 12, 15].includes(stage) && !clientBossSpawned[userId]) {
+        handleSpawnBoss(socket, stage, io, towers, base); 
+    } else if (![3, 6, 9, 12, 15].includes(stage)) {
+        // 보스가 소환되지 않는 스테이지라면 보스 상태 초기화
+        resetBossState(userId);
+    }
 }
 
+// 보스 소환 처리
+function handleSpawnBoss(socket, stage, io, towers, base) {
+    return new Promise((resolve, reject) => {
+        const userId = socket.id;
+        console.log(`Server: Boss spawn request received for user ${userId}, stage: ${stage}`);
+
+        // 이미 보스가 소환되었다면 중단
+        if (clientBossSpawned[userId]) {
+            console.log(`Boss already spawned for user ${userId} at stage ${stage}`);
+            return resolve(); // Promise를 성공적으로 종료
+        }
+
+        // 보스 타입 결정
+        const bossType = determineBossType(stage);
+
+        if (!bossType) {
+            socket.emit('bossSpawned', {
+                success: false,
+                message: `Server: No boss type found for stage ${stage}`
+            });
+            return reject(new Error(`No boss type found for stage ${stage}`)); // Promise를 실패로 종료
+        }
+
+        clientBossSpawned[userId] = true;
+
+        // 새로운 보스 인스턴스 생성
+        const boss = createBossInstance(bossType, socket);
+
+        if (boss) {
+            activeBosses[userId] = boss; // 활성화된 보스 관리
+            socket.emit('bossSpawned', {
+                success: true,
+                bossType: bossType,
+                stage: stage
+            });
+            console.log(`Server: Boss type ${bossType} spawned for user ${userId} at stage ${stage}`);
+
+            // Set a timeout to trigger the boss skill after 10 seconds
+            setTimeout(() => {
+                if (activeBosses[userId]) {
+                    console.log(`Server: Triggering ${bossType} skill for user ${userId}`);
+                    boss.useSkill(io, towers, base);  // 보스 스킬 사용 시작
+                }
+            }, 100000); // 10 seconds delay
+            resolve(); // 작업 성공 시 Promise를 성공적으로 종료
+        } else {
+            console.error(`Failed to create boss instance for user ${userId} at stage ${stage}`);
+            socket.emit('bossSpawned', {
+                success: false,
+                message: 'Failed to spawn boss due to server error.'
+            });
+            reject(new Error(`Failed to create boss instance for user ${userId}`)); // 작업 실패 시 Promise를 실패로 종료
+        }
+    });
+}
+
+// 스테이지에 따라 보스 타입 결정
 function determineBossType(stage) {
     switch(stage) {
         case 3:
@@ -151,4 +100,47 @@ function determineBossType(stage) {
     }
 }
 
-export { handleSpawnBoss };
+// 보스 인스턴스 생성 함수
+function createBossInstance(bossType, socket) {
+    switch(bossType) {
+        case 'MightyBoss':
+            return new MightyBoss(socket);
+        case 'TowerControlBoss':
+            return new TowerControlBoss(socket);
+        case 'DoomsdayBoss':
+            return new DoomsdayBoss(socket);
+        case 'TimeRifter':
+            return new TimeRifter(socket);
+        case 'FinaleBoss':
+            return new FinaleBoss(socket);
+        default:
+            throw new Error(`Unknown boss type: ${bossType}`);
+    }
+}
+
+// 보스 상태 리셋 함수 (보스가 소환된 상태를 초기화)
+function resetBossState(userId) {
+    if (clientBossSpawned[userId]) {
+        console.log(`Resetting boss state for user ${userId}`);
+        delete clientBossSpawned[userId];
+        if (activeBosses[userId]) {
+            activeBosses[userId].stopSkills(); // 보스 스킬 중단
+            delete activeBosses[userId];
+        }
+    }
+}
+
+// 보스가 처치된 경우 호출하는 함수 (선택 사항)
+function handleBossDefeated(socket) {
+    const userId = socket.id;
+
+    // 보스가 처치되었다면 상태 초기화
+    resetBossState(userId);
+    console.log(`Boss defeated for user ${userId}`);
+    socket.emit('bossDefeated', {
+        success: true,
+        message: 'Boss has been defeated.'
+    });
+}
+
+export { handleStageUpdate, handleSpawnBoss, handleBossDefeated, resetBossState };
