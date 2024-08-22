@@ -9,7 +9,6 @@ import { getGameAssets } from '../../init/assets.js';
 import { getPlayData } from '../../models/playData.model.js';
 import { getMonsters, setDamagedMonsterHp, setPoisonMonster } from '../../models/monster.model.js';
 import { CLIENTS } from '../match/matchMakingHandler.js';
-import { userGold } from '../../../client/src/multi_game.js';
 
 export const towerAddHandler = (socket, data) => {
   const { userId, towerType, towerId, posX, posY } = data.payload;
@@ -368,36 +367,36 @@ export const towerUnLockCheck = (socket, userId) => {
   //Speed Tower Part
   if (!userLock[1]) {
     let count = 0;
-    for (let baseTower in userTowers.baseTower) count += baseTower.length;
+    for (let number in userTowers.baseTower) count += userTowers.baseTower[number].length;
+
     if (count >= 10) userLock[1] = true;
   }
 
   //speedSupport Tower Part
   if (!userLock[2]) {
     let count = 0;
-    for (let speedTower in userTowers.speedTower) count += speedTower.length;
+    for (let number in userTowers.speedTower) count += userTowers.speedTower[number].length;
     if (count >= 10) userLock[2] = true;
   }
 
   //attackSupport Tower Part
   if (!userLock[3]) {
     let count = 0;
-    for (let strongTower in userTowers.strongTower) count += strongTower.length;
+    for (let number in userTowers.strongTower) count += userTowers.strongTower[number].length;
     if (count >= 10) userLock[3] = true;
   }
 
   //strong Tower Part
   if (!userLock[4]) {
     let count = 0;
-    for (let baseTower in userTowers.baseTower) count += baseTower.length;
+    for (let number in userTowers.baseTower) count += userTowers.baseTower[number].length;
     if (count >= 15) userLock[4] = true;
   }
 
   //splash Tower Part
   if (!userLock[5]) {
-    let count = 0;
     const userGold = userData.getGold();
-    if (userGold >= '15000') userLock[5] = true;
+    if (userGold >= 15000) userLock[5] = true;
   }
 
   //multiShot Tower, poison Tower, growth Tower Part
@@ -409,7 +408,7 @@ export const towerUnLockCheck = (socket, userId) => {
   if (check.length != hasChangedCheck.length) {
     let packet = {
       packetType: PacketType.S2C_TOWER_ALLOW,
-      data: userLock,
+      userLock: userLock,
     };
 
     socket.emit('towerAllow', packet);
