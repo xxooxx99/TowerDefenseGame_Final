@@ -439,48 +439,153 @@ function gameSync(data) {
 }
 
 let killCount = 0;
+let currentBoss = null
+
+function isBossStage(level) {
+  return [3, 6, 9, 12, 15].includes(level);  // Modify the levels as needed
+}
 
 function gameLoop() {
-  // 렌더링 시에는 항상 배경 이미지부터 그려야 합니다! 그래야 다른 이미지들이 배경 이미지 위에 그려져요!
-  ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height); // 배경 이미지 다시 그리기
-  drawPath(monsterPath, ctx); // 경로 다시 그리기
+  // Redraw the background
+  ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+  drawPath(monsterPath, ctx);
+
+  // Update UI elements (high score, score, gold, level)
   ctx.font = '25px Times New Roman';
   ctx.fillStyle = 'skyblue';
-  ctx.fillText(`최고 기록: ${highScore}`, 100, 50); // 최고 기록 표시
+  ctx.fillText(`최고 기록: ${highScore}`, 100, 50);
   ctx.fillStyle = 'white';
-  ctx.fillText(`점수: ${score}`, 100, 100); // 현재 스코어 표시
+  ctx.fillText(`점수: ${score}`, 100, 100);
   ctx.fillStyle = 'yellow';
-  ctx.fillText(`골드: ${userGold}`, 100, 150); // 골드 표시
+  ctx.fillText(`골드: ${userGold}`, 100, 150);
   ctx.fillStyle = 'black';
-  ctx.fillText(`현재 레벨: ${monsterLevel}`, 100, 200); // 최고 기록 표시
+  ctx.fillText(`현재 레벨: ${monsterLevel}`, 100, 200);
 
-  // 타워 그리기 및 몬스터 공격 처리
-
+  // Draw and manage towers
   for (let towerType in towers) {
-    for (let towerId in towers[towerType]) {
-      for (let i = 0; i < towers[towerType][towerId].length; i++) {
-        const tower = towers[towerType][towerId][i];
-        tower.draw(ctx);
-        tower.updateCooldown(); //쿨타임도
-        const data = tower.attack(monsters, towers);
-        if (data) {
-          sendEvent(PacketType.C2S_TOWER_ATTACK, {
-            userId,
-            towerType,
-            towerId,
-            towerNumber: tower.towerNumber,
-            monsterIndexs: data.monsters,
-            isExistSpeed: data.isExistSpeed,
-            isExistPower: data.isExistPower,
-            monstersSplash: data.monstersSplash,
-            poisonDamage: data.poisonDamage,
-            time: data.now,
-          });
-        }
+      for (let towerId in towers[towerType]) {
+          for (let i = 0; i < towers[towerType][towerId].length; i++) {
+              const tower = towers[towerType][towerId][i];
+              tower.draw(ctx);
+              tower.updateCooldown();
+              const data = tower.attack(monsters, towers);
+              if (data) {
+                  sendEvent(PacketType.C2S_TOWER_ATTACK, {
+                      userId,
+                      towerType,
+                      towerId,
+                      towerNumber: tower.towerNumber,
+                      monsterIndexs: data.monsters,
+                      isExistSpeed: data.isExistSpeed,
+                      isExistPower: data.isExistPower,
+                      monstersSplash: data.monstersSplash,
+                      poisonDamage: data.poisonDamage,
+                      time: data.now,
+                  });
+              }
+          }
+      }
+  }
+
+  // Handle growth towers
+  handleGrowthTowers();
+
+  // Draw base to ensure it is refreshed after monster attacks
+  base.draw(ctx, baseImage, monsters);
+
+  // If a boss is spawned, focus on boss logic
+  if (bossSpawned && currentBoss) {
+      currentBoss.move();
+      currentBoss.draw(ctx);
+
+      if (currentBoss.hp <= 0) {
+          handleBossDefeat();
+      }
+  } else {
+      // Handle regular monsters logic if no boss is active
+      for (let i = monsters.length - 1; i >= 0; i--) {
+          const monster = monsters[i];
+          if (monster.hp > 0) {
+              const attacked = monster.move();
+              monster.draw(ctx, false);
+              if (attacked) {
+                  const attackedSound = new Audio('sounds/attacked.wav');
+                  attackedSound.volume = 0.3;
+                  attackedSound.play();
+                  monsters.splice(i, 1);
+                  sendEvent(PacketType.C2S_DIE_MONSTER, {
+                      monsterIndex: monster.getMonsterIndex(),
+                      score,
+                      monsterLevel: monster.level,
+                  });
+                  sendEvent(PacketType.C2S_MONSTER_ATTACK_BASE, { damage: monster.Damage() });
+              }
+          } else {
+              monsters.splice(i, 1);
+              sendEvent(PacketType.C2S_DIE_MONSTER, {
+                  monsterIndex: monster.getMonsterIndex(),
+                  score,
+                  monsterLevel: monster.level,
+              });
+              sendEvent(PacketType.C2S_KILL_MONSTER_EVENT, {
+                  userId: localStorage.getItem('userId'),
+              });
+              killCount++;
+
+              // Check if all monsters for the current wave have been killed
+              if (killCount === monstersToSpawn && !bossSpawned) {  // Ensure no boss is active
+                monsterLevel++;
+                killCount = 0;
+
+                // Check if the current level is a boss stage
+                if (isBossStage(monsterLevel)) {
+                    clearInterval(monsterintervalId);
+                    spawnBoss(monsterLevel);  // Spawn the boss, pausing monster spawning
+                } else {
+                    startSpawning();  // Resume normal monster spawning
+                  }
+              }
+          }
+      }
+  }
+
+  // Handle opponent's game state
+  if (typeof updateOpponentGameState === "function") {
+      updateOpponentGameState();
+  }
+
+  // Request the next frame
+  requestAnimationFrame(gameLoop);
+}
+function updateOpponentGameState() {
+  // Logic to update the opponent's game state
+  // This could involve rendering the opponent's monsters, towers, and base
+  opponentCtx.clearRect(0, 0, opponentCanvas.width, opponentCanvas.height); // Clear opponent's canvas
+  opponentCtx.drawImage(opponentBackgroundImage, 0, 0, opponentCanvas.width, opponentCanvas.height); // Redraw opponent background
+  
+  // Redraw opponent's monsters and towers
+  opponentMonsters.forEach((monster) => {
+    monster.move();
+    monster.draw(opponentCtx, true);
+  });
+
+  for (let towerType in opponentTowers) {
+    for (let towerId in opponentTowers[towerType]) {
+      for (let i = 0; i < opponentTowers[towerType][towerId].length; i++) {
+        const tower = opponentTowers[towerType][towerId][i];
+        tower.draw(opponentCtx);
+        tower.attack(opponentMonsters, towers, false);
+        tower.updateCooldown();
       }
     }
   }
 
+  if (opponentBase) {
+    opponentBase.draw(opponentCtx, baseImage, true);
+  }
+}
+// Function to handle growth towers logic
+function handleGrowthTowers() {
   const growthTowers = towers[TOWER_TYPE[TOWER_TYPE.length - 1]];
   for (let towerId in growthTowers) {
     for (let i = 0; i < growthTowers[towerId].length; i++) {
@@ -495,87 +600,52 @@ function gameLoop() {
       }
     }
   }
+}
 
-  // 몬스터가 공격을 했을 수 있으므로 기지 다시 그리기
-  base.draw(ctx, baseImage, monsters);
+// Function to handle the boss defeat logic
+function handleBossDefeat() {
+  console.log('Boss defeated!');
+  bossSpawned = false;   // Mark the boss as defeated
+  currentBoss = null;    // Clear the current boss reference
+  startSpawning();       // Resume normal monster spawning
+}
 
-  for (let i = monsters.length - 1; i >= 0; i--) {
-    const monster = monsters[i];
-    if (monster.hp > 0) {
-      const Attacked = monster.move();
-      monster.draw(ctx, false);
-      if (Attacked) {
-        const attackedSound = new Audio('sounds/attacked.wav');
-        attackedSound.volume = 0.3;
-        attackedSound.play();
-        monsters.splice(i, 1);
-        sendEvent(PacketType.C2S_DIE_MONSTER, {
-          monsterIndex: monster.getMonsterIndex(),
-          score,
-          monsterLevel: monster.level,
-        });
-        sendEvent(PacketType.C2S_MONSTER_ATTACK_BASE, { damage: monster.Damage() });
-      }
-    } else {
-      monsters.splice(i, 1);
-      sendEvent(PacketType.C2S_DIE_MONSTER, {
-        monsterIndex: monster.getMonsterIndex(),
-        score,
-        monsterLevel: monster.level,
-      });
-      sendEvent(PacketType.C2S_KILL_MONSTER_EVENT, {
-        userId: localStorage.getItem('userId'),
-      });
-      killCount++;
+// Function to spawn a boss, pausing normal monsters
+function spawnBoss(stage) {
+  if (bossSpawned) return;  // Prevent multiple bosses from spawning at the same stage
 
-      if (killCount === monstersToSpawn) {
-        monsterLevel++;
-        killCount = 0;
+  let boss;
 
-        if (
-          monsterLevel === 3 ||
-          monsterLevel === 6 ||
-          monsterLevel === 9 ||
-          monsterLevel === 12 ||
-          monsterLevel === 15
-        ) {
-          clearInterval(monsterintervalId);
-          // 이 부분에 보스 소환 넣으시면 됩니다!
-        } else {
-          startSpawning();
-        }
-      }
-    }
+  // Select the boss based on the stage
+  switch (stage) {
+      case 3:
+          boss = new MightyBoss(monsterPath, towers, './sounds/Boss_bgm.mp3', './sounds/bossskill.mp3');
+          break;
+      case 6:
+          boss = new TowerControlBoss(monsterPath, towers, './sounds/Boss_bgm.mp3', './sounds/bossskill.mp3');
+          break;
+      case 9:
+          boss = new TimeRifter(monsterPath, towers, './sounds/Boss_bgm.mp3', './sounds/bossskill.mp3');
+          break;
+      case 12:
+          boss = new DoomsdayBoss(monsterPath, towers, './sounds/Boss_bgm.mp3', './sounds/bossskill.mp3');
+          break;
+      case 15:
+          boss = new FinaleBoss(monsterPath, './sounds/Boss_bgm.mp3');
+          break;
+      default:
+          console.error('Invalid boss stage:', stage);
+          return;
   }
 
-  monsters.forEach((monster) => {
-    monster.move();
-    monster.draw(ctx, true);
-  });
-
-  // 상대방 게임 화면 업데이트
-  opponentCtx.drawImage(opponentBackgroundImage, 0, 0, opponentCanvas.width, opponentCanvas.height);
-  drawPath(opponentMonsterPath, opponentCtx); // 상대방 경로 다시 그리기
-
-  for (let towerType in opponentTowers) {
-    for (let towerId in opponentTowers[towerType])
-      for (let i = 0; i < opponentTowers[towerType][towerId].length; i++) {
-        const tower = opponentTowers[towerType][towerId][i];
-        tower.draw(opponentCtx);
-        tower.attack(opponentMonsters, towers, false);
-        tower.updateCooldown();
-      }
+  // Initialize the boss and add it to the game
+  if (boss) {
+      boss.init();  // Initialize boss without socket
+      monsters.push(boss);  // Add boss to monsters array
+      currentBoss = boss;   // Track the current active boss
+      boss.startSkills();   // Begin boss skill usage
+      bossSpawned = true;   // Mark the boss as spawned
   }
-
-  opponentMonsters.forEach((monster) => {
-    monster.move();
-    monster.draw(opponentCtx, true);
-  });
-
-  if (opponentBase) {
-    opponentBase.draw(opponentCtx, baseImage, true);
-  }
-  requestAnimationFrame(gameLoop); // 지속적으로 다음 프레임에 gameLoop 함수 호출할 수 있도록 함
 }
 
 function opponentBaseAttacked(value) {
@@ -750,92 +820,92 @@ Promise.all([
     console.log('client checking: ', userId);
   });
 
-  serverSocket.on('bossSpawned', (data) => {
-    console.log('Received bossSpawned event:', data);
-    console.log('monsterPath:', monsterPath); // 여기서 monsterPath 확인
+  // serverSocket.on('bossSpawned', (data) => {
+  //   console.log('Received bossSpawned event:', data);
+  //   console.log('monsterPath:', monsterPath); // 여기서 monsterPath 확인
 
-    if (!data.success) {
-      console.error(data.message);
-      return;
-    }
+  //   if (!data.success) {
+  //     console.error(data.message);
+  //     return;
+  //   }
 
-    const { bossType } = data;
+  //   const { bossType } = data;
 
-    if (!bossType) {
-      console.error('Error: No boss type received from server.');
-      return;
-    }
+  //   if (!bossType) {
+  //     console.error('Error: No boss type received from server.');
+  //     return;
+  //   }
 
-    console.log(`Spawning ${bossType}...`);
+  //   console.log(`Spawning ${bossType}...`);
 
-    let boss;
+  //   let boss;
 
-    // 보스 타입에 따라 보스 생성
-    switch (bossType) {
-      case 'MightyBoss':
-        console.log('Creating MightyBoss with path:', monsterPath);
-        boss = new MightyBoss(
-          monsterPath,
-          serverSocket,
-          towers,
-          './sounds/Boss_bgm.mp3',
-          './sounds/bossskill.mp3',
-        );
-        break;
-      case 'TowerControlBoss':
-        boss = new TowerControlBoss(
-          monsterPath,
-          serverSocket,
-          towers,
-          './sounds/Boss_bgm.mp3',
-          './sounds/bossskill.mp3',
-        );
-        break;
-      case 'DoomsdayBoss':
-        boss = new DoomsdayBoss(
-          monsterPath,
-          serverSocket,
-          towers,
-          './sounds/Boss_bgm.mp3',
-          './sounds/bossskill.mp3',
-        );
-        break;
-      case 'TimeRifter':
-        boss = new TimeRifter(
-          monsterPath,
-          serverSocket,
-          towers,
-          './sounds/Boss_bgm.mp3',
-          './sounds/bossskill.mp3',
-        );
-        break;
-      case 'FinaleBoss':
-        boss = new FinaleBoss(
-          monsterPath,
-          serverSocket,
-          './sounds/Boss_bgm.mp3',
-          './sounds/bossskill.mp3',
-        );
-        break;
-      default:
-        console.error('Invalid boss type:', bossType);
-        return;
-    }
+  //   // 보스 타입에 따라 보스 생성
+  //   switch (bossType) {
+  //     case 'MightyBoss':
+  //       console.log('Creating MightyBoss with path:', monsterPath);
+  //       boss = new MightyBoss(
+  //         monsterPath,
+  //         serverSocket,
+  //         towers,
+  //         './sounds/Boss_bgm.mp3',
+  //         './sounds/bossskill.mp3',
+  //       );
+  //       break;
+  //     case 'TowerControlBoss':
+  //       boss = new TowerControlBoss(
+  //         monsterPath,
+  //         serverSocket,
+  //         towers,
+  //         './sounds/Boss_bgm.mp3',
+  //         './sounds/bossskill.mp3',
+  //       );
+  //       break;
+  //     case 'DoomsdayBoss':
+  //       boss = new DoomsdayBoss(
+  //         monsterPath,
+  //         serverSocket,
+  //         towers,
+  //         './sounds/Boss_bgm.mp3',
+  //         './sounds/bossskill.mp3',
+  //       );
+  //       break;
+  //     case 'TimeRifter':
+  //       boss = new TimeRifter(
+  //         monsterPath,
+  //         serverSocket,
+  //         towers,
+  //         './sounds/Boss_bgm.mp3',
+  //         './sounds/bossskill.mp3',
+  //       );
+  //       break;
+  //     case 'FinaleBoss':
+  //       boss = new FinaleBoss(
+  //         monsterPath,
+  //         serverSocket,
+  //         './sounds/Boss_bgm.mp3',
+  //         './sounds/bossskill.mp3',
+  //       );
+  //       break;
+  //     default:
+  //       console.error('Invalid boss type:', bossType);
+  //       return;
+  //   }
 
-    // 보스 초기화 및 화면에 그리기
-    if (boss) {
-      boss.init(); // 보스 초기화 (스킬 및 BGM)
-      monsters.push(boss); // 보스를 monsters 배열에 추가
-      if (typeof boss.draw === 'function') {
-        // draw 메서드가 함수인지 확인
-        boss.draw(ctx); // 보스를 화면에 그리기
-      } else {
-        console.error('Error: boss.draw is not a function');
-      }
-      boss.startSkills(); // 보스 스킬 사용 시작
-      console.log(`${bossType} successfully spawned and is ready.`);
-    }
-  });
+  //   // 보스 초기화 및 화면에 그리기
+  //   if (boss) {
+  //     boss.init(); // 보스 초기화 (스킬 및 BGM)
+  //     monsters.push(boss); // 보스를 monsters 배열에 추가
+  //     if (typeof boss.draw === 'function') {
+  //       // draw 메서드가 함수인지 확인
+  //       boss.draw(ctx); // 보스를 화면에 그리기
+  //     } else {
+  //       console.error('Error: boss.draw is not a function');
+  //     }
+  //     boss.startSkills(); // 보스 스킬 사용 시작
+  //     console.log(`${bossType} successfully spawned and is ready.`);
+  //   }
+  // });
 
   serverSocket.on('gameInit', (packetType, data) => {
     towersData = data.towersData;
@@ -1349,35 +1419,6 @@ function moveToStage(stage) {
     message: `Moved to Stage ${stage}`,
   });
 }
-
-function spawnBoss() {
-  if (bossSpawned) {
-    console.log('A boss is already spawned');
-    return; // 이미 보스가 소환된 경우 함수 종료
-  }
-
-  console.log('Spawning boss... Sending request to server.');
-  bossSpawned = true; // 보스 소환 상태를 true로 변경
-  serverSocket.emit('spawnBoss', { bossType: 'MightyBoss', stage: monsterLevel }); // 보스 타입과 레벨 전송
-}
-
-function getBossTypeForLevel(level) {
-  switch (level) {
-    case 3:
-      return 'MightyBoss';
-    case 6:
-      return 'TowerControlBoss';
-    case 9:
-      return 'TimeRifter';
-    case 12:
-      return 'DoomsdayBoss';
-    case 15:
-      return 'FinaleBoss';
-    default:
-      return null; // 기본값 추가
-  }
-}
-
 function sendEvent(handlerId, payload) {
   const userId = localStorage.getItem('userId');
 
