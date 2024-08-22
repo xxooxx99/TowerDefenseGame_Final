@@ -23,6 +23,7 @@ import {
   growthTowerChecker,
   myTowerDrawAndAttack,
   opponentTowerDrawAndAttack,
+  towerAllow,
 } from './tower/towerController.js';
 
 if (!localStorage.getItem('token')) {
@@ -115,6 +116,7 @@ export let towersData;
 
 // Tower data for the current user
 let towers = {};
+let towerLock;
 towerImageInit();
 //#endregion
 
@@ -770,6 +772,7 @@ Promise.all([
 
   serverSocket.on('gameInit', (packetType, data) => {
     towersData = data.towersData;
+    towerLock = data.towerLock;
     monsterPath = data.Payload.monsterPath;
     initialTowerCoords = data.Payload.towerInit;
     basePosition = data.Payload.basePos;
@@ -838,6 +841,10 @@ Promise.all([
 
   serverSocket.on('userTowerCreate', (data) => {
     towerCreateToSocket(userId, data, towers, opponentTowers);
+  });
+
+  serverSocket.on('towerAllow', (data) => {
+    towerAllow(towerLock, data);
   });
 
   // 게임 종료 로직

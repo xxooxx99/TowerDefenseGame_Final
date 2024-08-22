@@ -152,6 +152,10 @@ export function towerCreateToSocket(userId, data, towers, opponentTowers) {
   }
 }
 
+export function towerAllow(towerLock, data) {
+  towerLock = data;
+}
+
 // 발신
 export function towerUpgrades(userId, towers, posX, posY) {
   let min = Infinity;

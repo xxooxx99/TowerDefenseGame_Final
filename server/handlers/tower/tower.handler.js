@@ -9,13 +9,12 @@ import { getGameAssets } from '../../init/assets.js';
 import { getPlayData } from '../../models/playData.model.js';
 import { getMonsters, setDamagedMonsterHp, setPoisonMonster } from '../../models/monster.model.js';
 import { CLIENTS } from '../match/matchMakingHandler.js';
+import { userGold } from '../../../client/src/multi_game.js';
 
 export const towerAddHandler = (socket, data) => {
   const { userId, towerType, towerId, posX, posY } = data.payload;
   const towerAsset = getGameAssets().towerData.towerType;
   const userData = getPlayData(userId);
-
-  // towerUnLockCheck(userId);
 
   //#region 타워 간 거리 조정 로직
   let min = Infinity;
@@ -84,6 +83,7 @@ export const towerAddHandler = (socket, data) => {
     //#endregion
 
     //#region Client 내용 전송
+    towerUnLockCheck(socket, userId);
     const opponentPlayerId = userData.getOpponentInfo();
     const opponentSocket = CLIENTS[opponentPlayerId];
     socket.emit('userTowerCreate', packet);
@@ -357,7 +357,7 @@ export const towerSale = (socket, data) => {
   }
 };
 
-export const towerUnLockCheck = (userId) => {
+export const towerUnLockCheck = (socket, userId) => {
   const userData = getPlayData(userId);
   const userTowers = userData.towerInit;
   const userLock = userData.towerLock;
@@ -365,9 +365,53 @@ export const towerUnLockCheck = (userId) => {
   const check = userLock.filter((boolean) => boolean == false);
   if (check.length == 0) return;
 
-  const speedTower = userTowers.speedTower;
+  //Speed Tower Part
   if (!userLock[1]) {
-    const towers = userTowers.baseTower;
-    console.log(towers);
+    let count = 0;
+    for (let baseTower in userTowers.baseTower) count += baseTower.length;
+    if (count >= 10) userLock[1] = true;
+  }
+
+  //speedSupport Tower Part
+  if (!userLock[2]) {
+    let count = 0;
+    for (let speedTower in userTowers.speedTower) count += speedTower.length;
+    if (count >= 10) userLock[2] = true;
+  }
+
+  //attackSupport Tower Part
+  if (!userLock[3]) {
+    let count = 0;
+    for (let strongTower in userTowers.strongTower) count += strongTower.length;
+    if (count >= 10) userLock[3] = true;
+  }
+
+  //strong Tower Part
+  if (!userLock[4]) {
+    let count = 0;
+    for (let baseTower in userTowers.baseTower) count += baseTower.length;
+    if (count >= 15) userLock[4] = true;
+  }
+
+  //splash Tower Part
+  if (!userLock[5]) {
+    let count = 0;
+    const userGold = userData.getGold();
+    if (userGold >= '15000') userLock[5] = true;
+  }
+
+  //multiShot Tower, poison Tower, growth Tower Part
+  if (!userLock[6]) if (userTowers.length >= 30) userLock[6] = true;
+  if (!userLock[7]) if (userTowers.length >= 45) userLock[7] = true;
+  if (!userLock[8]) if (userTowers.length >= 60) userLock[8] = true;
+
+  const hasChangedCheck = userLock.filter((boolean) => boolean == false);
+  if (check.length != hasChangedCheck.length) {
+    let packet = {
+      packetType: PacketType.S2C_TOWER_ALLOW,
+      data: userLock,
+    };
+
+    socket.emit('towerAllow', packet);
   }
 };
