@@ -9,6 +9,8 @@ import {
   Tower,
 } from '../tower.js';
 
+const chatLog = document.getElementById('chatLog');
+
 //이미지 초기화
 const BTI = document.getElementById('baseTowerImage');
 const STI = document.getElementById('speedTowerImage');
@@ -178,10 +180,13 @@ export function towerCreateToSocket(userId, data, towers, opponentTowers) {
 
 export function towerAllow(towerLock, data) {
   towerLock = data.userLock;
+  chat('타워의 해금 조건이 만족되었습니다!');
   for (let lock = 0; lock < towerLock.length; lock++) {
-    if (towerLock[lock]) Images[lock].style.filter = '';
-    audioOfTowerAllow.currentTime = 0;
-    audioOfTowerAllow.play();
+    if (towerLock[lock]) {
+      Images[lock].style.filter = '';
+      audioOfTowerAllow.currentTime = 0;
+      audioOfTowerAllow.play();
+    }
   }
 
   return towerLock;
@@ -205,7 +210,7 @@ export function towerUpgrades(userId, towers, posX, posY) {
     }
   }
   if (selectTower.towerType == TOWER_TYPE[TOWER_TYPE.length - 1]) {
-    console.log('성장형 타워는 직접 업그레이드 할 수 없습니다.');
+    chat('성장형 타워는 직접 업그레이드 할 수 없습니다.');
     return;
   }
 
@@ -337,3 +342,10 @@ export function opponentTowerDrawAndAttack(opponentTowers, opponentMonsters, opp
       }
   }
 }
+
+export const chat = (chat) => {
+  const systemMessageElement = document.createElement('div');
+  systemMessageElement.textContent = `System: ${chat}`;
+  systemMessageElement.style.color = 'yellow';
+  chatLog.appendChild(systemMessageElement);
+};
