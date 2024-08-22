@@ -254,6 +254,7 @@ let monsterintervalId = null;
 const monsterSpawnInterval = 1000;
 let monstersToSpawn = 5; // 라운드당 몬스터 소환 수
 let bossToSpawn = 1;
+let bossMessageNumber = 0;
 
 function spawnMonster() {
   /* if (bossSpawned && currentBossStage === monsterLevel) {
@@ -279,6 +280,19 @@ function spawnMonster() {
     });
     monsterIndex++;
     bossSpawnCount++;
+    bossMessageNumber++;
+
+    if (monsterLevel !== 15) {
+      const systemMessageElement = document.createElement('div');
+      systemMessageElement.textContent = `System: ${bossMessageNumber}번째 보스가 출현합니다.`;
+      systemMessageElement.style.color = 'yellow';
+      chatLog.appendChild(systemMessageElement);
+    } else {
+      const systemMessageElement = document.createElement('div');
+      systemMessageElement.textContent = `System: 최종 보스가 출현합니다.`;
+      systemMessageElement.style.color = 'yellow';
+      chatLog.appendChild(systemMessageElement);
+    }
   } else if (monsterSpawnCount < monstersToSpawn) {
     const monster = new Monster(monsterPath, monsterImages, monsterLevel);
     monster.setMonsterIndex(monsterIndex);
