@@ -114,7 +114,7 @@ export class Tower {
 
       if (attackCount != this.hits) {
         this.cooldown = this.attackCycle - extraSpeed;
-        console.log(this.cooldown, this.attackCycle, extraSpeed);
+        // console.log(this.cooldown, this.attackCycle, extraSpeed);
         const time = new Date().getTime();
         return {
           monsters: this.target,
@@ -218,7 +218,7 @@ export class SplashTower extends Tower {
       if (attackCount != this.hits) {
         this.cooldown = this.attackCycle - extraSpeed;
         const time = new Date().getTime();
-        console.log(this.splashTarget.length);
+        // console.log(this.splashTarget.length);
         return {
           monsters: this.target,
           monstersSplash: this.splashTarget,

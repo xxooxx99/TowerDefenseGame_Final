@@ -125,7 +125,6 @@ const getRandomPositionNearPath = (maxDistance, monsterPath) => {
 
   const offsetX = (Math.random() - 0.5) * 2 * maxDistance;
   const offsetY = (Math.random() - 0.5) * 2 * maxDistance;
-  console.log(`초기타워 위치 + ${posX}, ${offsetX}, ${posY}, ${offsetY}`);
 
   return {
     x: posX + offsetX,

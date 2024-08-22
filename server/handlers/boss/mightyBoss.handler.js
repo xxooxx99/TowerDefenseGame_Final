@@ -1,37 +1,78 @@
-// server/handlers/boss/mightyBoss.handler.js
-export default class MightyBoss {
-    constructor() {
-        this.hp = 1000;
-        this.armor = 30;
+import EventEmitter from 'events';
+import { PacketType } from '../../constants.js';
+
+export default class MightyBoss extends EventEmitter {
+    constructor(socket) {
+        super();
+        this.maxHp = 1000;
+        this.hp = this.maxHp;
+        this.defense = 30;
         this.speed = 5;
-        this.skills = [
-            this.healSkill.bind(this),
-            this.spawnClone.bind(this),
-            this.reduceDamage.bind(this),
-        ];
+        this.skills = ['healSkill', 'spawnClone', 'reduceDamage'];
+        this.currentSkill = '';
+        this.bgm = 'mightyBossBGM.mp3';
+        this.socket = socket;
     }
 
-    // 체력 회복 스킬
+    useSkill(io) {
+        const randomSkill = this.getRandomSkill();
+        this.currentSkill = randomSkill;
+
+        io.emit('playSkillSound', { sound: 'bossskill.mp3' });
+        io.emit(PacketType.S2C_BOSS_SKILL, { skill: randomSkill });
+
+        switch (randomSkill) {
+            case 'healSkill':
+                this.healSkill();
+                break;
+            case 'spawnClone':
+                this.spawnClone();
+                break;
+            case 'reduceDamage':
+                this.reduceDamage();
+                break;
+        }
+    }
+
     healSkill() {
-        const healAmount = this.hp * 0.10;
-        this.hp += healAmount;
-        return `Boss heals for ${healAmount}`;
+        this.hp = Math.min(this.maxHp, this.hp + this.maxHp * 0.1);
+        console.log('Boss healed 10% of max HP.');
+        this.socket.emit('updateBossHp', { hp: this.hp });
+        this.emit('skillUsed', { skill: 'healSkill', hp: this.hp });
     }
 
-    // 분신 소환 스킬
     spawnClone() {
-        const cloneHp = this.hp * 0.30;
-        return `Boss spawns a clone with ${cloneHp} HP`;
+        const cloneHp = this.hp * 0.5;
+        console.log('Boss spawned a clone.');
+
+        const clone = new MightyBoss(this.socket);
+        clone.hp = cloneHp;
+
+        this.socket.emit('bossSpawn', {
+            bossType: 'Clone',
+            hp: clone.hp,
+            defense: clone.defense,
+            speed: clone.speed,
+        });
+
+        this.emit('skillUsed', { skill: 'spawnClone', cloneHp: clone.hp });
     }
 
-    // 피해 감소 스킬
     reduceDamage() {
-        return `Boss takes 50% reduced damage for 5 seconds`;
+        this.defense *= 0.5;
+        console.log('Boss reduces incoming damage by 50% for 5 seconds.');
+        this.socket.emit('updateBossDefense', { defense: this.defense });
+        this.emit('skillUsed', { skill: 'reduceDamage', defense: this.defense });
+
+        setTimeout(() => {
+            this.defense *= 2;
+            console.log('Boss defense restored.');
+            this.socket.emit('updateBossDefense', { defense: this.defense });
+        }, 5000);
     }
 
-    // 스킬 실행
-    useSkill() {
-        const skill = this.skills[Math.floor(Math.random() * this.skills.length)];
-        return skill();
+    getRandomSkill() {
+        const randomIndex = Math.floor(Math.random() * this.skills.length);
+        return this.skills[randomIndex];
     }
 }
