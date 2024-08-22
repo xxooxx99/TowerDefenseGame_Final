@@ -1,5 +1,5 @@
 import { towerImages, userGoldControl, towersData, sendEvent } from '../multi_game.js';
-import { audioOfTowerAddAndUpgrade, audioOfTowerSale } from '../multi_game.js';
+import { audioOfTowerAddAndUpgrade, audioOfTowerSale, audioOfTowerAllow } from '../multi_game.js';
 import { PacketType, TOWER_TYPE } from '../../constants.js';
 import {
   AttackSupportTower,
@@ -9,7 +9,31 @@ import {
   Tower,
 } from '../tower.js';
 
+//이미지 초기화
+const BTI = document.getElementById('baseTowerImage');
+const STI = document.getElementById('speedTowerImage');
+const SSTI = document.getElementById('speedSupportTowerImage');
+const ASTI = document.getElementById('attackSupportTowerImage');
+const SGTI = document.getElementById('strongTowerImage');
+const SPTI = document.getElementById('splashTowerImage');
+const MSTI = document.getElementById('multiShotTowerImage');
+const PTI = document.getElementById('poisonTowerImage');
+const GTI = document.getElementById('growthTowerImage');
+
+const Images = [BTI, STI, SSTI, ASTI, SGTI, SPTI, MSTI, PTI, GTI];
+
 // 초기화
+export const towerImageAllowInit = () => {
+  STI.style.filter = 'grayscale(100%)';
+  SSTI.style.filter = 'grayscale(100%)';
+  ASTI.style.filter = 'grayscale(100%)';
+  STI.style.filter = 'grayscale(100%)';
+  SPTI.style.filter = 'grayscale(100%)';
+  MSTI.style.filter = 'grayscale(100%)';
+  PTI.style.filter = 'grayscale(100%)';
+  GTI.style.filter = 'grayscale(100%)';
+};
+
 export const towerImageInit = () => {
   for (let i = 0; i < 9; i++) {
     for (let k = 0; k <= 2; k++) {
@@ -71,7 +95,7 @@ export function towerAttackToSocket(userId, data, monsters, opponentMonsters, to
       }
     }
 
-    if (killCount != 0) {
+    if (killCount != 0 && Math.trunc(towerId / 100) == 9) {
       console.log(`killCount: ${killCount}`);
       for (let tower of towers[towerType][towerId]) {
         if (tower.towerNumber == towerNumber) {
@@ -150,6 +174,17 @@ export function towerCreateToSocket(userId, data, towers, opponentTowers) {
     audioOfTowerAddAndUpgrade.play();
     userGoldControl(-towerCost);
   }
+}
+
+export function towerAllow(towerLock, data) {
+  towerLock = data.userLock;
+  for (let lock = 0; lock < towerLock.length; lock++) {
+    if (towerLock[lock]) Images[lock].style.filter = '';
+    audioOfTowerAllow.currentTime = 0;
+    audioOfTowerAllow.play();
+  }
+
+  return towerLock;
 }
 
 // 발신
