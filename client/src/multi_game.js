@@ -1183,15 +1183,28 @@ function updateMonstersHp(updatedMonsters) {
   });
 }
 
+// Base Attack 버튼 생성
 const attackMonstersButton = document.createElement('button');
-attackMonstersButton.textContent = 'Base Attack';
+attackMonstersButton.id = 'attack-monsters-button'; // ID 추가
+attackMonstersButton.textContent = '궁극기 공격';
 attackMonstersButton.style.position = 'absolute';
 attackMonstersButton.style.top = '10px';
 attackMonstersButton.style.left = '10px';
 attackMonstersButton.style.padding = '10px 20px';
-attackMonstersButton.style.fontSize = '8px';
+attackMonstersButton.style.fontSize = '25px';
 attackMonstersButton.style.cursor = 'pointer';
 document.body.appendChild(attackMonstersButton);
+
+// Cooldown 타이머 생성
+const cooldownElement = document.createElement('div');
+cooldownElement.id = 'cooldown-timer';
+cooldownElement.style.position = 'absolute';
+cooldownElement.style.top = '50px';
+cooldownElement.style.left = '10px';
+cooldownElement.style.fontSize = '30px';
+cooldownElement.style.color = 'red';
+cooldownElement.style.display = 'none'; // 초기에는 숨김
+document.body.appendChild(cooldownElement);
 
 attackMonstersButton.addEventListener('click', () => {
   const monsterIndices = monsters.map((monster) => monster.getMonsterIndex());
