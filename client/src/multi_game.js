@@ -3,6 +3,12 @@ import { Monster } from './monster.js';
 import { AttackSupportTower, poisonTower, SpeedSupportTower, SplashTower, Tower } from './tower.js';
 import { Boss } from './boss.js'; // 보스 클래스 추가
 import { CLIENT_VERSION, INITIAL_TOWER_NUMBER, PacketType, TOWER_TYPE } from '../constants.js';
+import {
+  towerImageInit,
+  placeInitialTowers,
+  towerAttackToSocket,
+  towerSaleToSocket,
+} from './tower/towerController.js';
 
 if (!localStorage.getItem('token')) {
   alert('로그인이 필요합니다.');
@@ -15,6 +21,7 @@ if (!userId) {
   location.href = '/login';
 }
 
+// 매칭 데이터
 let serverSocket;
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -34,57 +41,37 @@ const user_info = document.getElementById('user-info');
 const opponentUser_winRate = document.getElementById('opponentUser-winRate');
 const ownUser_winRate = document.getElementById('ownUser-winRate');
 
-// 타워 데이터
-let towerSale = null;
-let towerUpgrade = null;
-let towerBuilderId = null;
-let towerBuilderType = null;
-let posX = 0;
-let posY = 0;
-
-let intervalId = null;
-// 게임 데이터
-export let towersData; // 타워 데이터
-let monsterintervalId = null;
-/* let killCount = 0; */
-let monsterSpawnCount = 0; // 몬스터 스폰 수 초기화
-// 게임 데이터
-let towerCost = 100; // 타워 구입 비용
-let monsterSpawnInterval = 2000; // 몬스터 생성 주기
-let towerIndex = 1;
-let monsterIndex = 1;
 // 설정 데이터
 let acceptTime = 1000000; // 수락 대기 시간
+let matchAcceptInterval; // 인터벌 데이터
 
-// 인터벌 데이터
-let matchAcceptInterval;
+// 몬스터 데이터
+let monsterPath; // 몬스터 경로
+const NUM_OF_MONSTERS = 4; // 몬스터 개수
+
 // 유저 데이터
-let userGold; // 유저 골드
+export let userGold; // 유저 골드
+
+// base 데이터
 let base; // 기지 객체
 let baseHp = 0; // 기지 체력
-let monsterLevel = 0; // 몬스터 레벨
-let monsterPath; // 몬스터 경로
-let initialTowerCoords; // 초기 타워 좌표
 let basePosition; // 기지 좌표
-let monsters = []; // 유저 몬스터 목록
-let towers = {}; // 유저 타워 목록
+
 let score = 0; // 게임 점수
 let highScore = 0; // 기존 최고 점수
+
 // 상대 데이터
 let opponentBase; // 상대방 기지 객체
 let opponentBaseHp = 0;
 let opponentMonsterPath; // 상대방 몬스터 경로
 let opponentInitialTowerCoords; // 상대방 초기 타워 좌표
 let opponentBasePosition; // 상대방 기지 좌표
-let opponentMonsters = []; // 상대방 몬스터 목록
+export let opponentMonsters = []; // 상대방 몬스터 목록
 let opponentTowers = {}; // 상대방 타워 목록
-let isInitGame = false;
-const NUM_OF_MONSTERS = 4; // 몬스터 개수
-// 이미지 로딩 파트
-const backgroundImage = new Image();
-backgroundImage.src = 'images/bg.webp';
-const opponentBackgroundImage = new Image();
-opponentBackgroundImage.src = 'images/bg.webp';
+
+//#region Tower Controller Data
+// Initial Tower Data at Game Start
+let initialTowerCoords;
 export const towerImages = [];
 export const towerStroke = [
   'lightgray',
@@ -97,13 +84,36 @@ export const towerStroke = [
   'lightcyan',
   'lavender',
 ];
-for (let towerTypes = 0; towerTypes < TOWER_TYPE.length; towerTypes++) {
-  for (let towerUpgrade = 0; towerUpgrade <= 2; towerUpgrade++) {
-    const image = new Image();
-    image.src = `images/tower${100 * (towerTypes + 1) + towerUpgrade}.png`;
-    towerImages.push(image);
-  }
-}
+
+// Tower Control Button Status
+let towerSale = null;
+let towerUpgrade = null;
+let towerBuilderId = null;
+let towerBuilderType = null;
+
+// Live Cursor Pos
+let posX = 0;
+let posY = 0;
+
+// Static Tower data received from the server
+export let towersData;
+
+// Tower data for the current user
+let towers = {};
+
+//#endregion
+towerImageInit();
+
+//게임 데이터
+let bgm;
+
+//Game Init
+let isInitGame = false;
+// 이미지 로딩 파트
+const backgroundImage = new Image();
+backgroundImage.src = 'images/bg.webp';
+const opponentBackgroundImage = new Image();
+opponentBackgroundImage.src = 'images/bg.webp';
 
 const baseImage = new Image();
 baseImage.src = 'images/base.png';
@@ -116,7 +126,9 @@ for (let i = 1; i <= NUM_OF_MONSTERS; i++) {
   monsterImages.push(img);
 }
 
-let bgm;
+export function userGoldControl(value) {
+  userGold += value;
+}
 
 let audioOfTowerAddAndUpgrade = new Audio('sounds/TowerAddAndUpgrade.wav');
 audioOfTowerAddAndUpgrade.volume = 0.05;
@@ -132,7 +144,6 @@ function initMap() {
   placeInitialTowers(opponentInitialTowerCoords, opponentTowers); // 상대방 초기 타워 배치
   if (!base) placeBase(basePosition, true);
   if (!opponentBase) placeBase(opponentBasePosition, false);
-  towerIndex += INITIAL_TOWER_NUMBER;
 }
 
 function drawPath(path, context) {
@@ -151,11 +162,11 @@ function drawPath(path, context) {
     const endY = path[i + 1].y;
     const deltaX = endX - startX;
     const deltaY = endY - startY;
-    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY); // 피타고라스 정리로 두 점 사이의 거리를 구함 (유클리드 거리)
-    const angle = Math.atan2(deltaY, deltaX); // 두 점 사이의 각도를 tan-1(y/x)로 구해야 함 (자세한 것은 역삼각함수 참고): 삼각함수는 변의 비율! 역삼각함수는 각도를 구하는 것!
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY); // 두 점 사이의 거리를 구함 (유클리드 거리)
+    const angle = Math.atan2(deltaY, deltaX); // 두 점 사이의 각도를 tan-1(y/x)로 구해야 함
     for (let j = gap; j < distance - gap; j += segmentLength) {
-      const x = startX + Math.cos(angle) * j; // 다음 이미지 x좌표 계산(각도의 코사인 값은 x축 방향의 단위 벡터 * j를 곱하여 경로를 따라 이동한 x축 좌표를 구함)
-      const y = startY + Math.sin(angle) * j; // 다음 이미지 y좌표 계산(각도의 사인 값은 y축 방향의 단위 벡터 * j를 곱하여 경로를 따라 이동한 y축 좌표를 구함)
+      const x = startX + Math.cos(angle) * j; // 다음 이미지 x좌표 계산
+      const y = startY + Math.sin(angle) * j; // 다음 이미지 y좌표 계산
       drawRotatedImage(pathImage, x, y, imageWidth, imageHeight, angle, context);
     }
   }
@@ -167,35 +178,6 @@ function drawRotatedImage(image, x, y, width, height, angle, context) {
   context.rotate(angle);
   context.drawImage(image, -width / 2, -height / 2, width, height);
   context.restore();
-}
-
-function placeInitialTowers(initialTowerCoords, initialTowers) {
-  for (let towerData in towersData) {
-    initialTowers[towerData] = {};
-    for (let i = 0; i < towersData[towerData].length; i++) {
-      const id = towersData[towerData][i].id;
-      initialTowers[towerData][id] = [];
-    }
-  }
-
-  for (let towerCoords in initialTowerCoords) {
-    if (towerCoords !== 'length') {
-      const towerType = initialTowerCoords[towerCoords];
-      for (let towerId in towerType) {
-        towerType[towerId].forEach((towerData) => {
-          const tower = new Tower(
-            towerCoords,
-            towerId,
-            towerData.number,
-            towerData.posX,
-            towerData.posY,
-          );
-
-          initialTowers[towerCoords][towerId].push(tower);
-        });
-      }
-    }
-  }
 }
 
 function towerSaleCheck() {
@@ -305,6 +287,17 @@ function towerSales() {
   }
 }
 
+function opponentTowerAttack(monsterValue) {
+  try {
+    const attackedMonster = opponentMonsters.find((monster) => {
+      return monster.getMonsterIndex() === monsterValue.monsterIndex;
+    });
+    attackedMonster.setHp(monsterValue.hp);
+  } catch (err) {
+    console.log('이미 사망한 몬스터입니다.');
+  }
+}
+
 function placeBase(position, isPlayer) {
   if (isPlayer) {
     if (!base) {
@@ -319,31 +312,37 @@ function placeBase(position, isPlayer) {
   }
 }
 
-function spawnMonster() {
-  const socket = io();
-  const monster = new Monster(monsterPath, monsterImages, monsterLevel);
-  monster.setMonsterIndex(monsterIndex);
-  monster.onDie = onMonsterDie; // 몬스터가 죽을 때 호출되는 콜백 설정
-  monsters.push(monster);
-  sendEvent(PacketType.C2S_SPAWN_MONSTER, { hp: monster.getMaxHp(), monsterIndex, monsterLevel });
-  monsterIndex++;
-  monsterSpawnCount++;
+let monsterLevel = 1;
+const maxStages = 15;
+let monsters = [];
+let monsterIndex = 0;
+let monsterSpawnCount = 0;
+let monsterintervalId = null;
+const monsterSpawnInterval = 1000;
+let monstersToSpawn = 5; // 라운드당 몬스터 소환 수
 
-  if (monsterSpawnCount >= 20) {
-    clearInterval(monsterintervalId);
-    /* socket.emit('chat message', {
-      userId: 'System',
-      message: `Level ${monsterLevel} Clear!`,
-    }); */
-    monsterLevel++;
+function spawnMonster() {
+  if (bossSpawned && currentBossStage === monsterLevel) {
+    console.log('Boss already spawnd for this level');
+    return;
+  }
+
+  if (monsterSpawnCount < monstersToSpawn && !bossSpawned) {
+    const monster = new Monster(monsterPath, monsterImages, monsterLevel);
+    monster.setMonsterIndex(monsterIndex);
+    monster.push(monster);
+
+    sendEvent(PacketType.C2S_SPAWN_MONSTER, { hp: monster.getMaxHp(), monsterIndex, monsterLevel });
+    monsterIndex++;
+    monsterSpawnCount++;
+  }
+
+  console.log(`몬스터 소환, 총 소환된 몬스터: ${monsterSpawnCount}`);
+
+  if (monsterSpawnCount >= monstersToSpawn) {
     monsterSpawnCount = 0;
-    setTimeout(() => {
-      startSpawning();
-      /* socket.emit('chat message', {
-        userId: 'System',
-        message: `Level ${monsterLevel} Start!`,
-      }); */
-    }, 5000);
+    clearInterval(monsterintervalId);
+    console.log('라운드 몬스터 최대 소환');
   }
 }
 
@@ -370,6 +369,40 @@ function destroyOpponentMonster(index) {
   opponentMonsters.splice(destroyedMonsterIndex, 1);
 }
 
+function spawnBoss() {
+  bossSpawned = true;
+  currentBossStage = monsterLevel;
+
+  const bossClasses = [MightyBoss, TowerControlBoss, DoomsdayBoss, TimeRifter];
+  const randomBossClass = bossClasses[Math.floor(Math.random() * bossClasses.length)];
+
+  const boss = new randomBossClass(monsterPath, monsterLevel, socket, 'sounds/bossBgm.mp3', {
+    skillSound: 'sounds/bossSkill.wav',
+  });
+
+  monsters.push(boss);
+  sendEvent(PacketType.C2S_SPAWN_MONSTER, {
+    hp: boss.getMaxHp(),
+    monsterIndex,
+    monsterLevel,
+    isBoss: true,
+  });
+
+  // 보스 등장 메시지
+  socket.emit('chat message', {
+    userId: 'System',
+    message: `WARNING: A ${boss.constructor.name} has appeared at Level ${monsterLevel}!`,
+  });
+
+  monsterIndex++;
+  console.log('Boss spawned');
+}
+
+function onBossDie() {
+  bossSpawned = false; // 보스가 죽으면 보스 스폰 상태 해제
+  startSpawning(); // 다음 스테이지로 넘어가면서 몬스터 스폰 시작
+}
+
 function gameSync(data) {
   score = data.score;
   userGold = data.gold;
@@ -393,6 +426,9 @@ function gameSync(data) {
     console.error('Monster not found', data.attackedMonster.monsterIndex);
   }
 }
+
+let killCount = 0;
+let bossSpawned = false;
 
 function gameLoop() {
   // 렌더링 시에는 항상 배경 이미지부터 그려야 합니다! 그래야 다른 이미지들이 배경 이미지 위에 그려져요!
@@ -480,19 +516,29 @@ function gameLoop() {
       sendEvent(PacketType.C2S_KILL_MONSTER_EVENT, {
         userId: localStorage.getItem('userId'),
       });
-      /* killCount++;
+      killCount++;
 
-      if (killCount === 2) {
+      if (killCount === monstersToSpawn && !bossSpawned) {
         monsterLevel++;
         killCount = 0;
-        startSpawning();
-      } */
+
+        if ([3, 6, 9, 12, 15].includes(monsterLevel) && !bossSpawned) {
+          clearInterval(monsterintervalId);
+          spawnBoss();
+          bossSpawned = true;
+        } else {
+          startSpawning();
+        }
+      }
     }
   }
 
   monsters.forEach((monster) => {
     monster.move();
     monster.draw(ctx, true);
+    if (monster.isBoss) {
+      monster.useSkill(); // 보스만 스킬 사용
+    }
   });
 
   // 상대방 게임 화면 업데이트
@@ -746,60 +792,11 @@ Promise.all([
   });
 
   serverSocket.on('towerAttack', (data) => {
-    const { towerType, towerId, towerNumber, attackedmonsters, killCount } = data;
-    if (userId !== data.userId) {
-      for (let attackedMonsterData of attackedmonsters) {
-        for (let clientMonster of opponentMonsters) {
-          if (attackedMonsterData.monsterIndex == clientMonster.monsterIndex) {
-            clientMonster.setHp(attackedMonsterData.hp);
-            break;
-          }
-        }
-      }
-    } else {
-      for (let attackedMonsterData of attackedmonsters) {
-        for (let clientMonster of monsters) {
-          if (attackedMonsterData.monsterIndex == clientMonster.monsterIndex) {
-            clientMonster.setHp(attackedMonsterData.hp);
-            break;
-          }
-        }
-      }
-
-      if (killCount != 0) {
-        console.log(`killCount: ${killCount}`);
-        for (let tower of towers[towerType][towerId]) {
-          if (tower.towerNumber == towerNumber) {
-            tower.killCount -= killCount;
-            break;
-          }
-        }
-      }
-    }
+    towerAttackToSocket(userId, data, monsters, opponentMonsters, towers);
   });
 
   serverSocket.on('towerSale', (data) => {
-    const { towerType, towerId, towerNumber, saledGold } = data;
-    if (userId !== data.userId) {
-      const towersList = opponentTowers[towerType][towerId];
-      for (let i = 0; i < towersList.length; i++) {
-        if (towersList[i].towerNumber == towerNumber) {
-          towersList.splice(i, 1);
-          break;
-        }
-      }
-    } else {
-      const towersList = towers[towerType][towerId];
-      for (let i = 0; i < towersList.length; i++) {
-        if (towersList[i].towerNumber == towerNumber) {
-          towersList.splice(i, 1);
-          audioOfTowerSale.currentTime = 0;
-          audioOfTowerSale.play();
-          userGold += saledGold;
-          break;
-        }
-      }
-    }
+    towerSaleToSocket(userId, data, towers, opponentTowers);
   });
 
   serverSocket.on('userTowerUpgrade', (data) => {
@@ -862,21 +859,6 @@ Promise.all([
       audioOfTowerAddAndUpgrade.play();
       userGold -= towerCost;
     }
-  });
-  // 항복하기 버튼 생성 및 설정
-  const surrenderButton = document.createElement('button');
-  surrenderButton.textContent = '항복하기';
-  surrenderButton.style.position = 'absolute';
-  surrenderButton.style.top = '100px'; // 기존 UI 요소 아래 위치하도록 설정
-  surrenderButton.style.right = '10px';
-  surrenderButton.style.padding = '10px 20px';
-  surrenderButton.style.fontSize = '16px';
-  surrenderButton.style.cursor = 'pointer';
-  document.body.appendChild(surrenderButton);
-
-  // 항복하기 버튼 클릭 시 게임 종료 및 패배 처리
-  surrenderButton.addEventListener('click', () => {
-    loseGame(); // 플레이어가 항복한 경우 패배 처리
   });
 
   // 게임 종료 로직
@@ -1127,30 +1109,6 @@ gameCanvas.addEventListener('mouseout', (e) => {
   cursor.style.opacity = 0;
 });
 
-//보스 출현 로직
-
-let monsterDeathCount = 10; // 몬스터가 죽을 때까지의 카운트
-const bossImage = new Image();
-bossImage.src = 'images/TowerControlBoss.png';
-let bossSpawned = false; // 보스가 출현한 상태를 관리
-
-//보스 출현 메시지 추가
-const bossAttemptElement = document.createElement('div');
-bossAttemptElement.style.position = 'absolute';
-bossAttemptElement.style.top = '50px';
-bossAttemptElement.style.left = '10px';
-bossAttemptElement.style.padding = '10px 20px';
-bossAttemptElement.style.fontSize = '30px';
-bossAttemptElement.style.color = 'red';
-document.body.appendChild(bossAttemptElement);
-updateBossAttempt();
-
-function updateBossAttempt() {
-  if (!bossSpawned) {
-    bossAttemptElement.innerText = `Boss Attempt : ${monsterDeathCount}`;
-  }
-}
-
 hideGameElements();
 
 // Base Attack 버튼 및 Boss Attempt 요소를 숨기는 로직
@@ -1158,55 +1116,6 @@ function hideGameElements() {
   if (attackMonstersButton) {
     attackMonstersButton.style.display = 'none';
   }
-  if (bossAttemptElement) {
-    bossAttemptElement.style.display = 'none';
-  }
-}
-
-// 게임 시작 시 호출하여 요소를 표시하는 로직
-function showGameElements() {
-  if (attackMonstersButton) {
-    attackMonstersButton.style.display = 'block';
-  }
-  if (bossAttemptElement) {
-    bossAttemptElement.style.display = 'block';
-  }
-  isGameStarted = true;
-}
-
-// 몬스터가 죽을 때 호출되는 콜백
-function onMonsterDie() {
-  if (!bossSpawned) {
-    monsterDeathCount--;
-    updateBossAttempt();
-    if (monsterDeathCount <= 0) {
-      bossAttemptElement.innerText = 'WARNING : Watch out for the boss';
-      spawnBoss();
-    }
-  }
-}
-
-// 보스가 죽을 때 호출되는 콜백
-function onBossDie() {
-  bossSpawned = false;
-  monsterDeathCount = 10;
-  updateBossAttempt();
-}
-
-function spawnBoss() {
-  bossSpawned = true;
-  const boss = new Boss(monsterPath, bossImage, monsterLevel);
-  boss.setMonsterIndex(monsterIndex);
-  boss.onDie = onBossDie; // 보스가 죽을 때 호출되는 콜백 설정
-  monsters.push(boss);
-  sendEvent(PacketType.C2S_SPAWN_MONSTER, {
-    hp: boss.getMaxHp(),
-    monsterIndex,
-    monsterLevel,
-    isBoss: true,
-  });
-  console.log('Boss spawned');
-  monsterIndex++;
 }
 
 function sendEvent(handlerId, payload) {
@@ -1228,175 +1137,45 @@ function sendEvent(handlerId, payload) {
 const backButton = document.createElement('button');
 backButton.textContent = '돌아가기';
 backButton.style.position = 'absolute';
-backButton.style.top = '50px'; // 로그아웃 버튼 아래 위치하도록 설정
+backButton.style.top = '100px'; // 로그아웃 버튼 아래 위치하도록 설정
 backButton.style.right = '10px';
 backButton.style.padding = '10px 20px';
 backButton.style.fontSize = '16px';
 backButton.style.cursor = 'pointer';
 document.body.appendChild(backButton);
 
+// 항복하기 버튼 생성 및 설정
+const surrenderButton = document.createElement('button');
+surrenderButton.textContent = '항복하기';
+surrenderButton.style.position = 'absolute';
+surrenderButton.style.top = '150px'; // 기존 UI 요소 아래 위치하도록 설정
+surrenderButton.style.right = '10px';
+surrenderButton.style.padding = '10px 20px';
+surrenderButton.style.fontSize = '16px';
+surrenderButton.style.cursor = 'pointer';
+document.body.appendChild(surrenderButton);
+
+// 항복하기 버튼 클릭 시 게임 종료 및 패배 처리
+surrenderButton.addEventListener('click', () => {
+  loseGame(); // 플레이어가 항복한 경우 패배 처리
+});
+
 // 돌아가기 버튼 클릭 시 홈 화면으로 이동
 backButton.addEventListener('click', () => {
   location.href = 'http://localhost:8080/index.html'; // 홈 화면 경로로 이동
 });
 
-// Boss 생성 버튼 추가
-const boss1Button = document.createElement('button');
-boss1Button.textContent = 'Boss 1';
-boss1Button.style.position = 'absolute';
-boss1Button.style.bottom = '100px';
-boss1Button.style.left = '10px';
-boss1Button.style.padding = '10px 20px';
-boss1Button.style.fontSize = '16px';
-boss1Button.style.cursor = 'pointer';
-document.body.appendChild(boss1Button);
-
-const boss2Button = document.createElement('button');
-boss2Button.textContent = 'Boss 2';
-boss2Button.style.position = 'absolute';
-boss2Button.style.bottom = '150px';
-boss2Button.style.left = '10px';
-boss2Button.style.padding = '10px 20px';
-boss2Button.style.fontSize = '16px';
-boss2Button.style.cursor = 'pointer';
-document.body.appendChild(boss2Button);
-
-const boss3Button = document.createElement('button');
-boss3Button.textContent = 'Boss 3';
-boss3Button.style.position = 'absolute';
-boss3Button.style.bottom = '200px';
-boss3Button.style.left = '10px';
-boss3Button.style.padding = '10px 20px';
-boss3Button.style.fontSize = '16px';
-boss3Button.style.cursor = 'pointer';
-document.body.appendChild(boss3Button);
-
-const boss4Button = document.createElement('button');
-boss4Button.textContent = 'Boss 4';
-boss4Button.style.position = 'absolute';
-boss4Button.style.bottom = '250px';
-boss4Button.style.left = '10px';
-boss4Button.style.padding = '10px 20px';
-boss4Button.style.fontSize = '16px';
-boss4Button.style.cursor = 'pointer';
-document.body.appendChild(boss4Button);
-
-// 스킬 사용 버튼 추가
-const useSkillButton = document.createElement('button');
-useSkillButton.textContent = 'Use Skill';
-useSkillButton.style.position = 'absolute';
-useSkillButton.style.bottom = '50px';
-useSkillButton.style.left = '10px';
-useSkillButton.style.padding = '10px 20px';
-useSkillButton.style.fontSize = '16px';
-useSkillButton.style.cursor = 'pointer';
-document.body.appendChild(useSkillButton);
-
-// 보스 생성 및 스킬 사용 로직
-let currentBoss = null;
-
-boss1Button.addEventListener('click', () => {
-  spawnSpecificBoss('MightyBoss');
-});
-
-boss2Button.addEventListener('click', () => {
-  spawnSpecificBoss('TowerControlBoss');
-});
-
-boss3Button.addEventListener('click', () => {
-  spawnSpecificBoss('DoomsdayBoss');
-});
-
-boss4Button.addEventListener('click', () => {
-  spawnSpecificBoss('TimeRifter');
-});
-
-useSkillButton.addEventListener('click', () => {
-  if (currentBoss) {
-    currentBoss.handleBossSkill(currentBoss.getRandomSkill());
+// 게임 시작 시 호출하여 요소를 표시하는 로직
+// 베이스공격, 돌아가기, 항복하기 버튼 겜 시작전까지 숨김
+function showGameElements() {
+  if (attackMonstersButton) {
+    attackMonstersButton.style.display = 'block';
   }
-});
-
-function spawnSpecificBoss(bossType) {
-  let bossImage = new Image(); // 이미지 객체로 초기화
-  let bossBGM = 'sounds/Boss_bgm.mp3';
-  let skillSounds = {};
-
-  switch (bossType) {
-    case 'MightyBoss':
-      bossImage.src = 'images/MightyBoss.png';
-      skillSounds = {
-        healSkill: '', // 현재 효과음 없음
-        spawnClone: '',
-        reduceDamage: '',
-      };
-      break;
-    case 'TowerControlBoss':
-      bossImage.src = 'images/TowerControlBoss.png';
-      skillSounds = {
-        ignoreTowerDamage: '', // 현재 효과음 없음
-        changeTowerType: '',
-        downgradeTower: '',
-      };
-      break;
-    case 'DoomsdayBoss':
-      bossImage.src = 'images/DoomsdayBoss.png';
-      skillSounds = {
-        placeMark: '', // 현재 효과음 없음
-        swapFields: '',
-        absorbDamage: '',
-      };
-      break;
-    case 'TimeRifter':
-      bossImage.src = 'images/TimeRifter.png';
-      skillSounds = {
-        rewindHealth: '', // 현재 효과음 없음
-        accelerateTime: '',
-        timeWave: '',
-      };
-      break;
+  if (backButton) {
+    backButton.style.display = 'block';
   }
-
-  // 이미지 로딩 성공 여부를 확인
-  bossImage.onload = () => {
-    currentBoss = new Boss(
-      monsterPath,
-      bossImage,
-      monsterLevel,
-      serverSocket,
-      bossBGM,
-      skillSounds,
-    );
-    currentBoss.init(monsterLevel); // 보스 객체 초기화
-    currentBoss.setMonsterIndex(monsterIndex);
-    currentBoss.onDie = onBossDie; // 보스가 죽을 때 호출되는 콜백 설정
-    monsters.push(currentBoss);
-    sendEvent(PacketType.C2S_SPAWN_MONSTER, {
-      hp: currentBoss.getMaxHp(),
-      monsterIndex,
-      monsterLevel,
-      isBoss: true,
-    });
-    console.log(`${bossType} spawned`);
-    monsterIndex++;
-  };
-
-  // 이미지 로딩 실패 시 에러 처리
-  bossImage.onerror = () => {
-    console.error(`Failed to load boss image for ${bossType}`);
-  };
+  if (surrenderButton) {
+    surrenderButton.style.display = 'block';
+  }
+  isGameStarted = true;
 }
-
-currentBoss = new Boss(monsterPath, bossImage, monsterLevel, serverSocket, bossBGM, skillSounds);
-currentBoss.init(monsterLevel); // 보스 객체 초기화
-currentBoss.setMonsterIndex(monsterIndex);
-currentBoss.onDie = onBossDie; // 보스가 죽을 때 호출되는 콜백 설정
-monsters.push(currentBoss);
-sendEvent(PacketType.C2S_SPAWN_MONSTER, {
-  hp: currentBoss.getMaxHp(),
-  monsterIndex,
-  monsterLevel,
-  isBoss: true,
-});
-console.log(`${bossType} spawned`);
-monsterIndex++;
