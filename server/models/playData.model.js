@@ -68,6 +68,7 @@ export class GameData {
     this.opponentBasePos = opponentBasePosition;
     this.opponentUserInfo = opponentUserInfo;
     this.opponentBaseHp = 3;
+    this.towerLock = [true, false, false, false, false, false, false, false, false];
   }
 
   getOpponentInfo() {

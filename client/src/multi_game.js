@@ -28,8 +28,6 @@ if (!userId) {
   location.href = '/login';
 }
 
-towerImageInit();
-
 // 매칭 데이터
 let serverSocket;
 const canvas = document.getElementById('gameCanvas');
@@ -111,6 +109,7 @@ export let towersData;
 let towers = {};
 
 //#endregion
+towerImageInit();
 
 //게임 데이터
 let bgm;
@@ -152,7 +151,6 @@ function initMap() {
   placeInitialTowers(opponentInitialTowerCoords, opponentTowers); // 상대방 초기 타워 배치
   if (!base) placeBase(basePosition, true);
   if (!opponentBase) placeBase(opponentBasePosition, false);
-  towerIndex += INITIAL_TOWER_NUMBER;
 }
 
 function drawPath(path, context) {
@@ -1166,7 +1164,7 @@ function showGameElements() {
   isGameStarted = true;
 }
 
-const towersBox = window.document.getElementById('towers');
+const towersBox = document.getElementById('towers');
 const buyTowerButton1 = document.getElementById('baseTower');
 const buyTowerButton2 = document.getElementById('speedTower');
 const buyTowerButton3 = document.getElementById('speedSupportTower');
@@ -1235,6 +1233,15 @@ gameCanvas.addEventListener('mouseout', (e) => {
   cursor.style.opacity = 0;
 });
 
+hideGameElements();
+
+// Base Attack 버튼 및 Boss Attempt 요소를 숨기는 로직
+function hideGameElements() {
+  if (attackMonstersButton) {
+    attackMonstersButton.style.display = 'none';
+  }
+}
+
 function sendEvent(handlerId, payload) {
   const userId = localStorage.getItem('userId');
 
@@ -1281,3 +1288,18 @@ surrenderButton.addEventListener('click', () => {
 backButton.addEventListener('click', () => {
   location.href = 'http://localhost:8080/index.html'; // 홈 화면 경로로 이동
 });
+
+// 게임 시작 시 호출하여 요소를 표시하는 로직
+// 베이스공격, 돌아가기, 항복하기 버튼 겜 시작전까지 숨김
+function showGameElements() {
+  if (attackMonstersButton) {
+    attackMonstersButton.style.display = 'block';
+  }
+  if (backButton) {
+    backButton.style.display = 'block';
+  }
+  if (surrenderButton) {
+    surrenderButton.style.display = 'block';
+  }
+  isGameStarted = true;
+}

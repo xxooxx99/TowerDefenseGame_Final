@@ -15,6 +15,8 @@ export const towerAddHandler = (socket, data) => {
   const towerAsset = getGameAssets().towerData.towerType;
   const userData = getPlayData(userId);
 
+  // towerUnLockCheck(userId);
+
   //#region 타워 간 거리 조정 로직
   let min = Infinity;
   for (const towerData in userData.towerInit) {
@@ -354,3 +356,18 @@ export const towerSale = (socket, data) => {
     console.log(err);
   }
 };
+
+// export const towerUnLockCheck = (userId) => {
+//   const userData = getPlayData(userId);
+//   const userTowers = userData.towerInit;
+//   const userLock = userData.towerLock;
+
+//   const check = userLock.filter((boolean) => boolean == false);
+//   if (check.length == 0) return;
+
+//   const speedTower = userTowers.speedTower;
+//   if (!userLock[1]) {
+//     const towers = userTowers.baseTower;
+//     console.log(towers);
+//   }
+// };
