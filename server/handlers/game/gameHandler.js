@@ -1,7 +1,9 @@
 import { PacketType } from '../../constants.js';
 import { getGameByUserId, getPlayData } from '../../models/playData.model.js';
 import { sendGameSync } from './gameSyncHandler.js';
-import { getBase, baseAttackMonster } from '../../models/baseUpgrade.js';
+
+const bases = {};
+const monsters = [];
 
 function handleMonsterBaseAttack(socket, uuid, payload) {
   const playerData = getPlayData(uuid);
@@ -32,25 +34,16 @@ function handleMonsterBaseAttack(socket, uuid, payload) {
   }
 }
 
-function handleBaseAttackMonster(socket, uuid, payload) {
-  console.log('Received Base Attack Request:', uuid, payload);
+function handleBaseAttackMonster(req, res) {
+  console.log('Received Base Attack Request:', req.body);
 
-  if (!payload || !payload.baseUuid || !payload.monsterIndices) {
-    console.error('Invalid payload:', payload);
-    return;
+  // 유효성 검사
+  if (!req.body || !req.body.baseUuid || !req.body.monsterIndices) {
+    console.error('Invalid payload:', req.body);
+    return res.status(400).json({ success: false, error: 'Invalid payload' });
   }
 
-  const { baseUuid, monsterIndices } = payload;
-
-  try {
-    const updatedMonsters = baseAttackMonster(baseUuid, monsterIndices);
-    socket.emit('event', {
-      packetType: PacketType.S2C_UPDATE_MONSTER_HP,
-      payload: updatedMonsters,
-    });
-  } catch (error) {
-    console.error('Error in baseAttackMonster:', error);
-  }
+  const { baseUuid, monsterIndices } = req.body; // req.body에서 직접 데이터 추출
 }
 
 export { handleMonsterBaseAttack, handleBaseAttackMonster };

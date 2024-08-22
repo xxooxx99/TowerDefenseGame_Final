@@ -1,53 +1,115 @@
-import { Monster } from './monster.js';
+import { BossSkills } from './bossSkills.js'; // bossSkills.js에서 보스 스킬 로직을 불러옴
 
-export class Boss extends Monster {
-  constructor(path, bossImage, level, socket, bgm, skillSounds) {
-    super(path, [bossImage], level, null);
-    this.width = 100; // 보스 이미지 가로 길이
-    this.height = 100; // 보스 이미지 세로 길이
-    this.speed = 0.1; // 보스의 이동 속도
-    this.socket = socket; // 서버와의 통신을 위한 소켓 연결
-    this.bgm = bgm; // 배경음악 파일 경로
-    this.skillSounds = skillSounds; // 스킬 효과음 파일 경로 객체
-    this.skills = Object.keys(skillSounds);
-    this.bgmAudio = null; // BGM Audio 객체를 저장
-    this.isAbsorbingDamage = false; // 피해 흡수 상태 추적
-    this.isBossAlive = true; // 보스가 살아있는지 여부 추적
+export class Boss {
+  constructor(
+    socket,
+    path,
+    hp,
+    defense,
+    speed,
+    skills,
+    towers,
+    bgm = null,
+    skillSounds = null,
+    imagePath = null,
+  ) {
+    this.hp = hp;
+    this.maxHp = hp;
+    this.defense = defense;
+    this.speed = speed;
+    this.skills = skills;
+    this.socket = socket;
+    this.towers = towers;
+    this.bgm = bgm;
+    this.skillSounds = skillSounds;
+    this.bossSkills = new BossSkills(this, this.towers, this.socket);
+    this.monsterIndex = null;
+
+    // path가 undefined일 경우 에러 처리 및 경고 메시지 추가
+    if (!path || !Array.isArray(path) || path.length === 0) {
+      throw new Error('보스의 이동 경로가 필요합니다. 전달된 경로:', path);
+    }
+
+    this.path = path;
+    this.currentPathIndex = 0;
+    this.x = this.path[0].x;
+    this.y = this.path[0].y;
+    this.width = 100;
+    this.height = 100;
+
+    // 이미지 경로가 제대로 전달되었는지 확인
+    if (imagePath) {
+      this.image = new Image();
+      this.image.src = imagePath;
+    } else {
+      console.error('Error: imagePath is not defined.');
+    }
+
+    // UI 요소 미리 참조
+    this.hpElement = document.getElementById(`${this.constructor.name}-hp`);
+    this.skillElement = document.getElementById('boss-skill');
   }
 
-  init(level) {
-    if (!this.socket) {
-      console.error('Socket is undefined in Boss init method');
-      return;
+  startSkills() {
+    setInterval(() => {
+      const randomSkill = this.skills[Math.floor(Math.random() * this.skills.length)];
+      this.bossSkills.useSkill(randomSkill); // 랜덤 스킬 사용
+    }, 10000); // 10초마다 스킬 사용
+  }
+
+  draw(ctx) {
+    if (!this.image) return;
+    ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+  }
+
+  move() {
+    if (this.currentPathIndex < this.path.length - 1) {
+      const target = this.path[this.currentPathIndex + 1];
+      const dx = target.x - this.x;
+      const dy = target.y - this.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance < this.speed) {
+        this.x = target.x;
+        this.y = target.y;
+        this.currentPathIndex++;
+      } else {
+        this.x += (dx / distance) * this.speed;
+        this.y += (dy / distance) * this.speed;
+      }
     }
-    this.maxHp = 1000 + 1000 * level; // 보스의 최대 HP
-    this.hp = this.maxHp;
-    this.attackPower = 50 + 5 * level; // 보스의 공격력
+  }
 
-    // 배경음악 재생
-    this.playBGM();
-
-    // 서버로부터 보스 상태 및 스킬 이벤트 수신
-    this.socket.on('bossSpawn', (data) => {
-      this.hp = data.hp;
-      this.updateUI();
-    });
-
+  init() {
     this.socket.on('bossSkill', (data) => {
-      this.handleBossSkill(data.skill);
+      console.log(`Boss is using skill: ${data.skill}`);
+      this.bossSkills.useSkill(data.skill);
     });
 
     this.socket.on('updateBossHp', (data) => {
       this.hp = data.hp;
       this.updateUI();
     });
+
+    this.socket.on('towerDestroyed', (data) => {
+      console.log(`Tower at (${data.x}, ${data.y}) destroyed.`);
+    });
+
+    this.socket.on('placeMark', (data) => {
+      console.log(`Mark placed at (${data.x}, ${data.y}) with image: ${data.image}`);
+    });
+
+    this.playBGM();
   }
 
   playBGM() {
-    this.bgmAudio = new Audio(this.bgm);
-    this.bgmAudio.loop = true; // BGM이 반복 재생되도록 설정
-    this.bgmAudio.volume = 0.1; // 볼륨 낮추기
-    this.bgmAudio.play();
+    if (this.bgm) {
+      this.bgmAudio = new Audio(this.bgm);
+      this.bgmAudio.loop = true;
+      this.bgmAudio.volume = 0.1;
+      this.bgmAudio.preload = 'auto';
+      this.bgmAudio.play();
+    }
   }
 
   stopBGM() {
@@ -57,116 +119,99 @@ export class Boss extends Monster {
     }
   }
 
-  handleBossSkill(skill) {
-    console.log(`Boss used skill: ${skill}`);
-
-    // 스킬에 따른 효과음 재생 (단일 효과음으로 처리)
-    if (this.skillSounds['skillSound']) {
-      const skillAudio = new Audio(this.skillSounds['skillSound']);
-      skillAudio.play();
+  updateUI(skill = null) {
+    if (this.hpElement) {
+      this.hpElement.textContent = `HP: ${this.hp}`;
     }
 
-    // 스킬 효과 처리
-    switch (skill) {
-      case 'healSkill':
-        this.healSkill();
-        break;
-      case 'spawnClone':
-        this.spawnClone();
-        break;
-      case 'reduceDamage':
-        this.reduceDamage();
-        break;
-      case 'placeMark':
-        this.placeMark();
-        break;
-      case 'absorbDamage':
-        this.absorbDamage();
-        break;
-      case 'timeWave':
-        this.timeWave();
-        break;
-      case 'rewindHealth':
-        this.rewindHealth();
-        break;
-      case 'accelerateTime':
-        this.accelerateTime();
-        break;
-      case 'bossRoar':
-        this.bossRoar();
-        break;
-      default:
-        console.log('Unknown skill.');
+    if (this.skillElement && skill) {
+      this.skillElement.textContent = `Current Skill: ${skill}`;
     }
-    this.updateUI(); // 스킬 사용 후 UI 업데이트
   }
 
-  healSkill() {
-    this.hp = Math.min(this.maxHp, this.hp + this.maxHp * 0.1);
-    console.log('Boss healed 10% of max HP.');
+  onDie() {
+    this.isBossAlive = false;
+    this.stopBGM();
   }
+}
 
-  spawnClone() {
-    // 복제 보스 생성 로직
-    const clone = new Boss(
-      this.path,
-      this.images[0],
-      this.level,
-      this.socket,
-      this.bgm,
-      this.skillSounds,
+/* // MightyBoss, TowerControlBoss, DoomsdayBoss 등 개별 보스 클래스를 Boss 클래스에 상속
+class MightyBoss extends Boss {
+  constructor(path, socket, towers, bgm, skillSounds) {
+    console.log('Received path in MightyBoss:', path);
+    super(
+      socket,
+      path,
+      2000,
+      50,
+      0.6,
+      ['healSkill', 'spawnClone', 'reduceDamage'],
+      towers,
+      bgm,
+      skillSounds,
+      './images/MightyBoss.png',
     );
-    clone.hp = this.hp * 0.5; // 복제 보스는 원래 보스의 50% HP로 생성
-    clone.init(this.level);
-    monsters.push(clone);
-    console.log('Boss spawned a clone with 50% of current HP.');
+  }
+  move() {
+    super.move();
+  }
+}
+
+class TowerControlBoss extends Boss {
+  constructor(socket, towers, bgm, skillSounds) {
+    super(
+      socket,
+      1500,
+      30,
+      1.5,
+      ['ignoreTowerDamage', 'changeTowerType', 'downgradeTower'],
+      towers,
+      bgm,
+      skillSounds,
+      './images/TowerControlBoss.png',
+    );
   }
 
-  reduceDamage() {
-    this.damageReduction = 0.5; // 받는 피해를 50% 감소
-    setTimeout(() => {
-      this.damageReduction = 1.0; // 5초 후 원래 상태로 복구
-    }, 5000);
-    console.log('Boss reduces incoming damage by 50% for 5 seconds.');
+  move() {
+    // TowerControlBoss의 특화된 이동 로직을 추가
+    super.move();
+  }
+}
+
+class TimeRifter extends Boss {
+  constructor(socket, towers, bgm, skillSounds) {
+    super(
+      socket,
+      1000,
+      20,
+      2.0,
+      ['rewindHealth', 'accelerateTime', 'timeWave'],
+      towers,
+      bgm,
+      skillSounds,
+      './images/TimeRifter.png',
+    );
   }
 
-  absorbDamage() {
-    const initialHp = this.hp;
-    setTimeout(() => {
-      const absorbedDamage = initialHp - this.hp;
-      this.hp += absorbedDamage * 0.5; // 흡수된 피해의 50%를 체력으로 회복
-      this.updateUI();
-      console.log(`Boss absorbed ${absorbedDamage * 0.5} damage as health.`);
-    }, 5000);
+  move() {
+    // TimeRifter의 특화된 이동 로직을 추가
+    super.move();
   }
+}
 
-  placeMark() {
-    // 필드에 표식을 남기고 5초 후 표식이 있는 위치의 타워를 파괴하는 로직
-    const markPosition = this.getRandomPosition();
-    console.log('Placing mark on the field at position:', markPosition);
-
-    setTimeout(() => {
-      // 해당 좌표의 타워를 파괴하는 로직 추가
-      const tower = this.getTowerAtPosition(markPosition);
-      if (tower) {
-        this.destroyTower(tower);
-        console.log('Mark exploded, destroying tower at:', markPosition);
-      }
-    }, 5000);
-  }
-
-  getTowerAtPosition(position) {
-    // 주어진 좌표에 있는 타워를 반환하는 로직
-    return towers.find((tower) => tower.isAtPosition(position));
-  }
-
-  destroyTower(tower) {
-    // 타워를 파괴하는 로직
-    const index = towers.indexOf(tower);
-    if (index > -1) {
-      towers.splice(index, 1);
-      console.log('Tower destroyed:', tower);
-    }
+class DoomsdayBoss extends Boss {
+  constructor(socket, towers, bgm, skillSounds) {
+    super(
+      socket,
+      3000,
+      60,
+      0.8,
+      ['placeMark', 'cryOfDoom', 'absorbDamage'],
+      towers,
+      bgm,
+      skillSounds,
+      './images/DoomsdayBoss.png',
+    );
   }
 
   timeWave() {
@@ -245,7 +290,7 @@ export class Boss extends Monster {
     this.stopBGM();
     console.log('Boss has died, stopping BGM.');
   }
-}
+} */
 
 // 각 보스 클래스 정의
 export class MightyBoss extends Boss {
