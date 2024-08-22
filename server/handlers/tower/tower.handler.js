@@ -357,17 +357,17 @@ export const towerSale = (socket, data) => {
   }
 };
 
-// export const towerUnLockCheck = (userId) => {
-//   const userData = getPlayData(userId);
-//   const userTowers = userData.towerInit;
-//   const userLock = userData.towerLock;
+export const towerUnLockCheck = (userId) => {
+  const userData = getPlayData(userId);
+  const userTowers = userData.towerInit;
+  const userLock = userData.towerLock;
 
-//   const check = userLock.filter((boolean) => boolean == false);
-//   if (check.length == 0) return;
+  const check = userLock.filter((boolean) => boolean == false);
+  if (check.length == 0) return;
 
-//   const speedTower = userTowers.speedTower;
-//   if (!userLock[1]) {
-//     const towers = userTowers.baseTower;
-//     console.log(towers);
-//   }
-// };
+  const speedTower = userTowers.speedTower;
+  if (!userLock[1]) {
+    const towers = userTowers.baseTower;
+    console.log(towers);
+  }
+};

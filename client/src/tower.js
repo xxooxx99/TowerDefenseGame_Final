@@ -28,6 +28,7 @@ export class Tower {
             this.cooldown = towerIdData.attackCycle; // 타워 공격 쿨타임
             this.imageNum = (Math.trunc(towerId / 100) - 1) * 3 + (towerId % 100); // 나중에 중간에 7 곱해야함
             this.towerIdData = towerIdData;
+            console.log(towerIdData);
           }
         }
       }
@@ -64,38 +65,40 @@ export class Tower {
       let extraSpeed = 0;
       let extraSpeedTower = { towerId: null, towerNumber: null };
 
-      const attackAssistTowers = towers.attackSupportTower;
-      for (let attack in attackAssistTowers) {
-        for (let i = attackAssistTowers[attack].length - 1; i >= 0; i--) {
-          const bufTower = attackAssistTowers[attack][i];
-          const distance = Math.sqrt(
-            Math.pow(this.x - bufTower.x, 2) + Math.pow(this.y - bufTower.y, 2),
-          );
+      if (!my) {
+        const attackAssistTowers = towers.attackSupportTower;
+        for (let attack in attackAssistTowers) {
+          for (let i = attackAssistTowers[attack].length - 1; i >= 0; i--) {
+            const bufTower = attackAssistTowers[attack][i];
+            const distance = Math.sqrt(
+              Math.pow(this.x - bufTower.x, 2) + Math.pow(this.y - bufTower.y, 2),
+            );
 
-          if (bufTower.bufRange > distance) {
-            extraPower = bufTower.addDamage;
-            extraPowerTower = { towerId: bufTower.towerId, towerNumber: bufTower.towerNumber };
+            if (bufTower.bufRange > distance) {
+              extraPower = bufTower.addDamage;
+              extraPowerTower = { towerId: bufTower.towerId, towerNumber: bufTower.towerNumber };
+            }
+            if (extraPower) break;
           }
           if (extraPower) break;
         }
-        if (extraPower) break;
-      }
 
-      const speedAssistTowers = towers.speedSupportTower;
-      for (let speed in speedAssistTowers) {
-        for (let i = speedAssistTowers[speed].length - 1; i >= 0; i--) {
-          const bufTower = speedAssistTowers[speed][i];
-          const distance = Math.sqrt(
-            Math.pow(this.x - bufTower.x, 2) + Math.pow(this.y - bufTower.y, 2),
-          );
+        const speedAssistTowers = towers.speedSupportTower;
+        for (let speed in speedAssistTowers) {
+          for (let i = speedAssistTowers[speed].length - 1; i >= 0; i--) {
+            const bufTower = speedAssistTowers[speed][i];
+            const distance = Math.sqrt(
+              Math.pow(this.x - bufTower.x, 2) + Math.pow(this.y - bufTower.y, 2),
+            );
 
-          if (bufTower.bufRange > distance) {
-            extraSpeed = bufTower.addSpeed;
-            extraSpeedTower = bufTower.towerNumber;
+            if (bufTower.bufRange > distance) {
+              extraSpeed = bufTower.addSpeed;
+              extraSpeedTower = bufTower.towerNumber;
+            }
+            if (extraSpeed) break;
           }
           if (extraSpeed) break;
         }
-        if (extraSpeed) break;
       }
 
       for (let monster of monsters) {
