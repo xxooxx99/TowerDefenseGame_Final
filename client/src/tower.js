@@ -1,5 +1,4 @@
 import { towersData, towerImages, towerStroke } from './multi_game.js';
-
 export class Tower {
   constructor(towerTypes, towerId, towerNumber, x, y) {
     // 생성자 안에서 타워들의 속성을 정의한다고 생각하시면 됩니다!
@@ -126,18 +125,6 @@ export class Tower {
       }
     }
     return false;
-  }
-
-  getTowerIndex() {
-    return this.towerIndex;
-  }
-
-  setTowerIndex(index) {
-    this.towerIndex = index;
-  }
-
-  getAttackPower() {
-    return this.attackPower;
   }
 
   updateCooldown() {

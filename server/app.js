@@ -11,12 +11,12 @@ import initSocket from './init/socket.js';
 import { registerHandler } from './handlers/account/register.handler.js';
 import { loginHandler } from './handlers/account/login.handler.js';
 import { messageSendHandler } from './handlers/account/messageAuth.handler.js';
+import { getRankList } from './handlers/rank/rank.handler.js';
 import { handleBaseAttackMonster } from './handlers/game/gameHandler.js';
 import { config } from 'dotenv';
 import { loadGameAssets } from './init/assets.js';
 import { db_data_add } from './db.js';
-import { handleSpawnBoss } from './handlers/boss/bosshandlers.js';
-import * as bosshandler from './handlers/boss/bosshandlers.js';  // bosshandler를 올바르게 import
+import { initRank } from './models/rank.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -39,7 +39,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, '../client')));
-app.use('/api', [messageSendHandler, registerHandler, loginHandler]); // /라는 경로를 통해 들어온 데이터는 해당 배열의 핸들러가 순차적으로 진행.
+app.use('/api', [messageSendHandler, registerHandler, loginHandler, getRankList]); // /라는 경로를 통해 들어온 데이터는 해당 배열의 핸들러가 순차적으로 진행.
 
 app.post('/api/base-attack-monster', handleBaseAttackMonster);
 
@@ -54,12 +54,13 @@ io.on('connection', (socket) => {
   });
 
   socket.on('spawnBoss', (data) => {
-    console.log("Received boss spawn request from client:", socket.id, "for stage:", data.stage);  // 클라이언트 요청 수신 로그
-    bosshandler.handleSpawnBoss(io, socket, data.stage);  // 보스 소환 요청 처리
-});
+    console.log('Received boss spawn request from client:', socket.id, 'for stage:', data.stage); // 클라이언트 요청 수신 로그
+    bosshandler.handleSpawnBoss(io, socket, data.stage); // 보스 소환 요청 처리
+  });
 });
 
 loadGameAssets();
+initRank();
 
 server.listen(process.env.PORT, async () => {
   const address = server.address();
