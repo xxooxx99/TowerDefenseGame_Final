@@ -408,7 +408,7 @@ function setBossAttributes(boss, level) {
         boss.useSkill(baseHp, opponentBaseHp); // 보스 스킬 발동
       }
     }, boss.skillCooldown);
-    }
+  }
 }
 
 function startSpawning() {
@@ -500,6 +500,40 @@ function gameLoop() {
           monsterLevel: monster.level,
         });
         sendEvent(PacketType.C2S_MONSTER_ATTACK_BASE, { damage: monster.Damage() });
+
+        killCount++;
+
+        if (
+          monsterLevel === 3 ||
+          monsterLevel === 6 ||
+          monsterLevel === 9 ||
+          monsterLevel === 12 ||
+          monsterLevel === 15
+        ) {
+          if (killCount === bossToSpawn) {
+            monsterLevel++;
+            killCount = 0;
+            console.log('bossLevelUp');
+
+            clearInterval(monsterintervalId);
+
+            setTimeout(() => {
+              startSpawning();
+            }, 3000);
+          }
+        } else {
+          if (killCount === monstersToSpawn) {
+            monsterLevel++;
+            killCount = 0;
+            console.log('monsterLevelUp');
+
+            clearInterval(monsterintervalId);
+
+            setTimeout(() => {
+              startSpawning();
+            }, 3000);
+          }
+        }
       }
     } else {
       monsters.splice(i, 1);
