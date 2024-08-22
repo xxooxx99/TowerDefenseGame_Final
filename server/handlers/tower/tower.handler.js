@@ -400,9 +400,9 @@ export const towerUnLockCheck = (socket, userId) => {
   }
 
   //multiShot Tower, poison Tower, growth Tower Part
-  if (!userLock[6]) if (userTowers.length >= 30) userLock[6] = true;
-  if (!userLock[7]) if (userTowers.length >= 45) userLock[7] = true;
-  if (!userLock[8]) if (userTowers.length >= 60) userLock[8] = true;
+  if (!userLock[6]) if (userTowers.length >= 50) userLock[6] = true;
+  if (!userLock[7]) if (userTowers.length >= 70) userLock[7] = true;
+  if (!userLock[8]) if (userTowers.length >= 90) userLock[8] = true;
 
   const hasChangedCheck = userLock.filter((boolean) => boolean == false);
   if (check.length != hasChangedCheck.length) {
