@@ -1,13 +1,28 @@
 import { Base } from './base.js';
 import { Monster } from './monster.js';
 import { AttackSupportTower, poisonTower, SpeedSupportTower, SplashTower, Tower } from './tower.js';
-import { Boss } from './boss.js'; // 보스 클래스 추가
+import {
+  Boss,
+  DoomsdayBoss,
+  FinaleBoss,
+  MightyBoss,
+  TimeRifter,
+  TowerControlBoss,
+} from './boss.js'; // 보스 클래스 추가
 import { CLIENT_VERSION, INITIAL_TOWER_NUMBER, PacketType, TOWER_TYPE } from '../constants.js';
 import {
   towerImageInit,
   placeInitialTowers,
   towerAttackToSocket,
   towerSaleToSocket,
+  towerUpgradeToSocket,
+  towerCreateToSocket,
+  towerUpgrades,
+  towerSales,
+  towerRequest,
+  growthTowerChecker,
+  myTowerDrawAndAttack,
+  opponentTowerDrawAndAttack,
 } from './tower/towerController.js';
 
 if (!localStorage.getItem('token')) {
@@ -100,9 +115,8 @@ export let towersData;
 
 // Tower data for the current user
 let towers = {};
-
-//#endregion
 towerImageInit();
+//#endregion
 
 //게임 데이터
 let bgm;
@@ -130,10 +144,10 @@ export function userGoldControl(value) {
   userGold += value;
 }
 
-let audioOfTowerAddAndUpgrade = new Audio('sounds/TowerAddAndUpgrade.wav');
+export let audioOfTowerAddAndUpgrade = new Audio('sounds/TowerAddAndUpgrade.wav');
 audioOfTowerAddAndUpgrade.volume = 0.05;
 
-let audioOfTowerSale = new Audio('sounds/TowerSale.wav');
+export let audioOfTowerSale = new Audio('sounds/TowerSale.wav');
 audioOfTowerSale.volume = 0.8;
 
 function initMap() {
@@ -218,86 +232,6 @@ function towerBuilderCheck(towerType, button) {
   } else console.log('build를 취소해주세요!');
 }
 
-function towerRequest() {
-  const towerType = TOWER_TYPE[towerBuilderId / 100 - 1];
-  sendEvent(PacketType.C2S_TOWER_CREATE, {
-    userId,
-    towerType,
-    towerId: towerBuilderId,
-    posX,
-    posY,
-  });
-}
-
-function towerUpgrades() {
-  let min = Infinity;
-  let selectTower = null;
-  for (let towerType in towers) {
-    for (let towerId in towers[towerType]) {
-      for (let i = 0; i < towers[towerType][towerId].length; i++) {
-        const tower = towers[towerType][towerId][i];
-        const distance = Math.sqrt(Math.pow(posX - tower.x, 2) + Math.pow(posY - tower.y, 2));
-
-        if (min > distance) {
-          min = distance;
-          selectTower = tower;
-        }
-      }
-    }
-  }
-  if (selectTower.towerType == TOWER_TYPE[TOWER_TYPE.length - 1]) {
-    console.log('성장형 타워는 직접 업그레이드 할 수 없습니다.');
-    return;
-  }
-
-  if (min < 50) {
-    sendEvent(PacketType.C2S_TOWER_UPGRADE, {
-      userId,
-      towerType: selectTower.towerType,
-      towerId: selectTower.towerId,
-      towerNumber: selectTower.towerNumber,
-    });
-  }
-}
-
-function towerSales() {
-  let min = Infinity;
-  let selectTower = null;
-  for (let towerType in towers) {
-    for (let towerId in towers[towerType]) {
-      for (let i = 0; i < towers[towerType][towerId].length; i++) {
-        const tower = towers[towerType][towerId][i];
-        const distance = Math.sqrt(Math.pow(posX - tower.x, 2) + Math.pow(posY - tower.y, 2));
-
-        if (min > distance) {
-          min = distance;
-          selectTower = tower;
-        }
-      }
-    }
-  }
-
-  if (min < 50) {
-    sendEvent(PacketType.C2S_TOWER_SALE, {
-      userId,
-      towerType: selectTower.towerType,
-      towerId: selectTower.towerId,
-      towerNumber: selectTower.towerNumber,
-    });
-  }
-}
-
-function opponentTowerAttack(monsterValue) {
-  try {
-    const attackedMonster = opponentMonsters.find((monster) => {
-      return monster.getMonsterIndex() === monsterValue.monsterIndex;
-    });
-    attackedMonster.setHp(monsterValue.hp);
-  } catch (err) {
-    console.log('이미 사망한 몬스터입니다.');
-  }
-}
-
 function placeBase(position, isPlayer) {
   if (isPlayer) {
     if (!base) {
@@ -330,7 +264,7 @@ function spawnMonster() {
   if (monsterSpawnCount < monstersToSpawn && !bossSpawned) {
     const monster = new Monster(monsterPath, monsterImages, monsterLevel);
     monster.setMonsterIndex(monsterIndex);
-    monster.push(monster);
+    monsters.push(monster);
 
     sendEvent(PacketType.C2S_SPAWN_MONSTER, { hp: monster.getMaxHp(), monsterIndex, monsterLevel });
     monsterIndex++;
@@ -373,7 +307,7 @@ function spawnBoss() {
   bossSpawned = true;
   currentBossStage = monsterLevel;
 
-  const bossClasses = [MightyBoss, TowerControlBoss, DoomsdayBoss, TimeRifter];
+  const bossClasses = [MightyBoss, TowerControlBoss, DoomsdayBoss, TimeRifter, FinaleBoss];
   const randomBossClass = bossClasses[Math.floor(Math.random() * bossClasses.length)];
 
   const boss = new randomBossClass(monsterPath, monsterLevel, socket, 'sounds/bossBgm.mp3', {
@@ -445,46 +379,8 @@ function gameLoop() {
   ctx.fillText(`현재 레벨: ${monsterLevel}`, 100, 200); // 최고 기록 표시
 
   // 타워 그리기 및 몬스터 공격 처리
-
-  for (let towerType in towers) {
-    for (let towerId in towers[towerType]) {
-      for (let i = 0; i < towers[towerType][towerId].length; i++) {
-        const tower = towers[towerType][towerId][i];
-        tower.draw(ctx);
-        tower.updateCooldown(); //쿨타임도
-        const data = tower.attack(monsters, towers);
-        if (data) {
-          sendEvent(PacketType.C2S_TOWER_ATTACK, {
-            userId,
-            towerType,
-            towerId,
-            towerNumber: tower.towerNumber,
-            monsterIndexs: data.monsters,
-            isExistSpeed: data.isExistSpeed,
-            isExistPower: data.isExistPower,
-            monstersSplash: data.monstersSplash,
-            poisonDamage: data.poisonDamage,
-            time: data.now,
-          });
-        }
-      }
-    }
-  }
-
-  const growthTowers = towers[TOWER_TYPE[TOWER_TYPE.length - 1]];
-  for (let towerId in growthTowers) {
-    for (let i = 0; i < growthTowers[towerId].length; i++) {
-      if (growthTowers[towerId][i].killCount <= 0 && growthTowers[towerId][i].satisfied) {
-        sendEvent(PacketType.C2S_TOWER_UPGRADE, {
-          userId,
-          towerType: TOWER_TYPE[TOWER_TYPE.length - 1],
-          towerId: towerId,
-          towerNumber: growthTowers[towerId][i].towerNumber,
-        });
-        growthTowers[towerId][i].satisfied = false;
-      }
-    }
-  }
+  myTowerDrawAndAttack(userId, towers, monsters, ctx);
+  growthTowerChecker(userId, towers);
 
   // 몬스터가 공격을 했을 수 있으므로 기지 다시 그리기
   base.draw(ctx, baseImage, monsters);
@@ -522,6 +418,9 @@ function gameLoop() {
         monsterLevel++;
         killCount = 0;
 
+        //스테이지 변경시 base attack 공격 초기화
+        base.resetAttack();
+
         if ([3, 6, 9, 12, 15].includes(monsterLevel) && !bossSpawned) {
           clearInterval(monsterintervalId);
           spawnBoss();
@@ -545,15 +444,7 @@ function gameLoop() {
   opponentCtx.drawImage(opponentBackgroundImage, 0, 0, opponentCanvas.width, opponentCanvas.height);
   drawPath(opponentMonsterPath, opponentCtx); // 상대방 경로 다시 그리기
 
-  for (let towerType in opponentTowers) {
-    for (let towerId in opponentTowers[towerType])
-      for (let i = 0; i < opponentTowers[towerType][towerId].length; i++) {
-        const tower = opponentTowers[towerType][towerId][i];
-        tower.draw(opponentCtx);
-        tower.attack(opponentMonsters, towers, false);
-        tower.updateCooldown();
-      }
-  }
+  opponentTowerDrawAndAttack(opponentTowers, opponentMonsters, opponentCtx);
 
   opponentMonsters.forEach((monster) => {
     monster.move();
@@ -800,65 +691,11 @@ Promise.all([
   });
 
   serverSocket.on('userTowerUpgrade', (data) => {
-    const { towerType, towerId, towerCost, towerData } = data;
-    if (userId !== data.userId) {
-      const arr = opponentTowers[towerType][towerId - 1];
-      for (let i = 0; i < arr.length; i++) {
-        if (arr[i].towerNumber == towerData.number) {
-          arr.splice(i, 1);
-          break;
-        }
-      }
-
-      const tower = new Tower(towerType, towerId, towerData.number, towerData.posX, towerData.posY);
-      opponentTowers[towerType][towerId].push(tower);
-    } else {
-      const arr = towers[towerType][towerId - 1];
-      for (let i = 0; i < arr.length; i++) {
-        if (arr[i].towerNumber == towerData.number) {
-          arr.splice(i, 1);
-          break;
-        }
-      }
-
-      const tower = new Tower(towerType, towerId, towerData.number, towerData.posX, towerData.posY);
-      towers[towerType][towerId].push(tower);
-      audioOfTowerAddAndUpgrade.currentTime = 0;
-      audioOfTowerAddAndUpgrade.play();
-      userGold -= towerCost;
-    }
+    towerUpgradeToSocket(userId, data, towers, opponentTowers);
   });
 
   serverSocket.on('userTowerCreate', (data) => {
-    const { towerId, towerCost, number, posX, posY } = data;
-
-    let tower;
-    switch (TOWER_TYPE[towerId / 100 - 1]) {
-      case TOWER_TYPE[2]:
-        tower = new SpeedSupportTower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
-        break;
-      case TOWER_TYPE[3]:
-        tower = new AttackSupportTower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
-        break;
-      case TOWER_TYPE[5]:
-        tower = new SplashTower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
-        break;
-      case TOWER_TYPE[7]:
-        tower = new poisonTower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
-        break;
-      default:
-        tower = new Tower(TOWER_TYPE[towerId / 100 - 1], towerId, number, posX, posY);
-        break;
-    }
-
-    if (userId !== data.userId) {
-      opponentTowers[TOWER_TYPE[towerId / 100 - 1]][towerId].push(tower);
-    } else {
-      towers[TOWER_TYPE[towerId / 100 - 1]][towerId].push(tower);
-      audioOfTowerAddAndUpgrade.currentTime = 0;
-      audioOfTowerAddAndUpgrade.play();
-      userGold -= towerCost;
-    }
+    towerCreateToSocket(userId, data, towers, opponentTowers);
   });
 
   // 게임 종료 로직
@@ -1040,6 +877,21 @@ attackMonstersButton.addEventListener('click', () => {
   base.attackMonsters({ baseUuid, monsterIndices });
 });
 
+// 게임 시작 시 호출하여 요소를 표시하는 로직
+// 베이스공격, 돌아가기, 항복하기 버튼 겜 시작전까지 숨김
+function showGameElements() {
+  if (attackMonstersButton) {
+    attackMonstersButton.style.display = 'block';
+  }
+  if (backButton) {
+    backButton.style.display = 'block';
+  }
+  if (surrenderButton) {
+    surrenderButton.style.display = 'block';
+  }
+  isGameStarted = true;
+}
+
 const towersBox = document.getElementById('towers');
 const buyTowerButton1 = document.getElementById('baseTower');
 const buyTowerButton2 = document.getElementById('speedTower');
@@ -1087,9 +939,9 @@ const mousePos = (event) => {
   posX = event.offsetX;
   posY = event.offsetY;
 
-  if (towerBuilderId) towerRequest();
-  if (towerUpgrade) towerUpgrades();
-  if (towerSale) towerSales();
+  if (towerBuilderId) towerRequest(userId, towerBuilderId, posX, posY);
+  if (towerUpgrade) towerUpgrades(userId, towers, posX, posY);
+  if (towerSale) towerSales(userId, towers, posX, posY);
 };
 
 const gameCanvas = document.getElementById('gameCanvas');
@@ -1118,7 +970,7 @@ function hideGameElements() {
   }
 }
 
-function sendEvent(handlerId, payload) {
+export function sendEvent(handlerId, payload) {
   const userId = localStorage.getItem('userId');
 
   if (!userId) {
@@ -1164,18 +1016,3 @@ surrenderButton.addEventListener('click', () => {
 backButton.addEventListener('click', () => {
   location.href = 'http://localhost:8080/index.html'; // 홈 화면 경로로 이동
 });
-
-// 게임 시작 시 호출하여 요소를 표시하는 로직
-// 베이스공격, 돌아가기, 항복하기 버튼 겜 시작전까지 숨김
-function showGameElements() {
-  if (attackMonstersButton) {
-    attackMonstersButton.style.display = 'block';
-  }
-  if (backButton) {
-    backButton.style.display = 'block';
-  }
-  if (surrenderButton) {
-    surrenderButton.style.display = 'block';
-  }
-  isGameStarted = true;
-}

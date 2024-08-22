@@ -9,6 +9,7 @@ export class Base {
     this.attackPower = 1000;
     this.beamDuration = 0;
     this.monsters = [];
+    this.attackUsedThisStage = false; // 스테이지당 공격 여부를 추적
   }
 
   draw(ctx, baseImage, monsterList, isOpponent = false) {
@@ -51,6 +52,20 @@ export class Base {
   }
 
   attackMonsters(payload) {
+    //스테이지당 한번씩만 공격이 되도록 수정
+
+    if(this.attackUsedThisStage) {
+      Socket.emit('chat message', {
+        userId: 'System',
+        message :'궁극기 공격은 스테이지당 한번씩만 사용할 수 있습니다!'
+      });
+      return;
+    }
+
+    //공격실행시 음원 재생
+    const attackSound = new Audio('sounds/baseattack.mp3');
+    attackSound.volume = 0.1; //볼륨 10%
+    attackSound.play();
     this.beamDuration = 20; // 예시로 20 프레임 동안 빔을 표시
     const { baseUuid, monsterIndices } = payload;  // payload에서 데이터 추출
 
@@ -87,5 +102,10 @@ export class Base {
     .catch(error => {
       console.error('Error:', error);
     });
+
+  }
+  resetAttack() {
+    this.attackUsedThisStage = false;
   }
 }
+
