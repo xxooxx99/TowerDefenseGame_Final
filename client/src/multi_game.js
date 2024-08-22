@@ -116,6 +116,7 @@ towerImageAllowInit();
 
 //게임 데이터
 let bgm;
+let isBossStage = false; // 보스 스테이지 여부를 추적
 
 //Game Init
 let isInitGame = false;
@@ -273,9 +274,19 @@ function spawnMonster() {
     (bossSpawnCount < bossToSpawn && monsterLevel === 12) ||
     (bossSpawnCount < bossToSpawn && monsterLevel === 15)
   ) {
+    // 보스 스테이지 진입 시 기존 BGM을 멈추고 보스 BGM 실행
+    if (!isBossStage) {
+      if (bgm) {
+        bgm.pause(); // 기존 BGM 정지
+      }
+      isBossStage = true;
+    }
     const monster = new Monster(monsterPath, monsterImages, monsterLevel);
     monster.setMonsterIndex(monsterIndex);
     monsters.push(monster);
+
+    // 보스일 경우 스킬과 BGM 설정
+    setBossAttributes(monster, monsterLevel);
 
     sendEvent(PacketType.C2S_SPAWN_MONSTER, {
       hp: monster.getMaxHp(),
@@ -317,6 +328,87 @@ function spawnMonster() {
     clearInterval(monsterintervalId);
     console.log('보스 라운드 최대 소환');
   }
+}
+
+let currentBossBGM = null; // 전역 변수로 보스 BGM을 관리
+let bossSkillIntervals = {}; // 보스 스킬의 setInterval을 개별적으로 관리
+
+// BGM 재생 메서드 수정
+function playBossBGM(bgmPath, loopBgmPath = null) {
+  // 현재 재생 중인 보스 BGM이 있으면 중지
+  if (currentBossBGM && !currentBossBGM.paused) {
+    currentBossBGM.pause();
+    currentBossBGM.currentTime = 0;
+  }
+
+  // 새로운 BGM 재생
+  currentBossBGM = new Audio(bgmPath);
+  currentBossBGM.loop = loopBgmPath === null;
+  currentBossBGM.volume = 0.1;
+  currentBossBGM.play();
+
+  if (loopBgmPath) {
+    currentBossBGM.addEventListener('ended', () => {
+      currentBossBGM.src = loopBgmPath;
+      currentBossBGM.loop = true;
+      currentBossBGM.play();
+    });
+  }
+}
+
+function setBossAttributes(boss, level) {
+  switch (level) {
+    case 3:
+      playBossBGM('sounds/boss01_bgm.mp3');
+      break;
+    case 6:
+      playBossBGM('sounds/boss02_bgm.mp3');
+      boss.setSkill(() => {
+        boss.heal(0.5); // 최대 체력의 50% 회복
+        console.log(`Boss 2 체력 회복 스킬 발동! 현재 체력: ${boss.hp}/${boss.maxHp}`);
+        boss.playSkillSound('sounds/boss2.mp3');
+      });
+      boss.setSkillCooldown(5000); // 10초 쿨타임
+      break;
+    case 9:
+      playBossBGM('sounds/boss03_bgm.mp3');
+      boss.setSkill(() => {
+        boss.boostSpeed(2, 1);
+        console.log('Boss 3 속도 증가 스킬 발동!');
+        boss.playSkillSound('sounds/boss3.mp3');
+      });
+      boss.setSkillCooldown(5000); // 8초 쿨타임
+      break;
+    case 12:
+      playBossBGM('sounds/boss4_bgm1.mp3', 'sounds/boss4_bgm2.mp3');
+      boss.setSkill(() => {
+        boss.howl(baseHp);
+        console.log('Boss 4 Howl 스킬 발동!');
+        boss.playSkillSound('sounds/boss4.mp3');
+      });
+      boss.setSkillCooldown(12000); // 12초 쿨타임
+      break;
+    case 15:
+      playBossBGM('sounds/final_bgm1.mp3', 'sounds/final_bgm2.mp3');
+      boss.setSkill(() => {
+        boss.finalBossSkill(opponentBaseHp);
+        console.log('Final Boss 스킬 발동!');
+        boss.playSkillSound('sounds/finalboss.mp3');
+      });
+      break;
+  }
+
+  if (boss.skillCooldown) {
+    // 보스의 스킬 주기 설정
+    bossSkillIntervals[boss.getMonsterIndex()] = setInterval(() => {
+      if (boss.hp <= 0) {
+        console.log(`Boss ${boss.getMonsterIndex()} is dead, stopping its skill.`);
+        clearInterval(bossSkillIntervals[boss.getMonsterIndex()]); // 죽은 보스의 스킬만 멈춤
+      } else {
+        boss.useSkill(baseHp, opponentBaseHp); // 보스 스킬 발동
+      }
+    }, boss.skillCooldown);
+    }
 }
 
 function startSpawning() {
