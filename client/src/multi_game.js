@@ -1058,7 +1058,7 @@ attackMonstersButton.addEventListener('click', () => {
   base.attackMonsters({ baseUuid, monsterIndices });
 });
 
-const towersBox = window.document.getElementById('towers');
+const towersBox = document.getElementById('towers');
 const buyTowerButton1 = document.getElementById('baseTower');
 const buyTowerButton2 = document.getElementById('speedTower');
 const buyTowerButton3 = document.getElementById('speedSupportTower');
@@ -1089,7 +1089,6 @@ for (let i = 0; i < buttons.length; i++) {
     towerBuilderCheck((i + 1) * 100, buttons[i]);
     event.stopPropagation();
   });
-  //towersBox.appendChild(buttons[i]);
 }
 
 upgradeTowerButton.addEventListener('click', (event) => {
