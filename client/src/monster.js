@@ -105,10 +105,11 @@ useSkill(baseHp, opponentBaseHp) {
   this.lastSkillTime = now;
 }
 
-  heal(amount) {
-    this.hp = Math.min(this.hp + amount, this.maxHp);
-    console.log(`보스 2 체력 회복: ${amount}`);
-  }
+heal(percentage) {
+  const healAmount = this.maxHp * percentage; // 최대 체력의 일정 비율 회복
+  this.hp = Math.min(this.hp + healAmount, this.maxHp); // 체력이 최대 체력을 넘지 않도록 제한
+  console.log(`Boss 회복: ${healAmount}. 현재 체력: ${this.hp}/${this.maxHp}`);
+}
 
   boostSpeed(duration, increaseFactor) {
     if (!this.isSpeedBoosted) {
@@ -118,7 +119,7 @@ useSkill(baseHp, opponentBaseHp) {
       setTimeout(() => {
         this.speed /= (1 + increaseFactor);
         this.isSpeedBoosted = false;
-      }, duration * 3000);
+      }, duration * 5000);
     }
   }
 
