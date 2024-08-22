@@ -254,7 +254,7 @@ export class MightyBoss extends Boss {
     super(path, bossImage, level, socket, bgm, skillSounds);
     this.maxHp = 1000;
     this.defense = 30;
-    this.speed = 0;
+    this.speed = 1;
   }
 
   useSkill() {
@@ -268,7 +268,7 @@ export class TowerControlBoss extends Boss {
     super(path, bossImage, level, socket, bgm, skillSounds);
     this.maxHp = 700;
     this.defense = 0;
-    this.speed = 5;
+    this.speed = 1;
   }
 
   useSkill() {
@@ -282,7 +282,7 @@ export class DoomsdayBoss extends Boss {
     super(path, bossImage, level, socket, bgm, skillSounds);
     this.maxHp = 500;
     this.defense = 10;
-    this.speed = 10;
+    this.speed = 1;
   }
 
   useSkill() {
@@ -296,10 +296,20 @@ export class TimeRifter extends Boss {
     super(path, bossImage, level, socket, bgm, skillSounds);
     this.maxHp = 700;
     this.defense = 10;
-    this.speed = 3;
+    this.speed = 1;
   }
 
   useSkill() {
     super.useSkill(); // 부모 클래스의 useSkill 호출
+  }
+}
+
+export class FinaleBoss extends Boss {
+  constructor(path, level, socket, bgm, skillSounds) {
+    const bossImage = 'images/FinaleBoss.png';
+    super(path, bossImage, level, socket, bgm, skillSounds);
+    this.maxHp = 500;
+    this.defense = 10;
+    this.speed = 1;
   }
 }

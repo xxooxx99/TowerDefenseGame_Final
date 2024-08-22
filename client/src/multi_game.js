@@ -1,7 +1,7 @@
 import { Base } from './base.js';
 import { Monster } from './monster.js';
 import { AttackSupportTower, poisonTower, SpeedSupportTower, SplashTower, Tower } from './tower.js';
-import { Boss } from './boss.js'; // 보스 클래스 추가
+import { Boss, DoomsdayBoss, FinaleBoss, MightyBoss, TimeRifter, TowerControlBoss } from './boss.js'; // 보스 클래스 추가
 import { CLIENT_VERSION, INITIAL_TOWER_NUMBER, PacketType, TOWER_TYPE } from '../constants.js';
 import { towerImageInit, placeInitialTowers, towerAttackToSocket, towerSaleToSocket } from './tower/towerController.js';
 
@@ -372,7 +372,7 @@ function spawnBoss() {
   bossSpawned = true;
   currentBossStage = monsterLevel;
   
-  const bossClasses = [MightyBoss, TowerControlBoss, DoomsdayBoss, TimeRifter];
+  const bossClasses = [MightyBoss,TowerControlBoss, DoomsdayBoss,TimeRifter,FinaleBoss];
   const randomBossClass = bossClasses[Math.floor(Math.random() * bossClasses.length)];
 
   const boss = new randomBossClass(monsterPath, monsterLevel, socket, 'sounds/bossBgm.mp3', {
@@ -521,6 +521,9 @@ function gameLoop() {
         monsterLevel++;
         killCount = 0;
 
+        //스테이지 변경시 base attack 공격 초기화
+        base.resetAttack();
+        
         if ([3,6,9,12,15]. includes(monsterLevel) && !bossSpawned) {
           clearInterval(monsterintervalId);
           spawnBoss();
@@ -1039,6 +1042,23 @@ attackMonstersButton.addEventListener('click', () => {
   base.attackMonsters({ baseUuid, monsterIndices });
 });
 
+
+// 게임 시작 시 호출하여 요소를 표시하는 로직
+// 베이스공격, 돌아가기, 항복하기 버튼 겜 시작전까지 숨김
+function showGameElements() {
+  if (attackMonstersButton) {
+    attackMonstersButton.style.display = 'block';
+  }
+  if (backButton) {
+    backButton.style.display = 'block';
+  }
+  if (surrenderButton) {
+    surrenderButton.style.display = 'block'
+  } 
+  isGameStarted = true;
+}
+
+
 const towersBox = window.document.getElementById('towers');
 const buyTowerButton1 = document.getElementById('baseTower');
 const buyTowerButton2 = document.getElementById('speedTower');
@@ -1108,16 +1128,6 @@ gameCanvas.addEventListener('mouseout', (e) => {
   cursor.style.opacity = 0;
 });
 
-hideGameElements();
-
-// Base Attack 버튼 및 Boss Attempt 요소를 숨기는 로직
-function hideGameElements() {
-  if (attackMonstersButton) {
-    attackMonstersButton.style.display = 'none';
-  }
-}
-
-
 
 function sendEvent(handlerId, payload) {
   const userId = localStorage.getItem('userId');
@@ -1166,17 +1176,3 @@ backButton.addEventListener('click', () => {
 location.href = 'http://localhost:8080/index.html'; // 홈 화면 경로로 이동
 });
 
-// 게임 시작 시 호출하여 요소를 표시하는 로직
-// 베이스공격, 돌아가기, 항복하기 버튼 겜 시작전까지 숨김
-function showGameElements() {
-  if (attackMonstersButton) {
-    attackMonstersButton.style.display = 'block';
-  }
-  if (backButton) {
-    backButton.style.display = 'block';
-  }
-  if (surrenderButton) {
-    surrenderButton.style.display = 'block'
-  } 
-  isGameStarted = true;
-}
