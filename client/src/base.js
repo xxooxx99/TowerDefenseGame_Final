@@ -10,6 +10,40 @@ export class Base {
     this.beamDuration = 0;
     this.monsters = [];
     this.attackUsedThisStage = false; // 스테이지당 공격 여부를 추적
+    this.cooldown = 10;
+    this.remainingCooldown = 0; //남은 쿨타임
+    const socekt = io();
+  }
+
+  startCooldown() {
+    this.remainingCooldown = this.cooldown;
+
+    // 타이머 HTML 업데이트
+    const cooldownElement = document.getElementById('cooldown-timer');
+    cooldownElement.textContent = `남은 시간: ${this.remainingCooldown}초`;
+
+    const cooldownInterval = setInterval(() => {
+      this.remainingCooldown--;
+
+      // 남은 쿨타임을 타이머에 표시
+      cooldownElement.textContent = `남은 시간: ${this.remainingCooldown}초`;
+
+      if (this.remainingCooldown <= 0) {
+        clearInterval(cooldownInterval);
+        this.resetAttack(); // 쿨타임 종료 시 공격 가능 상태로 초기화
+
+        // 타이머를 숨기고, 버튼 다시 표시
+        cooldownElement.style.display = 'none';
+        const attackMonstersButton = document.getElementById('attack-monsters-button');
+        if (attackMonstersButton) {
+          attackMonstersButton.style.display = 'block'; // 버튼 표시
+        }
+      }
+    }, 1000); // 1초마다 갱신
+  }
+
+  resetAttack() {
+    this.attackUsedThisStage = false;
   }
 
   draw(ctx, baseImage, monsterList, isOpponent = false) {
@@ -52,21 +86,13 @@ export class Base {
   }
 
   attackMonsters(payload) {
-    //스테이지당 한번씩만 공격이 되도록 수정
-
-    if(this.attackUsedThisStage) {
-      Socket.emit('chat message', {
-        userId: 'System',
-        message :'궁극기 공격은 스테이지당 한번씩만 사용할 수 있습니다!'
-      });
-      return;
-    }
+    //쿨타임 가지고 공격
 
     //공격실행시 음원 재생
-    const attackSound = new Audio('sounds/baseattack.mp3');
+    const attackSound = new Audio('/sounds/baseattack.mp3');
     attackSound.volume = 0.1; //볼륨 10%
     attackSound.play();
-    this.beamDuration = 20; // 예시로 20 프레임 동안 빔을 표시
+    this.beamDuration = 40; // 예시로 20 프레임 동안 빔을 표시
     const { baseUuid, monsterIndices } = payload;  // payload에서 데이터 추출
 
     // 실제로 몬스터에게 데미지를 입히는 로직
@@ -78,34 +104,55 @@ export class Base {
       }
     });
 
-    // 서버에 공격 요청을 전송
-    fetch('/api/base-attack-monster', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ baseUuid, monsterIndices })  // payload를 그대로 전송
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        console.log(`Base Successfully ATTACK ALL MONSTERS!`);
-        data.updatedMonsters.forEach(updatedMonster => {
-          const monster = this.monsters.find(m => m.id === updatedMonster.id);
-          if (monster) {
-            monster.hp = updatedMonster.hp; // 몬스터의 HP를 업데이트
-            console.log(`Monster ${updatedMonster.id} HP updated to ${updatedMonster.hp}`);
-          }
-        });
-      } else {
-        console.error('Base attack failed:', data.error);
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-    });
+    // 공격 사용 상태로 설정하고 쿨타임 시작
+    this.attackUsedThisStage = true;
 
-  }
-  resetAttack() {
-    this.attackUsedThisStage = false;
+    // 버튼 숨기고 타이머 표시
+    const attackMonstersButton = document.getElementById('attack-monsters-button');
+    if (attackMonstersButton) {
+      attackMonstersButton.style.display = 'none';
+    }
+
+    const cooldownElement = document.getElementById('cooldown-timer');
+    cooldownElement.style.display = 'block'; // 타이머 표시
+    this.startCooldown(); // 쿨타임 시작
+
+
+
+// 서버에 공격 요청을 전송
+fetch('/api/base-attack-monster', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ baseUuid, monsterIndices })  // payload 전송
+})
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    return response.json(); // 응답을 JSON으로 파싱
+  })
+  .then(data => {
+    if (data.success) {
+      console.log(`Base Successfully ATTACK ALL MONSTERS!,Send Chat Event!`);
+
+      socket.emit('ultimateAttackUsed', {
+        playerName: baseUuid
+      });
+      data.updatedMonsters.forEach(updatedMonster => {
+        const monster = this.monsters.find(m => m.id === updatedMonster.id);
+        if (monster) {
+          monster.hp = updatedMonster.hp; // 몬스터의 HP 업데이트
+          console.log(`Monster ${updatedMonster.id} HP updated to ${updatedMonster.hp}`);
+        }
+      });
+    } else {
+      console.error('Base attack failed:', data.error);
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error); // 네트워크 또는 JSON 파싱 오류 처리
+  });
+
   }
 }
 

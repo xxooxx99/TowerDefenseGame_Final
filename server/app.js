@@ -52,6 +52,19 @@ io.on('connection', (socket) => {
     io.emit('chat message', data);
     console.log(`Received chat message from ${data.userId}: ${data.message} from app.js`);
   });
+    // 궁극기 공격 사용 이벤트 처리
+    socket.on('ultimateAttackUsed', (data) => {
+      const { playerName } = data;
+      const message = `${playerName}이(가) 궁극기 공격을 사용하였습니다!`;
+  
+      // 모든 클라이언트에게 궁극기 사용 메시지 전송
+      io.emit('chat message', {
+        userId: 'System',
+        message: message,
+      });
+  
+      console.log(`궁극기 사용 알림: ${message}`);
+    });
 });
 
 loadGameAssets();

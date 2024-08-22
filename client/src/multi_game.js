@@ -16,7 +16,6 @@ if (!userId) {
   location.href = '/login';
 }
 
-towerImageInit();
 
 // 매칭 데이터
 let serverSocket;
@@ -98,7 +97,7 @@ export let towersData;
 
 // Tower data for the current user
 let towers = {}; 
-
+towerImageInit();
 //#endregion
 
 
@@ -142,7 +141,6 @@ function initMap() {
   placeInitialTowers(opponentInitialTowerCoords, opponentTowers); // 상대방 초기 타워 배치
   if (!base) placeBase(basePosition, true);
   if (!opponentBase) placeBase(opponentBasePosition, false);
-  towerIndex += INITIAL_TOWER_NUMBER;
 }
 
 function drawPath(path, context) {
@@ -319,6 +317,7 @@ let monsterSpawnCount = 0;
 let monsterintervalId = null;
 const monsterSpawnInterval = 1000;
 let monstersToSpawn = 5; // 라운드당 몬스터 소환 수
+let currentBossStage  = 0;
 
 function spawnMonster() {
   if (bossSpawned && currentBossStage === monsterLevel) {
@@ -329,7 +328,7 @@ function spawnMonster() {
   if (monsterSpawnCount < monstersToSpawn && !bossSpawned) {
     const monster = new Monster(monsterPath, monsterImages, monsterLevel) ;
     monster.setMonsterIndex(monsterIndex);
-    monster.push(monster);
+    monsters.push(monster);
 
     sendEvent(PacketType.C2S_SPAWN_MONSTER, {hp : monster.getMaxHp(), monsterIndex, monsterLevel});
     monsterIndex++
@@ -523,7 +522,7 @@ function gameLoop() {
 
         //스테이지 변경시 base attack 공격 초기화
         base.resetAttack();
-        
+
         if ([3,6,9,12,15]. includes(monsterLevel) && !bossSpawned) {
           clearInterval(monsterintervalId);
           spawnBoss();
@@ -1023,15 +1022,29 @@ function updateMonstersHp(updatedMonsters) {
   });
 }
 
+// Base Attack 버튼 생성
 const attackMonstersButton = document.createElement('button');
-attackMonstersButton.textContent = 'Base Attack';
+attackMonstersButton.id = 'attack-monsters-button'; // ID 추가
+attackMonstersButton.textContent = '궁극기 공격';
 attackMonstersButton.style.position = 'absolute';
 attackMonstersButton.style.top = '10px';
 attackMonstersButton.style.left = '10px';
 attackMonstersButton.style.padding = '10px 20px';
-attackMonstersButton.style.fontSize = '8px';
+attackMonstersButton.style.fontSize = '25px';
 attackMonstersButton.style.cursor = 'pointer';
 document.body.appendChild(attackMonstersButton);
+
+// Cooldown 타이머 생성
+const cooldownElement = document.createElement('div');
+cooldownElement.id = 'cooldown-timer';
+cooldownElement.style.position = 'absolute';
+cooldownElement.style.top = '50px';
+cooldownElement.style.left = '10px';
+cooldownElement.style.fontSize = '30px';
+cooldownElement.style.color = 'red';
+cooldownElement.style.display = 'none'; // 초기에는 숨김
+document.body.appendChild(cooldownElement);
+
 
 attackMonstersButton.addEventListener('click', () => {
   const monsterIndices = monsters.map((monster) => monster.getMonsterIndex());

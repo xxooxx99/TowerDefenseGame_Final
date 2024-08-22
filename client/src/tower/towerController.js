@@ -1,5 +1,5 @@
 import { AttackSupportTower, poisonTower, SpeedSupportTower, SplashTower, Tower } from '../tower.js';
-import { towerImages, userGoldControl } from '../multi_game.js';
+import { towerImages, userGoldControl,towersData } from '../multi_game.js';
 
 export const towerImageInit = () => {
     for (let i = 0; i < 9; i++) {
