@@ -251,7 +251,13 @@ export class Monster {
 
   draw(ctx) {
     if (this.image) {
-      ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+      const imageWidth = this.image.naturalWidth;
+      const imageHeight = this.image.naturalHeight;
+
+      const drawX = this.x - imageWidth / 2;
+      const drawY = this.y - imageHeight / 2;
+
+      ctx.drawImage(this.image, drawX, drawY, imageWidth, imageHeight);
 
       ctx.save(); // 현재 상태 저장
       ctx.restore(); // 상태 복원
@@ -293,8 +299,8 @@ export class Monster {
       ctx.fillStyle = 'white';
       const textWidth = ctx.measureText(text).width;
 
-      const textX = this.x + this.width / 2 - textWidth / 2;
-      const textY = this.y - 5;
+      const textX = this.x - textWidth / 2;
+      const textY = drawY - 10;
       ctx.fillText(text, textX, textY);
     } else {
       console.error('몬스터 이미지를 찾을 수 없습니다.');
