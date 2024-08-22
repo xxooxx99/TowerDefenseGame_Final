@@ -1,6 +1,6 @@
 import { BossSkills } from './bossSkills.js'; // bossSkills.js에서 보스 스킬 로직을 불러옴
 
-class Boss {
+export class Boss {
   constructor(
     socket,
     path,
@@ -135,7 +135,7 @@ class Boss {
   }
 }
 
-// MightyBoss, TowerControlBoss, DoomsdayBoss 등 개별 보스 클래스를 Boss 클래스에 상속
+/* // MightyBoss, TowerControlBoss, DoomsdayBoss 등 개별 보스 클래스를 Boss 클래스에 상속
 class MightyBoss extends Boss {
   constructor(path, socket, towers, bgm, skillSounds) {
     console.log('Received path in MightyBoss:', path);
@@ -290,7 +290,7 @@ class DoomsdayBoss extends Boss {
     this.stopBGM();
     console.log('Boss has died, stopping BGM.');
   }
-}
+} */
 
 // 각 보스 클래스 정의
 export class MightyBoss extends Boss {

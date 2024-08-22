@@ -23,14 +23,36 @@ export class Monster {
   }
 
   getMonsterTypeByLevel(level) {
-    if (level !== 0 && level % 2 === 0 && level % 10 !== 0) {
-      return 'fast';
-    } else if (level !== 0 && level % 3 === 0 && level % 10 !== 0) {
-      return 'tank';
-    } else if (level !== 0 && level % 5 === 0) {
-      return 'healing';
-    } else {
+    if (level === 1) {
       return 'normal';
+    } else if (level === 2) {
+      return 'fast';
+    } else if (level === 3) {
+      return 'boss1';
+    } else if (level === 4) {
+      return 'healing';
+    } else if (level === 5) {
+      return 'tank';
+    } else if (level === 6) {
+      return 'boss2';
+    } else if (level === 7) {
+      return 'fast';
+    } else if (level === 8) {
+      return 'tank';
+    } else if (level === 9) {
+      return 'boss3';
+    } else if (level === 10) {
+      return 'normal';
+    } else if (level === 11) {
+      return 'fast';
+    } else if (level === 12) {
+      return 'boss4';
+    } else if (level === 13) {
+      return 'tnak';
+    } else if (level === 14) {
+      return 'healing';
+    } else if (level === 15) {
+      return 'finalboss';
     }
   }
 
@@ -53,6 +75,31 @@ export class Monster {
         this.healingInterval = 100;
         this.healingAmount = 1 * level;
         this.startHealing();
+        break;
+      case 'boss1':
+        this.maxHp = 500;
+        this.speed = 1;
+        this.attackPower = 2;
+        break;
+      case 'boss2':
+        this.maxHp = 1000;
+        this.speed = 1;
+        this.attackPower = 2;
+        break;
+      case 'boss3':
+        this.maxHp = 1500;
+        this.speed = 1;
+        this.attackPower = 2;
+        break;
+      case 'boss4':
+        this.maxHp = 2000;
+        this.speed = 1;
+        this.attackPower = 2;
+        break;
+      case 'finalboss':
+        this.maxHp = 100000000000;
+        this.speed = 1;
+        this.attackPower = 3;
         break;
       default:
         this.maxHp = 100 + 10 * level;
@@ -81,14 +128,46 @@ export class Monster {
 
     let imageIndex = 0;
 
-    if (level !== 0 && level % 2 === 0 && level % 10 !== 0) {
-      imageIndex = 1;
-    } else if (level !== 0 && level % 3 === 0 && level % 10 !== 0) {
-      imageIndex = 2;
-    } else if (level !== 0 && level % 5 === 0) {
-      imageIndex = 3;
-    } else {
+    // 0 = normal
+    // 1 = fast
+    // 2 = tank
+    // 3 = healing
+    // 4 = boss1
+    // 5 = boss2
+    // 6 = boss3
+    // 7 = boss4
+    // 8 = finalboss
+
+    if (level === 1) {
       imageIndex = 0;
+    } else if (level === 2) {
+      imageIndex = 1;
+    } else if (level === 3) {
+      imageIndex = 4;
+    } else if (level === 4) {
+      imageIndex = 3;
+    } else if (level === 5) {
+      imageIndex = 2;
+    } else if (level === 6) {
+      imageIndex = 5;
+    } else if (level === 7) {
+      imageIndex = 1;
+    } else if (level === 8) {
+      imageIndex = 2;
+    } else if (level === 9) {
+      imageIndex = 6;
+    } else if (level === 10) {
+      imageIndex = 0;
+    } else if (level === 11) {
+      imageIndex = 1;
+    } else if (level === 12) {
+      imageIndex = 7;
+    } else if (level === 13) {
+      imageIndex = 2;
+    } else if (level === 14) {
+      imageIndex = 3;
+    } else if (level === 15) {
+      imageIndex = 8;
     }
 
     return this.monsterImages[imageIndex] || this.monsterImages[0];
@@ -187,6 +266,21 @@ export class Monster {
           break;
         case 'healing':
           monsterName = '힐하는 해골';
+          break;
+        case 'boss1':
+          monsterName = 'boss1';
+          break;
+        case 'boss2':
+          monsterName = 'boss2';
+          break;
+        case 'boss3':
+          monsterName = 'boss3';
+          break;
+        case 'boss4':
+          monsterName = 'boss4';
+          break;
+        case 'finalboss':
+          monsterName = 'finalboss';
           break;
         default:
           monsterName = '슬라임';

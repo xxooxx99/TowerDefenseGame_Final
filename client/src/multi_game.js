@@ -54,7 +54,7 @@ let matchAcceptInterval; // 인터벌 데이터
 
 // 몬스터 데이터
 let monsterPath; // 몬스터 경로
-const NUM_OF_MONSTERS = 4; // 몬스터 개수
+const NUM_OF_MONSTERS = 9; // 몬스터 개수
 
 // 유저 데이터
 export let userGold; // 유저 골드
@@ -324,9 +324,11 @@ const maxStages = 15;
 let monsters = [];
 let monsterIndex = 0;
 let monsterSpawnCount = 0;
+let bossSpawnCount = 0;
 let monsterintervalId = null;
 const monsterSpawnInterval = 1000;
 let monstersToSpawn = 5; // 라운드당 몬스터 소환 수
+let bossToSpawn = 1;
 
 function spawnMonster() {
   if (bossSpawned && currentBossStage === monsterLevel) {
@@ -334,22 +336,44 @@ function spawnMonster() {
     return;
   }
 
-  if (monsterSpawnCount < monstersToSpawn && !bossSpawned) {
+  if (monsterSpawnCount < monstersToSpawn) {
     const monster = new Monster(monsterPath, monsterImages, monsterLevel);
     monster.setMonsterIndex(monsterIndex);
-    monster.push(monster);
+    monsters.push(monster);
 
     sendEvent(PacketType.C2S_SPAWN_MONSTER, { hp: monster.getMaxHp(), monsterIndex, monsterLevel });
     monsterIndex++;
     monsterSpawnCount++;
   }
+  if (
+    bossSpawnCount < bossSpawnCount ||
+    monsterLevel === 3 ||
+    monsterLevel === 6 ||
+    monsterLevel === 9 ||
+    monsterLevel === 12 ||
+    monsterLevel === 15
+  ) {
+    const monster = new Monster(monsterPath, monsterImages, monsterLevel);
+    monster.setMonsterIndex(monsterIndex);
+    monsters.push(monster);
+
+    sendEvent(PacketType.C2S_SPAWN_MONSTER, { hp: monster.getMaxHp(), monsterIndex, monsterLevel });
+    monsterIndex++;
+    bossSpawnCount++;
+  }
 
   console.log(`몬스터 소환, 총 소환된 몬스터: ${monsterSpawnCount}`);
+  console.log(`보스 몬스터 소환, 청 소환된 보스 몬스터: ${bossSpawnCount}`);
 
   if (monsterSpawnCount >= monstersToSpawn) {
     monsterSpawnCount = 0;
     clearInterval(monsterintervalId);
     console.log('라운드 몬스터 최대 소환');
+  }
+  if (bossSpawnCount >= bossToSpawn) {
+    bossSpawnCount = 0;
+    clearInterval(monsterintervalId);
+    console.log('보스 최대 소환');
   }
 }
 
@@ -376,7 +400,7 @@ function destroyOpponentMonster(index) {
   opponentMonsters.splice(destroyedMonsterIndex, 1);
 }
 
-function spawnBoss() {
+/* function spawnBoss() {
   bossSpawned = true;
   currentBossStage = monsterLevel;
 
@@ -403,12 +427,12 @@ function spawnBoss() {
 
   monsterIndex++;
   console.log('Boss spawned');
-}
+} */
 
-function onBossDie() {
+/* function onBossDie() {
   bossSpawned = false; // 보스가 죽으면 보스 스폰 상태 해제
   startSpawning(); // 다음 스테이지로 넘어가면서 몬스터 스폰 시작
-}
+} */
 
 function gameSync(data) {
   score = data.score;
@@ -435,6 +459,7 @@ function gameSync(data) {
 }
 
 let killCount = 0;
+let bosskillCount = 0;
 let bossSpawned = false;
 
 function gameLoop() {
@@ -524,20 +549,48 @@ function gameLoop() {
         userId: localStorage.getItem('userId'),
       });
       killCount++;
+      console.log(`killCount: ${killCount}`);
 
-      if (killCount === monstersToSpawn && !bossSpawned) {
-        monsterLevel++;
-        killCount = 0;
+      if (
+        monsterLevel === 3 ||
+        monsterLevel === 6 ||
+        monsterLevel === 9 ||
+        monsterLevel === 12 ||
+        monsterLevel === 15
+      ) {
+        if (killCount === bossToSpawn) {
+          monsterLevel++;
+          killCount = 0;
 
-        //스테이지 변경시 base attack 공격 초기화
-        base.resetAttack();
+          //스테이지 변경시 base attack 공격 초기화
+          base.resetAttack();
 
-        if ([3, 6, 9, 12, 15].includes(monsterLevel) && !bossSpawned) {
+          // if ([3, 6, 9, 12, 15].includes(monsterLevel) && !bossSpawned) {
           clearInterval(monsterintervalId);
-          spawnBoss();
-          bossSpawned = true;
-        } else {
-          startSpawning();
+          // spawnBoss();
+          // bossSpawned = true;
+
+          setTimeout(() => {
+            startSpawning();
+          }, 3000);
+        }
+      } else {
+        if (killCount === monstersToSpawn) {
+          monsterLevel++;
+          killCount = 0;
+          console.log('monsterLevelUp');
+
+          //스테이지 변경시 base attack 공격 초기화
+          base.resetAttack();
+
+          // if ([3, 6, 9, 12, 15].includes(monsterLevel) && !bossSpawned) {
+          clearInterval(monsterintervalId);
+          // spawnBoss();
+          // bossSpawned = true;
+
+          setTimeout(() => {
+            startSpawning();
+          }, 3000);
         }
       }
     }
@@ -1288,18 +1341,3 @@ surrenderButton.addEventListener('click', () => {
 backButton.addEventListener('click', () => {
   location.href = 'http://localhost:8080/index.html'; // 홈 화면 경로로 이동
 });
-
-// 게임 시작 시 호출하여 요소를 표시하는 로직
-// 베이스공격, 돌아가기, 항복하기 버튼 겜 시작전까지 숨김
-function showGameElements() {
-  if (attackMonstersButton) {
-    attackMonstersButton.style.display = 'block';
-  }
-  if (backButton) {
-    backButton.style.display = 'block';
-  }
-  if (surrenderButton) {
-    surrenderButton.style.display = 'block';
-  }
-  isGameStarted = true;
-}
