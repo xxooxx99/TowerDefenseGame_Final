@@ -75,7 +75,6 @@
       #gameCanvas {
         cursor: none;
         border: 2px solid #000;
-        overflow: hidden;
         display: none;
       }
       #opponentCanvas {
@@ -197,6 +196,7 @@
       <button id="loginButton">로그인</button>
       <button id="abilityButton" style="display: none">능력</button>
       <button id="matchButton" style="display: none">다른 유저와 대결하기</button>
+      <button id="rankButton" style="display: none">랭킹</button>
     </div>
 
     <div class="logout-container" id="logout-container" style="display: none">
@@ -290,6 +290,7 @@
           document.getElementById('loginButton').style.display = 'none';
           document.getElementById('abilityButton').style.display = 'block';
           document.getElementById('matchButton').style.display = 'block';
+          document.getElementById('rankButton').style.display = 'block';
           document.getElementById('current-user').innerText = `현재 접속된 아이디: ${userId}`;
           document.getElementById('logout-container').style.display = 'block';
         }
@@ -312,6 +313,10 @@
         document.getElementById('progressBarContainer').style.display = 'block';
         document.getElementById('matchAcceptButton').style.display = 'none';
         import('./src/multi_game.js');
+      });
+
+      document.getElementById('rankButton').addEventListener('click', () => {
+        window.location.href = 'rank.html';
       });
 
       document.getElementById('logout').addEventListener('click', async () => {

@@ -37,6 +37,8 @@ const ownUser_name = document.getElementById('ownUser-name');
 const user_info = document.getElementById('user-info');
 const opponentUser_winRate = document.getElementById('opponentUser-winRate');
 const ownUser_winRate = document.getElementById('ownUser-winRate');
+
+// 설정 데이터
 let acceptTime = 1000000; // 수락 대기 시간
 let matchAcceptInterval; // 인터벌 데이터
 
@@ -125,6 +127,12 @@ for (let i = 1; i <= NUM_OF_MONSTERS; i++) {
 export function userGoldControl (value) {
   userGold += value;
 }
+
+let audioOfTowerAddAndUpgrade = new Audio('sounds/TowerAddAndUpgrade.wav');
+audioOfTowerAddAndUpgrade.volume = 0.05;
+
+let audioOfTowerSale = new Audio('sounds/TowerSale.wav');
+audioOfTowerSale.volume = 0.8;
 
 function initMap() {
   ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height); // 배경 이미지 그리기
@@ -814,6 +822,8 @@ Promise.all([
 
       const tower = new Tower(towerType, towerId, towerData.number, towerData.posX, towerData.posY);
       towers[towerType][towerId].push(tower);
+      audioOfTowerAddAndUpgrade.currentTime = 0;
+      audioOfTowerAddAndUpgrade.play();
       userGold -= towerCost;
     }
   });
@@ -844,6 +854,8 @@ Promise.all([
       opponentTowers[TOWER_TYPE[towerId / 100 - 1]][towerId].push(tower);
     } else {
       towers[TOWER_TYPE[towerId / 100 - 1]][towerId].push(tower);
+      audioOfTowerAddAndUpgrade.currentTime = 0;
+      audioOfTowerAddAndUpgrade.play();
       userGold -= towerCost;
     }
   });
@@ -909,9 +921,6 @@ Promise.all([
       case PacketType.S2C_ENEMY_TOWER_SPAWN:
         placeNewOpponentTower(packet.data.opponentTowers);
         break;
-      // case PacketType.S2C_ENEMY_TOWER_ATTACK:
-      //   opponentTowerAttack(packet.data.attackedOpponentMonster, packet.data.attackedOpponentTower);
-      //   break;
       case PacketType.S2C_ENEMY_SPAWN_MONSTER:
         spawnOpponentMonster(packet.data.opponentMonsters);
         break;

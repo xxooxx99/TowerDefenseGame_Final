@@ -1,11 +1,14 @@
+import {
+  towerSet,
+  towerDelete,
+  towerAttackTimeSet,
+  calculateDistance,
+} from '../../models/tower.model.js';
 import { PacketType } from '../../constants.js';
 import { getGameAssets } from '../../init/assets.js';
-import { towerSet, towerDelete, towerAttackTimeSet } from '../../models/tower.model.js';
 import { getPlayData } from '../../models/playData.model.js';
-import { getOpponentInfo } from '../../models/playData.model.js';
 import { getMonsters, setDamagedMonsterHp, setPoisonMonster } from '../../models/monster.model.js';
-import { sendGameSync } from '../game/gameSyncHandler.js';
-import { getTowers } from '../../models/tower.model.js';
+import { CLIENTS } from '../match/matchMakingHandler.js';
 
 export const towerAddHandler = (socket, data) => {
   const { userId, towerType, towerId, posX, posY } = data.payload;
@@ -19,10 +22,10 @@ export const towerAddHandler = (socket, data) => {
       const towerType = userData.towerInit[towerData];
       for (let towerId in towerType)
         for (let i = 0; i < towerType[towerId].length; i++) {
-          const distance = Math.sqrt(
-            Math.pow(posX - towerType[towerId][i].posX, 2) +
-              Math.pow(posY - towerType[towerId][i].posY, 2),
-          );
+          const towerX = towerType[towerId][i].posX;
+          const towerY = towerType[towerId][i].posY;
+
+          const distance = calculateDistance(posX, posY, towerX, towerY);
           min = Math.min(min, distance);
         }
     }
@@ -34,7 +37,7 @@ export const towerAddHandler = (socket, data) => {
   //#region 타워와 도로 간의 거리 조정 로직
   min = Infinity;
   for (const road of userData.monsterPath) {
-    const distance = Math.sqrt(Math.pow(posX - road.x, 2) + Math.pow(posY - road.y, 2));
+    const distance = calculateDistance(posX, posY, road.x, road.y);
     min = Math.min(min, distance);
   }
 
@@ -79,7 +82,8 @@ export const towerAddHandler = (socket, data) => {
     //#endregion
 
     //#region Client 내용 전송
-    const opponentSocket = getOpponentInfo(userId);
+    const opponentPlayerId = userData.getOpponentInfo();
+    const opponentSocket = CLIENTS[opponentPlayerId];
     socket.emit('userTowerCreate', packet);
     opponentSocket.emit('userTowerCreate', packet);
     //#endregion
@@ -123,7 +127,8 @@ export const towerUpgrade = (socket, data) => {
     //#endregion
 
     //#region Client 내용 전송
-    const opponentSocket = getOpponentInfo(userId);
+    const opponentPlayerId = userData.getOpponentInfo();
+    const opponentSocket = CLIENTS[opponentPlayerId];
     socket.emit('userTowerUpgrade', packet);
     opponentSocket.emit('userTowerUpgrade', packet);
     //#endregion
@@ -174,9 +179,11 @@ export const towerAttack = (socket, data) => {
     if (speedTowerId) {
       for (let speedTower of userData.towerInit[speedSupportTower][speedTowerId]) {
         if (speedTower.number == speedTowerNumber) {
-          const distance = Math.sqrt(
-            Math.pow(speedTower.posX - myTowerData.posX, 2) +
-              Math.pow(speedTower.posY - myTowerData.posY, 2),
+          const distance = calculateDistance(
+            speedTower.posX,
+            speedTower.posY,
+            myTowerData.posX,
+            myTowerData.posY,
           );
 
           for (let i = towerAsset.speedSupportTower.length - 1; i >= 0; i--) {
@@ -193,15 +200,6 @@ export const towerAttack = (socket, data) => {
       }
     }
 
-    // const speedIncludeTowerId = speed
-    //   ? time - myTowerOfServer.attackTime - (speed / 60) * 1000
-    //   : time - myTowerOfServer.attackTime;
-
-    // const selectSpeedTower = towerAsset[towerType][towerId % 100];
-
-    // console.log(speedIncludeTowerId, (selectSpeedTower.attackCycle / 100) * 600);
-    // if (speedIncludeTowerId < (selectSpeedTower.attackCycle / 100) * 600)
-    //   console.log('현재 정상적이지 않은 공격속도입니다.');
     towerAttackTimeSet(userData.towerInit, towerType, towerId, towerNumber, time);
     //#endregion
 
@@ -213,9 +211,11 @@ export const towerAttack = (socket, data) => {
     if (powerTowerId) {
       for (let powerTower of userData.towerInit.attackSupportTower[powerTowerId]) {
         if (powerTower.number == powerTowerNumber) {
-          const distance = Math.sqrt(
-            Math.pow(powerTower.posX - myTowerOfServer.posX, 2) +
-              Math.pow(powerTower.posY - myTowerOfServer.posY, 2),
+          const distance = calculateDistance(
+            powerTower.posX,
+            powerTower.posY,
+            myTowerOfServer.posX,
+            myTowerOfServer.posY,
           );
 
           for (let i = 0; i < towerAsset.attackSupportTower.length; i++) {
@@ -252,9 +252,6 @@ export const towerAttack = (socket, data) => {
     if (data.payload.poisonDamage) {
       const poisonDamage = data.payload.poisonDamage;
       for (let monsterData of monsterIndexs) {
-        let attackedMonster = monsters.find(
-          (monster) => monster.monsterIndex == monsterData.monsterIndex,
-        );
         attackedmonsters.push(
           setPoisonMonster(
             userId,
@@ -267,9 +264,6 @@ export const towerAttack = (socket, data) => {
       }
     } else {
       for (let monsterData of monsterIndexs) {
-        let attackedMonster = monsters.find(
-          (monster) => monster.monsterIndex == monsterData.monsterIndex,
-        );
         attackedmonsters.push(setDamagedMonsterHp(userId, damage, monsterData.monsterIndex));
       }
     }
@@ -307,7 +301,8 @@ export const towerAttack = (socket, data) => {
       killCount,
     };
 
-    const opponentSocket = getOpponentInfo(userId);
+    const opponentPlayerId = userData.getOpponentInfo();
+    const opponentSocket = CLIENTS[opponentPlayerId];
     socket.emit('towerAttack', packet);
     opponentSocket.emit('towerAttack', packet);
   } catch (err) {
@@ -351,7 +346,8 @@ export const towerSale = (socket, data) => {
       saledGold: gold,
     };
 
-    const opponentSocket = getOpponentInfo(userId);
+    const opponentPlayerId = userData.getOpponentInfo();
+    const opponentSocket = CLIENTS[opponentPlayerId];
     socket.emit('towerSale', packet);
     opponentSocket.emit('towerSale', packet);
   } catch (err) {
