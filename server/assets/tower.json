@@ -9,8 +9,7 @@
         "cost": 50,
         "UpgradeCost": 10,
         "attackCycle": 300,
-        "range": 300,
-        "hits": 2
+        "range": 300
       },
       { "id": 101, "power": 50, "cost": 100, "UpgradeCost": 90, "attackCycle": 250, "range": 300 },
       { "id": 102, "power": 60, "cost": 150, "UpgradeCost": 80, "attackCycle": 200, "range": 300 }
