@@ -37,7 +37,8 @@ function handleDieMonster(socket, userId, payload) {
 
   removeMonster(userId, payload.monsterIndex);
   sendGameSync(socket, userId, PacketType.S2C_ENEMY_DIE_MONSTER, {
-    destroyedMonsterIndex: payload.monsterIndex,
+    destroyedMonsterId: payload.monsterId,
+    mainMonsters: getMonsters(userId),
   });
 
   // 남은 몬스터 수 감소
