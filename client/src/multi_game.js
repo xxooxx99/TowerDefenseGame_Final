@@ -598,7 +598,7 @@ function gameLoop() {
 
   opponentMonsters.forEach((monster) => {
     monster.move();
-    monster.draw(opponentCtx, true);
+    monster.opponentdraw(opponentCtx, true);
   });
 
   if (opponentBase) {
