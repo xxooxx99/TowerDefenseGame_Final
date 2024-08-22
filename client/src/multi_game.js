@@ -2,6 +2,7 @@ import { Base } from './base.js';
 import { Monster } from './monster.js';
 import { CLIENT_VERSION, INITIAL_TOWER_NUMBER, PacketType, TOWER_TYPE } from '../constants.js';
 import {
+  towerImageAllowInit,
   towerImageInit,
   placeInitialTowers,
   towerAttackToSocket,
@@ -14,6 +15,7 @@ import {
   growthTowerChecker,
   myTowerDrawAndAttack,
   opponentTowerDrawAndAttack,
+  towerAllow,
 } from './tower/towerController.js';
 
 if (!localStorage.getItem('token')) {
@@ -106,7 +108,9 @@ export let towersData;
 
 // Tower data for the current user
 let towers = {};
+let towerLock;
 towerImageInit();
+towerImageAllowInit();
 //#endregion
 
 //게임 데이터
@@ -140,6 +144,9 @@ audioOfTowerAddAndUpgrade.volume = 0.05;
 
 export let audioOfTowerSale = new Audio('sounds/TowerSale.wav');
 audioOfTowerSale.volume = 0.8;
+
+export let audioOfTowerAllow = new Audio('sounds/TowerAllow.mp3');
+audioOfTowerAllow.volume = 0.3;
 
 function initMap() {
   ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height); // 배경 이미지 그리기
@@ -630,6 +637,7 @@ Promise.all([
   //서버 -> 게임시작
   serverSocket.on('gameInit', (packetType, data) => {
     towersData = data.towersData;
+    towerLock = data.Payload.towerLock;
     monsterPath = data.Payload.monsterPath;
     initialTowerCoords = data.Payload.towerInit;
     basePosition = data.Payload.basePos;
@@ -698,6 +706,11 @@ Promise.all([
 
   serverSocket.on('userTowerCreate', (data) => {
     towerCreateToSocket(userId, data, towers, opponentTowers);
+  });
+
+  serverSocket.on('towerAllow', (data) => {
+    const newTowerLock = towerAllow(towerLock, data);
+    towerLock = newTowerLock;
   });
 
   serverSocket.on('gameOver', (data) => {
@@ -915,6 +928,11 @@ const buttons = [
 const cursorImage = document.getElementById('cursorImage');
 for (let i = 0; i < buttons.length; i++) {
   buttons[i].addEventListener('click', (event) => {
+    if (!towerLock[i]) {
+      console.log('이 타워는 잠겨있습니다!');
+      return;
+    }
+
     towerBuilderCheck((i + 1) * 100, buttons[i]);
     event.stopPropagation();
   });
