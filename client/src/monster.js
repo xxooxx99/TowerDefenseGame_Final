@@ -19,7 +19,126 @@ export class Monster {
     this.image = this.getImageForLevel(level);
     this.onDie = null; // 몬스터가 죽을 때 호출되는 콜백 추가
 
+    this.skillCooldown = 5000; // 스킬 쿨다운 기본값 (필요 시 보스별로 수정)
+    this.lastSkillTime = Date.now(); // 마지막 스킬 사용 시간
+    this.boss4HowlCount = 0; // boss4의 howl 횟수
+    this.finalBossAccumulatedDamage = 0; // final boss의 누적 데미지
+
     this.init(level);
+    this.setSkillCooldown(); // 각 보스마다 스킬 쿨타임 설정
+    this.skill = null;
+  }
+
+
+  // 스킬 쿨타임 설정
+  setSkillCooldown() {
+    switch (this.type) {
+      case 'boss2':
+        this.skillCooldown = 10000;
+        break;
+      case 'boss3':
+        this.skillCooldown = 8000;
+        break;
+      case 'boss4':
+        this.skillCooldown = 12000;
+        break;
+      case 'finalboss':
+        this.skillCooldown = null;
+        break;
+      default:
+        this.skillCooldown = 5000;
+        break;
+    }
+  }
+
+  // BGM 재생 메서드
+  playBGM(bgmPath, loopBgmPath = null) {
+    if (this.bgm && !this.bgm.paused) {
+      this.bgm.pause();
+      this.bgm.currentTime = 0;
+    }
+    this.bgm = new Audio(bgmPath);
+    this.bgm.loop = loopBgmPath === null;
+    this.bgm.volume = 0.1;
+    this.bgm.play();
+
+    if (loopBgmPath) {
+      this.bgm.addEventListener('ended', () => {
+        this.bgm.src = loopBgmPath;
+        this.bgm.loop = true;
+        this.bgm.play();
+      });
+    }
+  }
+
+  // 스킬 효과음 재생 메서드
+  playSkillSound(skillSoundPath) {
+    const skillSound = new Audio(skillSoundPath);
+    skillSound.volume = 0.1;
+    skillSound.play();
+  }
+
+  // 스킬 설정 메서드
+  setSkill(skillFunction) {
+    this.skill = skillFunction;
+  }
+
+// 스킬 사용 메서드
+useSkill(baseHp, opponentBaseHp) {
+  const now = Date.now();
+
+  if (this.hp <= 0) {
+    console.log('보스가 죽었기 때문에 스킬이 발동되지 않습니다.');
+    return;
+  }
+
+  if (this.type !== 'finalboss' && this.skillCooldown && now - this.lastSkillTime < this.skillCooldown) {
+    console.log(`스킬 쿨타임 중입니다. 남은 시간: ${this.skillCooldown - (now - this.lastSkillTime)}ms`);
+    return;
+  }
+
+  if (this.skill) {
+    console.log(`Boss ${this.getMonsterIndex()} 스킬 사용 중...`);
+    this.skill(baseHp, opponentBaseHp); // 설정된 스킬을 실행
+  }
+
+  this.lastSkillTime = now;
+}
+
+  heal(amount) {
+    this.hp = Math.min(this.hp + amount, this.maxHp);
+    console.log(`보스 2 체력 회복: ${amount}`);
+  }
+
+  boostSpeed(duration, increaseFactor) {
+    if (!this.isSpeedBoosted) {
+      this.speed *= (1 + increaseFactor);
+      this.isSpeedBoosted = true;
+
+      setTimeout(() => {
+        this.speed /= (1 + increaseFactor);
+        this.isSpeedBoosted = false;
+      }, duration * 3000);
+    }
+  }
+
+  howl(baseHp) {
+    this.boss4HowlCount++;
+    if (this.boss4HowlCount >= 2) {
+      baseHp -= 1;
+      this.boss4HowlCount = 0;
+      console.log('보스 4: Howl로 인해 base HP 1 감소');
+    }
+  }
+
+  finalBossSkill(opponentBaseHp) {
+    this.finalBossAccumulatedDamage += this.damageTaken;
+    this.damageTaken = 0;
+    if (this.finalBossAccumulatedDamage >= 5000) {
+      opponentBaseHp -= 1;
+      this.finalBossAccumulatedDamage -= 5000;
+      console.log('최종 보스: 상대 base HP 감소');
+    }
   }
 
   getMonsterTypeByLevel(level) {
@@ -77,28 +196,28 @@ export class Monster {
         this.startHealing();
         break;
       case 'boss1':
-        this.maxHp = 500;
-        this.speed = 1;
+        this.maxHp = 5000;
+        this.speed = 0.5;
         this.attackPower = 2;
         break;
       case 'boss2':
-        this.maxHp = 1000;
-        this.speed = 1;
+        this.maxHp = 10000;
+        this.speed = 0.5;
         this.attackPower = 2;
         break;
       case 'boss3':
-        this.maxHp = 1500;
-        this.speed = 1;
+        this.maxHp = 10000;
+        this.speed = 0.5;
         this.attackPower = 2;
         break;
       case 'boss4':
-        this.maxHp = 2000;
-        this.speed = 1;
+        this.maxHp = 10000;
+        this.speed = 0.5;
         this.attackPower = 2;
         break;
       case 'finalboss':
         this.maxHp = 100000000000;
-        this.speed = 1;
+        this.speed = 0.5;
         this.attackPower = 3;
         break;
       default:
@@ -203,6 +322,8 @@ export class Monster {
     } else {
       this.hp = 0;
       console.log('Monster reached the ned of path and is marked as dead');
+
+      this.die();
       return true;
     }
   }
