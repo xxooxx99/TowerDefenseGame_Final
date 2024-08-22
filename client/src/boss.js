@@ -249,7 +249,8 @@ export class Boss extends Monster {
 
 // 각 보스 클래스 정의
 export class MightyBoss extends Boss {
-  constructor(path, bossImage, level, socket, bgm, skillSounds) {
+  constructor(path, level, socket, bgm, skillSounds) {
+    const bossImage = 'images/mightyBoss.png'; // MightyBoss의 이미지 경로
     super(path, bossImage, level, socket, bgm, skillSounds);
     this.maxHp = 1000;
     this.defense = 30;
@@ -262,7 +263,8 @@ export class MightyBoss extends Boss {
 }
 
 export class TowerControlBoss extends Boss {
-  constructor(path, bossImage, level, socket, bgm, skillSounds) {
+  constructor(path, level, socket, bgm, skillSounds) {
+    const bossImage = 'images/towerControlBoss.png'; // TowerControlBoss의 이미지 경로
     super(path, bossImage, level, socket, bgm, skillSounds);
     this.maxHp = 700;
     this.defense = 0;
@@ -275,7 +277,8 @@ export class TowerControlBoss extends Boss {
 }
 
 export class DoomsdayBoss extends Boss {
-  constructor(path, bossImage, level, socket, bgm, skillSounds) {
+  constructor(path, level, socket, bgm, skillSounds) {
+    const bossImage = 'images/doomsdayBoss.png'; // DoomsdayBoss의 이미지 경로
     super(path, bossImage, level, socket, bgm, skillSounds);
     this.maxHp = 500;
     this.defense = 10;
@@ -288,7 +291,8 @@ export class DoomsdayBoss extends Boss {
 }
 
 export class TimeRifter extends Boss {
-  constructor(path, bossImage, level, socket, bgm, skillSounds) {
+  constructor(path, level, socket, bgm, skillSounds) {
+    const bossImage = 'images/timeRifter.png'; // TimeRifter의 이미지 경로
     super(path, bossImage, level, socket, bgm, skillSounds);
     this.maxHp = 700;
     this.defense = 10;

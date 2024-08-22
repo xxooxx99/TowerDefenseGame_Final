@@ -54,19 +54,6 @@ export class Monster {
         this.healingAmount = 1 * level;
         this.startHealing();
         break;
-      /* (더미)
-      case 'speedBoost':
-        this.maxHp = 100 + 10 * level;
-        this.speed = 2;
-        this.attackPower = 10 + 1 * level;
-        this.speedBoost = 1.5;
-        break;
-      case 'defenseBoost':
-        this.maxHp = 100 + 10 * level;
-        this.speed = 2;
-        this.attackPower = 10 + 1 * level;
-        this.defenseBoost = 1.5;
-        break; */
       default:
         this.maxHp = 100 + 10 * level;
         this.speed = 2;
