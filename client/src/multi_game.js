@@ -16,6 +16,7 @@ import {
   myTowerDrawAndAttack,
   opponentTowerDrawAndAttack,
   towerAllow,
+  chat,
 } from './tower/towerController.js';
 
 if (!localStorage.getItem('token')) {
@@ -147,6 +148,9 @@ audioOfTowerSale.volume = 0.8;
 
 export let audioOfTowerAllow = new Audio('sounds/TowerAllow.mp3');
 audioOfTowerAllow.volume = 0.3;
+
+export let audioOfTowerNotAllow = new Audio('sounds/TowerNotAllow.wav');
+audioOfTowerNotAllow.volume = 0.3;
 
 function initMap() {
   ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height); // 배경 이미지 그리기
@@ -929,7 +933,9 @@ const cursorImage = document.getElementById('cursorImage');
 for (let i = 0; i < buttons.length; i++) {
   buttons[i].addEventListener('click', (event) => {
     if (!towerLock[i]) {
-      console.log('이 타워는 잠겨있습니다!');
+      chat('해금 조건이 만족되지 않은 타워입니다.');
+      audioOfTowerNotAllow.currentTime = 0;
+      audioOfTowerNotAllow.play();
       return;
     }
 
