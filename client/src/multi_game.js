@@ -16,6 +16,7 @@ import {
   myTowerDrawAndAttack,
   opponentTowerDrawAndAttack,
   towerAllow,
+  chat,
 } from './tower/towerController.js';
 
 if (!localStorage.getItem('token')) {
@@ -149,6 +150,9 @@ audioOfTowerSale.volume = 0.8;
 export let audioOfTowerAllow = new Audio('sounds/TowerAllow.mp3');
 audioOfTowerAllow.volume = 0.3;
 
+export let audioOfTowerNotAllow = new Audio('sounds/TowerNotAllow.wav');
+audioOfTowerNotAllow.volume = 0.3;
+
 function initMap() {
   ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height); // 배경 이미지 그리기
   drawPath(monsterPath, ctx);
@@ -255,6 +259,7 @@ let monsterintervalId = null;
 const monsterSpawnInterval = 1000;
 let monstersToSpawn = 5; // 라운드당 몬스터 소환 수
 let bossToSpawn = 1;
+let bossMessageNumber = 0;
 
 function spawnMonster() {
   /* if (bossSpawned && currentBossStage === monsterLevel) {
@@ -290,6 +295,19 @@ function spawnMonster() {
     });
     monsterIndex++;
     bossSpawnCount++;
+    bossMessageNumber++;
+
+    if (monsterLevel !== 15) {
+      const systemMessageElement = document.createElement('div');
+      systemMessageElement.textContent = `System: ${bossMessageNumber}번째 보스가 출현합니다.`;
+      systemMessageElement.style.color = 'yellow';
+      chatLog.appendChild(systemMessageElement);
+    } else {
+      const systemMessageElement = document.createElement('div');
+      systemMessageElement.textContent = `System: 최종 보스가 출현합니다.`;
+      systemMessageElement.style.color = 'yellow';
+      chatLog.appendChild(systemMessageElement);
+    }
   } else if (monsterSpawnCount < monstersToSpawn) {
     const monster = new Monster(monsterPath, monsterImages, monsterLevel);
     monster.setMonsterIndex(monsterIndex);
@@ -456,7 +474,7 @@ function hideFinalBossDamageUI() {
         boss.useSkill(baseHp, opponentBaseHp); // 보스 스킬 발동
       }
     }, boss.skillCooldown);
-    }
+  }
 }
 
 function startSpawning() {
@@ -548,6 +566,40 @@ function gameLoop() {
           monsterLevel: monster.level,
         });
         sendEvent(PacketType.C2S_MONSTER_ATTACK_BASE, { damage: monster.Damage() });
+
+        killCount++;
+
+        if (
+          monsterLevel === 3 ||
+          monsterLevel === 6 ||
+          monsterLevel === 9 ||
+          monsterLevel === 12 ||
+          monsterLevel === 15
+        ) {
+          if (killCount === bossToSpawn) {
+            monsterLevel++;
+            killCount = 0;
+            console.log('bossLevelUp');
+
+            clearInterval(monsterintervalId);
+
+            setTimeout(() => {
+              startSpawning();
+            }, 3000);
+          }
+        } else {
+          if (killCount === monstersToSpawn) {
+            monsterLevel++;
+            killCount = 0;
+            console.log('monsterLevelUp');
+
+            clearInterval(monsterintervalId);
+
+            setTimeout(() => {
+              startSpawning();
+            }, 3000);
+          }
+        }
       }
     } else {
       monsters.splice(i, 1);
@@ -612,7 +664,7 @@ function gameLoop() {
 
   opponentMonsters.forEach((monster) => {
     monster.move();
-    monster.draw(opponentCtx, false);
+    monster.opponentdraw(opponentCtx, true);
   });
 
   if (opponentBase) {
@@ -1091,7 +1143,9 @@ const cursorImage = document.getElementById('cursorImage');
 for (let i = 0; i < buttons.length; i++) {
   buttons[i].addEventListener('click', (event) => {
     if (!towerLock[i]) {
-      console.log('이 타워는 잠겨있습니다!');
+      chat('해금 조건이 만족되지 않은 타워입니다.');
+      audioOfTowerNotAllow.currentTime = 0;
+      audioOfTowerNotAllow.play();
       return;
     }
 

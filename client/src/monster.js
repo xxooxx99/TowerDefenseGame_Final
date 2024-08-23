@@ -29,7 +29,6 @@ export class Monster {
     this.skill = null;
   }
 
-
   // 스킬 쿨타임 설정
   setSkillCooldown() {
     switch (this.type) {
@@ -83,14 +82,14 @@ export class Monster {
     this.skill = skillFunction;
   }
 
-// 스킬 사용 메서드
-useSkill(baseHp, opponentBaseHp) {
-  const now = Date.now();
+  // 스킬 사용 메서드
+  useSkill(baseHp, opponentBaseHp) {
+    const now = Date.now();
 
-  if (this.hp <= 0) {
-    console.log('보스가 죽었기 때문에 스킬이 발동되지 않습니다.');
-    return;
-  }
+    if (this.hp <= 0) {
+      console.log('보스가 죽었기 때문에 스킬이 발동되지 않습니다.');
+      return;
+    }
 
   if (this.type !== 'finalboss' && this.skillCooldown && now - this.lastSkillTime < this.skillCooldown) {
     return;
@@ -102,11 +101,11 @@ useSkill(baseHp, opponentBaseHp) {
   }
 }
 
-heal(percentage) {
-  const healAmount = this.maxHp * percentage; // 최대 체력의 일정 비율 회복
-  this.hp = Math.min(this.hp + healAmount, this.maxHp); // 체력이 최대 체력을 넘지 않도록 제한
-  console.log(`Boss 회복: ${healAmount}. 현재 체력: ${this.hp}/${this.maxHp}`);
-}
+  heal(percentage) {
+    const healAmount = this.maxHp * percentage; // 최대 체력의 일정 비율 회복
+    this.hp = Math.min(this.hp + healAmount, this.maxHp); // 체력이 최대 체력을 넘지 않도록 제한
+    console.log(`Boss 회복: ${healAmount}. 현재 체력: ${this.hp}/${this.maxHp}`);
+  }
 
 boostSpeed() {
   if (!this.isSpeedBoosted) {
@@ -446,6 +445,64 @@ finalBossSkill(opponentBaseHp) {
       const textX = this.x - textWidth / 2;
       const textY = drawY - 10;
       ctx.fillText(text, textX, textY);
+    } else {
+      console.error('몬스터 이미지를 찾을 수 없습니다.');
+    }
+  }
+
+  opponentdraw(ctx) {
+    if (this.image) {
+      const imageWidth = this.image.naturalWidth;
+      const imageHeight = this.image.naturalHeight;
+
+      const drawX = this.x - imageWidth / 2;
+      const drawY = this.y - imageHeight / 2;
+
+      ctx.drawImage(this.image, drawX, drawY, imageWidth, imageHeight);
+
+      ctx.save(); // 현재 상태 저장
+      ctx.restore(); // 상태 복원
+      let monsterName = '';
+
+      switch (this.type) {
+        case 'fast':
+          monsterName = '재빠른 늑대';
+          break;
+        case 'tank':
+          monsterName = '튼실한 오크';
+          break;
+        case 'healing':
+          monsterName = '힐하는 해골';
+          break;
+        case 'boss1':
+          monsterName = 'boss1';
+          break;
+        case 'boss2':
+          monsterName = 'boss2';
+          break;
+        case 'boss3':
+          monsterName = 'boss3';
+          break;
+        case 'boss4':
+          monsterName = 'boss4';
+          break;
+        case 'finalboss':
+          monsterName = 'finalboss';
+          break;
+        default:
+          monsterName = '슬라임';
+          break;
+      }
+
+      // const text = `${monsterName} (레벨 ${this.level}) ${Math.ceil(this.hp)}/${this.maxHp}`;
+
+      /* ctx.font = '12px Arial';
+      ctx.fillStyle = 'white';
+      const textWidth = ctx.measureText(text).width;
+
+      const textX = this.x - textWidth / 2;
+      const textY = drawY - 10;
+      ctx.fillText(text, textX, textY); */
     } else {
       console.error('몬스터 이미지를 찾을 수 없습니다.');
     }
