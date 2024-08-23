@@ -1,4 +1,4 @@
-import { towerImages, userGoldControl, towersData, sendEvent } from '../multi_game.js';
+import { towerImages, userGoldControl, towersData, sendEvent,chat } from '../multi_game.js';
 import { PacketType, TOWER_TYPE } from '../../constants.js';
 import {
   AttackSupportTower,

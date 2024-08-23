@@ -16,8 +16,8 @@ import {
   myTowerDrawAndAttack,
   opponentTowerDrawAndAttack,
   towerAllow,
-  chat,
   audioOfTowerNotAllow,
+  //chat,
 } from './tower/towerController.js';
 
 if (!localStorage.getItem('token')) {
@@ -340,15 +340,16 @@ function playBossBGM(bgmPath, loopBgmPath = null) {
 // 최종보스 UI 업데이트
 export function updateFinalBossDamageUI(accumulatedDamage, remainingDamage) {
   const damageElement = document.getElementById('final-boss-damage');
-  console.log(remainingDamage, typeof remainingDamage);
-  const dispalyremainingDamage = 5000 - remainingDamage;  // 5000에서 현재 누적 데미지에 대한 나머지값 계산
+  
+  // 남은 데미지를 5000에서 현재 남은 데미지를 뺀 값으로 표시
+  const displayRemainingDamage = 5000 - remainingDamage;
 
-  console.log(`Updating UI - Accumulated Damage: ${accumulatedDamage}, Remaining Damage: ${dispalyremainingDamage}`);
-                
+  console.log(`Updating UI - Accumulated Damage: ${accumulatedDamage}, Remaining Damage: ${Math.max(displayRemainingDamage, 0)}`);
+
   if (damageElement) {
-      damageElement.innerHTML = `누적 데미지: ${accumulatedDamage} / 남은 데미지: ${dispalyremainingDamage}`;
+    damageElement.innerHTML = `누적 데미지: ${accumulatedDamage} / 남은 데미지: ${Math.max(displayRemainingDamage, 0)}`;
   } else {
-      console.log("Damage element not found");
+    console.log("Damage element not found");
   }
 }
 
@@ -412,31 +413,38 @@ function setBossAttributes(boss, level) {
       break;
       case 15:
         playBossBGM('sounds/final_bgm1.mp3', 'sounds/final_bgm2.mp3');
-        
+        boss.previousHp = boss.hp;  // 이전 체력값 초기화
+
+        // Final 보스 스킬 설정
         boss.setSkill(() => {
-          boss.finalBossSkill(opponentBaseHp);
-          //트리거 발동시
-          chat('당신의 공격으로 인하여 보스의 스킬이 발동됩니다!, 상대방의 체력이 감소합니다!') 
-          console.log('Final Boss 스킬 발동!');
-          boss.playSkillSound('sounds/finalboss.mp3');
+            boss.finalBossSkill(opponentBaseHp);
+            chat('당신의 공격으로 인하여 보스의 스킬이 발동됩니다!, 상대방의 체력이 감소합니다!');
+            console.log('Final Boss 스킬 발동!');
+            boss.playSkillSound('sounds/finalboss.mp3');
         });
+
         // Final 보스가 등장하면 UI를 보여줌
         showFinalBossDamageUI();
-      
-        const intervalid = setInterval(() => {
-          boss.finalBossSkill(opponentBaseHp);
 
-          if (boss.hp < 0) {
-            clearInterval(intervalid) //보스 사망시 데미지 트랙 종료
-          }
-        },100); //0.1초마다 데미지 확인
-        // 보스 사망 시 UI 제거
+        // 0.1초마다 데미지 확인 로직 추가
+        const intervalId = setInterval(() => {
+            const damageDealt = boss.previousHp - boss.hp;  // 이전 체력값과 비교해 데미지가 발생했는지 확인
+            if (damageDealt > 0) {
+                boss.finalBossSkill(opponentBaseHp);  // 데미지가 발생한 경우에만 스킬 발동
+                boss.previousHp = boss.hp;  // 이전 체력값 업데이트
+            }
+
+            if (boss.hp <= 0) {
+                clearInterval(intervalId); // 보스가 사망하면 인터벌 제거
+            }
+        }, 100); // 100ms마다 데미지 확인
+
+        // 보스 사망 시 UI 제거 및 interval 종료
         boss.onDie = () => {
-          hideFinalBossDamageUI();
+            hideFinalBossDamageUI();
+            clearInterval(intervalId); // 보스 사망 시 데미지 확인 멈춤
         };
-      
         break;
-      
   }
 
   // Final 보스가 사라질 때 UI를 제거하는 함수
