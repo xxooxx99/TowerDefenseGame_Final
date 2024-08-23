@@ -353,10 +353,3 @@ export function opponentTowerDrawAndAttack(opponentTowers, opponentMonsters, opp
       }
   }
 }
-
-export const chat = (chat) => {
-  const systemMessageElement = document.createElement('div');
-  systemMessageElement.textContent = `System: ${chat}`;
-  systemMessageElement.style.color = 'yellow';
-  chatLog.appendChild(systemMessageElement);
-};

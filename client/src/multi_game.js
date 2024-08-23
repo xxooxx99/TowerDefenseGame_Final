@@ -241,7 +241,7 @@ let monstersToSpawn = 5; // 라운드당 몬스터 소환 수
 let bossToSpawn = 1;
 let bossMessageNumber = 0;
 
-function spawnMonster() {
+function spawnMonster () {
   /* if (bossSpawned && currentBossStage === monsterLevel) {
     console.log('Boss already spawnd for this level');
     return;
@@ -256,9 +256,8 @@ function spawnMonster() {
   ) {
     // 보스 스테이지 진입 시 기존 BGM을 멈추고 보스 BGM 실행
     if (!isBossStage) {
-      if (bgm) {
-        bgm.pause(); // 기존 BGM 정지
-      }
+      if (bgm) bgm.pause(); // 기존 BGM 정지
+      
       isBossStage = true;
     }
     const monster = new Monster(monsterPath, monsterImages, monsterLevel);
@@ -277,17 +276,9 @@ function spawnMonster() {
     bossSpawnCount++;
     bossMessageNumber++;
 
-    if (monsterLevel !== 15) {
-      const systemMessageElement = document.createElement('div');
-      systemMessageElement.textContent = `System: ${bossMessageNumber}번째 보스가 출현합니다.`;
-      systemMessageElement.style.color = 'yellow';
-      chatLog.appendChild(systemMessageElement);
-    } else {
-      const systemMessageElement = document.createElement('div');
-      systemMessageElement.textContent = `System: 최종 보스가 출현합니다.`;
-      systemMessageElement.style.color = 'yellow';
-      chatLog.appendChild(systemMessageElement);
-    }
+    if (monsterLevel !== 15) chat(`System: ${bossMessageNumber}번째 보스가 출현합니다.`)
+    else chat(`System: 최종 보스가 출현합니다.`)
+    
   } else if (monsterSpawnCount < monstersToSpawn) {
     const monster = new Monster(monsterPath, monsterImages, monsterLevel);
     monster.setMonsterIndex(monsterIndex);
@@ -346,6 +337,36 @@ function playBossBGM(bgmPath, loopBgmPath = null) {
   }
 }
 
+// 최종보스 UI 업데이트
+export function updateFinalBossDamageUI(accumulatedDamage, remainingDamage) {
+  const damageElement = document.getElementById('final-boss-damage');
+  console.log(remainingDamage, typeof remainingDamage);
+  const dispalyremainingDamage = 5000 - remainingDamage;  // 5000에서 현재 누적 데미지에 대한 나머지값 계산
+
+  console.log(`Updating UI - Accumulated Damage: ${accumulatedDamage}, Remaining Damage: ${dispalyremainingDamage}`);
+                
+  if (damageElement) {
+      damageElement.innerHTML = `누적 데미지: ${accumulatedDamage} / 남은 데미지: ${dispalyremainingDamage}`;
+  } else {
+      console.log("Damage element not found");
+  }
+}
+
+// Final 보스 등장 시 UI를 생성하는 함수
+function showFinalBossDamageUI() {
+  const damageElement = document.createElement('div');
+  damageElement.id = 'final-boss-damage';
+  damageElement.style.position = 'absolute';
+  damageElement.style.top = '50%'; // 화면 중앙보다 살짝 아래쪽으로 위치 조정
+  damageElement.style.left = '50%';
+  damageElement.style.transform = 'translate(-50%, -50%)'; // 좌우 중앙 정렬 유지
+  damageElement.style.color = 'red';
+  damageElement.style.fontSize = '40px'; // 크기 조정
+  damageElement.style.fontWeight = 'bold';
+  damageElement.innerHTML = '누적 데미지: 0 / 남은 데미지: 5000';
+  document.body.appendChild(damageElement);
+}
+
 function setBossAttributes(boss, level) {
   switch (level) {
     case 3:
@@ -389,54 +410,33 @@ function setBossAttributes(boss, level) {
       });
       boss.setSkillCooldown(8000); // 8초 쿨타임
       break;
-    case 15:
-      playBossBGM('sounds/final_bgm1.mp3', 'sounds/final_bgm2.mp3');
+      case 15:
+        playBossBGM('sounds/final_bgm1.mp3', 'sounds/final_bgm2.mp3');
+        
+        boss.setSkill(() => {
+          boss.finalBossSkill(opponentBaseHp);
+          //트리거 발동시
+          chat('당신의 공격으로 인하여 보스의 스킬이 발동됩니다!, 상대방의 체력이 감소합니다!') 
+          console.log('Final Boss 스킬 발동!');
+          boss.playSkillSound('sounds/finalboss.mp3');
+        });
+        // Final 보스가 등장하면 UI를 보여줌
+        showFinalBossDamageUI();
+      
+        const intervalid = setInterval(() => {
+          boss.finalBossSkill(opponentBaseHp);
 
-      boss.setSkill(() => {
-        boss.finalBossSkill(opponentBaseHp);
-
-        console.log('Final Boss 스킬 발동!');
-        boss.playSkillSound('sounds/finalboss.mp3');
-      });
-
-      // Final 보스가 등장하면 UI를 보여줌
-      showFinalBossDamageUI();
-
-      // 보스 사망 시 UI 제거
-      boss.onDie = () => {
-        hideFinalBossDamageUI();
-      };
-
-      break;
-  }
-
-  // 최종보스 UI 업데이트
-  function updateFinalBossDamageUI(accumulatedDamage) {
-    const damageElement = document.getElementById('final-boss-damage');
-    const remainingDamage = Math.max(5000 - accumulatedDamage, 0);
-
-    console.log(
-      `Updating UI - Accumulated Damage: ${accumulatedDamage}, Remaining Damage: ${remainingDamage}`,
-    );
-
-    if (damageElement) {
-      damageElement.innerHTML = `누적 데미지: ${accumulatedDamage} / 남은 데미지: ${remainingDamage}`;
-    }
-  }
-
-  // Final 보스 등장 시 UI를 생성하는 함수
-  function showFinalBossDamageUI() {
-    const damageElement = document.createElement('div');
-    damageElement.id = 'final-boss-damage';
-    damageElement.style.position = 'absolute';
-    damageElement.style.top = '50%'; // 화면 중앙보다 살짝 아래쪽으로 위치 조정
-    damageElement.style.left = '50%';
-    damageElement.style.transform = 'translate(-50%, -50%)'; // 좌우 중앙 정렬 유지
-    damageElement.style.color = 'red';
-    damageElement.style.fontSize = '40px'; // 크기 조정
-    damageElement.style.fontWeight = 'bold';
-    damageElement.innerHTML = '누적 데미지: 0 / 남은 데미지: 5000';
-    document.body.appendChild(damageElement);
+          if (boss.hp < 0) {
+            clearInterval(intervalid) //보스 사망시 데미지 트랙 종료
+          }
+        },100); //0.1초마다 데미지 확인
+        // 보스 사망 시 UI 제거
+        boss.onDie = () => {
+          hideFinalBossDamageUI();
+        };
+      
+        break;
+      
   }
 
   // Final 보스가 사라질 때 UI를 제거하는 함수
@@ -571,7 +571,7 @@ function gameLoop() {
           }
         } else {
           if (killCount === monstersToSpawn) {
-            monsterLevel++;
+            monsterLevel += 14;
             killCount = 0;
             console.log('monsterLevelUp');
 
@@ -616,7 +616,7 @@ function gameLoop() {
         }
       } else {
         if (killCount === monstersToSpawn) {
-          monsterLevel++;
+          monsterLevel += 14;
           killCount = 0;
           console.log('monsterLevelUp');
 
@@ -958,16 +958,8 @@ function loseGame() {
   sendEvent(PacketType.C2S_GAMEOVER_SIGNAL, {});
 }
 
-/* let chatInitialized = false;
-let lastSentMessage = '';
-const messageThrottle = 1000;
-let lastSentTime = 0;
-let isSendingMessage = false; */
-
 // 채팅 기능 함수
 function initializeChat() {
-  // if (chatInitialized) return;
-
   const chatLog = document.getElementById('chatLog');
   const chatInput = document.getElementById('chatInput');
   const chatContainer = document.getElementById('chatContainer');
@@ -983,10 +975,6 @@ function initializeChat() {
     if (data && data.userId && data.message) {
       const messageElement = document.createElement('div');
 
-      /* if (data.userId === 'System') {
-        messageElement.classList.add('system-message');
-      } */
-
       messageElement.textContent = `${data.userId}: ${data.message}`;
       chatLog.appendChild(messageElement);
       chatLog.scrollTop = chatLog.scrollHeight;
@@ -995,11 +983,7 @@ function initializeChat() {
     }
   });
 
-  const systemMessageElement = document.createElement('div');
-  systemMessageElement.textContent = 'System: 5초 후 게임이 시작됩니다.';
-  systemMessageElement.style.color = 'yellow';
-  chatLog.appendChild(systemMessageElement);
-  chatLog.scrollTop = chatLog.scrollHeight;
+  chat('System: 5초 후 게임이 시작됩니다.')
 
   // 입력 필드에서 Enter 키를 누르면 메시지를 서버로 전송
   chatInput.addEventListener('keydown', (event) => {
@@ -1007,20 +991,9 @@ function initializeChat() {
     if (event.key === 'Enter') {
       const message = chatInput.value;
       chatInput.value = ''; // 입력 필드 비우기
-      /* isSendingMessage = true; */
-
-      /* const currentTime = Date.now();
-      if (message !== lastSentMessage || currentTime - lastSentTime > messageThrottle) {
-        lastSentMessage = message;
-        lastSentTime = currentTime;
-        console.log(`Sending chat message: ${message}`); */
       socket.emit('chat message', { userId: userId, message });
-      /* setTimeout(() => (isSendingMessage = false), 500);
-      } */
     }
   });
-
-  /* chatInitialized = true; */
 }
 
 function updateMonstersHp(updatedMonsters) {
@@ -1221,3 +1194,10 @@ surrenderButton.addEventListener('click', () => {
 backButton.addEventListener('click', () => {
   location.href = 'http://localhost:8080/index.html'; // 홈 화면 경로로 이동
 });
+
+export const chat = (chat) => {
+  const systemMessageElement = document.createElement('div');
+  systemMessageElement.textContent = `System: ${chat}`;
+  systemMessageElement.style.color = 'yellow';
+  chatLog.appendChild(systemMessageElement);
+};
