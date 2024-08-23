@@ -17,6 +17,7 @@ import {
   opponentTowerDrawAndAttack,
   towerAllow,
   chat,
+  audioOfTowerNotAllow,
 } from './tower/towerController.js';
 
 if (!localStorage.getItem('token')) {
@@ -79,7 +80,6 @@ export let opponentMonsters = []; // 상대방 몬스터 목록
 let opponentTowers = {}; // 상대방 타워 목록
 
 //#region Tower Controller Data
-// Initial Tower Data at Game Start
 let initialTowerCoords;
 export const towerImages = [];
 export const towerStroke = [
@@ -93,21 +93,13 @@ export const towerStroke = [
   'lightcyan',
   'lavender',
 ];
-
-// Tower Control Button Status
 let towerSale = null;
 let towerUpgrade = null;
 let towerBuilderId = null;
 let towerBuilderType = null;
-
-// Live Cursor Pos
 let posX = 0;
 let posY = 0;
-
-// Static Tower data received from the server
 export let towersData;
-
-// Tower data for the current user
 let towers = {};
 let towerLock;
 towerImageInit();
@@ -140,18 +132,6 @@ for (let i = 1; i <= NUM_OF_MONSTERS; i++) {
 export function userGoldControl(value) {
   userGold += value;
 }
-
-export let audioOfTowerAddAndUpgrade = new Audio('sounds/TowerAddAndUpgrade.wav');
-audioOfTowerAddAndUpgrade.volume = 0.05;
-
-export let audioOfTowerSale = new Audio('sounds/TowerSale.wav');
-audioOfTowerSale.volume = 0.8;
-
-export let audioOfTowerAllow = new Audio('sounds/TowerAllow.mp3');
-audioOfTowerAllow.volume = 0.3;
-
-export let audioOfTowerNotAllow = new Audio('sounds/TowerNotAllow.wav');
-audioOfTowerNotAllow.volume = 0.3;
 
 function initMap() {
   ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height); // 배경 이미지 그리기

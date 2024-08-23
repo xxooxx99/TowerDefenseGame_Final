@@ -1,5 +1,4 @@
 import { towerImages, userGoldControl, towersData, sendEvent } from '../multi_game.js';
-import { audioOfTowerAddAndUpgrade, audioOfTowerSale, audioOfTowerAllow } from '../multi_game.js';
 import { PacketType, TOWER_TYPE } from '../../constants.js';
 import {
   AttackSupportTower,
@@ -11,7 +10,7 @@ import {
 
 const chatLog = document.getElementById('chatLog');
 
-//이미지 초기화
+//이미지
 const BTI = document.getElementById('baseTowerImage');
 const STI = document.getElementById('speedTowerImage');
 const SSTI = document.getElementById('speedSupportTowerImage');
@@ -21,8 +20,20 @@ const SPTI = document.getElementById('splashTowerImage');
 const MSTI = document.getElementById('multiShotTowerImage');
 const PTI = document.getElementById('poisonTowerImage');
 const GTI = document.getElementById('growthTowerImage');
-
 const Images = [BTI, STI, SSTI, ASTI, SGTI, SPTI, MSTI, PTI, GTI];
+
+//음향
+export let audioOfTowerAddAndUpgrade = new Audio('sounds/TowerAddAndUpgrade.wav');
+audioOfTowerAddAndUpgrade.volume = 0.05;
+
+export let audioOfTowerSale = new Audio('sounds/TowerSale.wav');
+audioOfTowerSale.volume = 0.8;
+
+export let audioOfTowerAllow = new Audio('sounds/TowerAllow.mp3');
+audioOfTowerAllow.volume = 0.3;
+
+export let audioOfTowerNotAllow = new Audio('sounds/TowerNotAllow.wav');
+audioOfTowerNotAllow.volume = 0.3;
 
 // 초기화
 export const towerImageAllowInit = () => {
