@@ -5,7 +5,7 @@
     "baseTower": [
       {
         "id": 100,
-        "power": 500,
+        "power": 30,
         "cost": 50,
         "UpgradeCost": 10,
         "attackCycle": 300,
