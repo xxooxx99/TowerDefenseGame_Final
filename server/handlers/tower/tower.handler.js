@@ -15,7 +15,6 @@ export const towerAddHandler = (socket, data) => {
   const towerAsset = getGameAssets().towerData.towerType;
   const userData = getPlayData(userId);
 
-  //#region 타워 간 거리 조정 로직
   let min = Infinity;
   for (const towerData in userData.towerInit) {
     if (towerData !== 'length') {
@@ -32,9 +31,7 @@ export const towerAddHandler = (socket, data) => {
   }
 
   if (min < 80) return { status: 'fail', message: '타워간 거리가 너무 가깝습니다!' };
-  //#endregion
 
-  //#region 타워와 도로 간의 거리 조정 로직
   min = Infinity;
   for (const road of userData.monsterPath) {
     const distance = calculateDistance(posX, posY, road.x, road.y);
@@ -42,23 +39,17 @@ export const towerAddHandler = (socket, data) => {
   }
 
   if (min < 100) return { status: 'fail', message: '타워와 도로 간 거리가 너무 가깝습니다!' };
-  //#endregion
 
-  //#region Tower Number Check
   const index = (towerId * 1) % 100;
   if (!towerAsset[towerType][index]) return { status: 'fail', message: '잘못된 접근입니다!' };
-  //#endregion
 
   try {
-    //#region Gold 관련 검증, 조정 로직
     const gold = userData.getGold();
     if (gold < towerAsset[towerType][index].cost)
       return { status: 'fail', message: '타워를 설치 비용이 부족합니다.' };
 
     userData.spendGold(towerAsset[towerType][index].cost);
-    //#endregion
 
-    //#region 서버 데이터에 타워 추가
     const newNumber = userData.towerInit.length + 1;
     towerSet(userData.towerInit, towerType, towerId * 1, {
       number: newNumber,
@@ -66,9 +57,7 @@ export const towerAddHandler = (socket, data) => {
       posY,
       attackTime: new Date().getTime(),
     });
-    //#endregion
 
-    //#region 보낼 Packet 정의
     let packet = {
       packetType: PacketType.S2C_TOWER_CREATE,
       userId: userId,
@@ -79,15 +68,12 @@ export const towerAddHandler = (socket, data) => {
       posX,
       posY,
     };
-    //#endregion
 
-    //#region Client 내용 전송
     towerUnLockCheck(socket, userId);
     const opponentPlayerId = userData.getOpponentInfo();
     const opponentSocket = CLIENTS[opponentPlayerId];
     socket.emit('userTowerCreate', packet);
     opponentSocket.emit('userTowerCreate', packet);
-    //#endregion
   } catch (err) {
     console.log(err);
     return { status: 'fail', message: '타워를 설치 요청에 실패하였습니다.' };
@@ -102,21 +88,16 @@ export const towerUpgrade = (socket, data) => {
     const gold = userData.getGold();
     const index = towerId % 100;
 
-    //#region Gold, Max Level Check
     if (towerId % 100 >= 2)
       return { status: 'fail', message: '모든 업그레이드가 진행된 타워입니다.' };
 
     if (gold < towerAsset[towerType][index].cost)
       return { status: 'fail', message: '타워를 업그레이드 비용이 부족합니다.' };
-    //#endregion
 
-    //#region User Tower 조정
     userData.spendGold(towerAsset[towerType][index].cost);
     const newTower = towerDelete(userData.towerInit, towerType, towerId, towerNumber);
     towerSet(userData.towerInit, towerType, towerId * 1 + 1, newTower[0], true);
-    //#endregion
 
-    //#region 보낼 Packet 정의
     let packet = {
       packetType: PacketType.S2C_TOWER_CREATE,
       userId: userId,
@@ -125,14 +106,11 @@ export const towerUpgrade = (socket, data) => {
       towerCost: towerAsset[towerType][index].cost,
       towerData: newTower[0],
     };
-    //#endregion
 
-    //#region Client 내용 전송
     const opponentPlayerId = userData.getOpponentInfo();
     const opponentSocket = CLIENTS[opponentPlayerId];
     socket.emit('userTowerUpgrade', packet);
     opponentSocket.emit('userTowerUpgrade', packet);
-    //#endregion
   } catch (err) {
     console.log(err);
     return { status: 'fail', message: '타워를 업그레이드 요청에 실패하였습니다.' };
@@ -156,7 +134,6 @@ export const towerAttack = (socket, data) => {
     const userData = getPlayData(userId);
     const monsters = getMonsters(userId);
 
-    //#region User, Monster, Tower Check
     if (!userData || !monsters)
       return { status: 'fail', message: '해당 유저 정보가 존재하지 않습니다.' };
 
@@ -170,9 +147,7 @@ export const towerAttack = (socket, data) => {
       console.log('타워가 존재하지 않습니다.');
       return;
     }
-    //#endregion
 
-    //#region Speed Buf Tower Check
     const speedTowerId = isExistSpeed.towerId;
     const speedTowerNumber = isExistSpeed.towerNumber;
 
@@ -202,9 +177,7 @@ export const towerAttack = (socket, data) => {
     }
 
     towerAttackTimeSet(userData.towerInit, towerType, towerId, towerNumber, time);
-    //#endregion
 
-    //#region Power Buf Tower Check
     const powerTowerId = isExistPower.towerId;
     const powerTowerNumber = isExistPower.towerNumber;
 
@@ -232,9 +205,7 @@ export const towerAttack = (socket, data) => {
         if (power) break;
       }
     }
-    //#endregion
 
-    //#region Damage calculate
     const towerStatus = towerAsset[towerType][towerId % 100];
     const critical =
       towerStatus.criticalPercent || 10 >= Math.floor(Math.random() * 101) ? true : false;
@@ -245,11 +216,9 @@ export const towerAttack = (socket, data) => {
 
     if (critical) damage = baseDamage * criticalDamage;
     else damage = baseDamage;
-    //#endregion
 
     let attackedmonsters = [];
 
-    //#region poison and different Tower Check
     if (data.payload.poisonDamage) {
       const poisonDamage = data.payload.poisonDamage;
       for (let monsterData of monsterIndexs) {
@@ -268,9 +237,7 @@ export const towerAttack = (socket, data) => {
         attackedmonsters.push(setDamagedMonsterHp(userId, damage, monsterData.monsterIndex));
       }
     }
-    //#endregion
 
-    //#region Splash Tower Check
     if (data.payload.monstersSplash) {
       const monstersSplash = data.payload.monstersSplash;
       for (let monsterBySplash of monstersSplash) {
@@ -283,14 +250,12 @@ export const towerAttack = (socket, data) => {
       }
     }
 
-    //#region Tower Kill Score
     let killCount = 0;
     for (let monster of attackedmonsters) {
       if (monster.hp <= 0) {
         killCount++;
       }
     }
-    //#endregion
 
     let packet = {
       packetType: PacketType.S2C_TOWER_ATTACK,
