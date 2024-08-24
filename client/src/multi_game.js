@@ -241,7 +241,7 @@ let monstersToSpawn = 5; // 라운드당 몬스터 소환 수
 let bossToSpawn = 1;
 let bossMessageNumber = 0;
 
-function spawnMonster () {
+function spawnMonster() {
   /* if (bossSpawned && currentBossStage === monsterLevel) {
     console.log('Boss already spawnd for this level');
     return;
@@ -257,7 +257,7 @@ function spawnMonster () {
     // 보스 스테이지 진입 시 기존 BGM을 멈추고 보스 BGM 실행
     if (!isBossStage) {
       if (bgm) bgm.pause(); // 기존 BGM 정지
-      
+
       isBossStage = true;
     }
     const monster = new Monster(monsterPath, monsterImages, monsterLevel);
@@ -276,9 +276,8 @@ function spawnMonster () {
     bossSpawnCount++;
     bossMessageNumber++;
 
-    if (monsterLevel !== 15) chat(`System: ${bossMessageNumber}번째 보스가 출현합니다.`)
-    else chat(`System: 최종 보스가 출현합니다.`)
-    
+    if (monsterLevel !== 15) chat(`System: ${bossMessageNumber}번째 보스가 출현합니다.`);
+    else chat(`System: 최종 보스가 출현합니다.`);
   } else if (monsterSpawnCount < monstersToSpawn) {
     const monster = new Monster(monsterPath, monsterImages, monsterLevel);
     monster.setMonsterIndex(monsterIndex);
@@ -318,9 +317,9 @@ function playBossBGM(bgmPath) {
 
   // 음악이 거의 끝날 때 루프 시키기
   currentBossBGM.addEventListener('timeupdate', () => {
-    const buffer = 0.1;  // 0.1초 여유 시간
+    const buffer = 0.1; // 0.1초 여유 시간
     if (currentBossBGM.duration - currentBossBGM.currentTime <= buffer) {
-      currentBossBGM.currentTime = 0;  // 딜레이 없이 즉시 다시 시작
+      currentBossBGM.currentTime = 0; // 딜레이 없이 즉시 다시 시작
       currentBossBGM.play();
     }
   });
@@ -329,23 +328,23 @@ function playBossBGM(bgmPath) {
   currentBossBGM.play();
 }
 
-  // // 두 번째 BGM 파일이 있을 경우 미리 로드하고 준비
-  // if (loopBgmPath) {
-  //   const nextBGM = new Audio(loopBgmPath);
-  //   nextBGM.volume = 0.1;
-  //   nextBGM.loop = true;
+// // 두 번째 BGM 파일이 있을 경우 미리 로드하고 준비
+// if (loopBgmPath) {
+//   const nextBGM = new Audio(loopBgmPath);
+//   nextBGM.volume = 0.1;
+//   nextBGM.loop = true;
 
-  //   // 첫 번째 BGM이 끝나기 직전에 두 번째 BGM을 준비 상태로 만들기
-  //   currentBossBGM.addEventListener('timeupdate', () => {
-  //     // 첫 번째 BGM이 거의 끝날 때 (예: 0.6초 남았을 때)
-  //     if (currentBossBGM.duration - currentBossBGM.currentTime <= 0.6) {
-  //       currentBossBGM.pause();
-  //       currentBossBGM = nextBGM; // 두 번째 BGM으로 전환
-  //       currentBossBGM.play(); // 두 번째 BGM 재생
-  //     }
-  //   });
-  // } else {
-  //   currentBossBGM.loop = true;
+//   // 첫 번째 BGM이 끝나기 직전에 두 번째 BGM을 준비 상태로 만들기
+//   currentBossBGM.addEventListener('timeupdate', () => {
+//     // 첫 번째 BGM이 거의 끝날 때 (예: 0.6초 남았을 때)
+//     if (currentBossBGM.duration - currentBossBGM.currentTime <= 0.6) {
+//       currentBossBGM.pause();
+//       currentBossBGM = nextBGM; // 두 번째 BGM으로 전환
+//       currentBossBGM.play(); // 두 번째 BGM 재생
+//     }
+//   });
+// } else {
+//   currentBossBGM.loop = true;
 // 최종보스 UI 업데이트
 export function updateFinalBossDamageUI(elapsedTime, remainingDamage, requiredDamage) {
   const damageElement = document.getElementById('final-boss-damage');
@@ -353,7 +352,7 @@ export function updateFinalBossDamageUI(elapsedTime, remainingDamage, requiredDa
   if (damageElement) {
     damageElement.innerHTML = `남은 시간: ${Math.max(5 - elapsedTime, 0).toFixed(1)}초 / 가한 데미지: ${remainingDamage} / 요구 데미지: ${requiredDamage}`;
   } else {
-    console.log("Damage element not found");
+    console.log('Damage element not found');
   }
 }
 
@@ -415,68 +414,69 @@ function setBossAttributes(boss, level) {
       });
       boss.setSkillCooldown(8000); // 8초 쿨타임
       break;
-      case 15:
-        playBossBGM('sounds/final_bgm.wav');
-        boss.previousHp = boss.hp;  // 이전 체력값 초기화
-        boss.remainingDamage = 0;  // 초기화된 누적 데미지
-        boss.requiredDamage = 1000;  // 초기 요구 데미지 설정
-        boss.lastHowlTime = Date.now();  // 타이머 초기화
-        
-        boss.setSkill(() => {
-          const now = Date.now();
-          const elapsedTime = (now - boss.lastHowlTime) / 1000;  // 5초 경과 확인
-          boss.playSkillSound('sounds/finalboss.mp3');
-          
-          if (elapsedTime >= 5) {  // 5초 경과 시 스킬 발동
-            if (boss.remainingDamage < boss.requiredDamage) {
-              sendEvent(PacketType.C2S_MONSTER_ATTACK_BASE, { damage: boss.Damage() });
-              chat('최종 보스에게 요구된 데미지를 입히지 못했습니다. 기지 체력이 감소합니다.');
-              console.log('보스의 스킬 발동으로 기지에 데미지가 가해졌습니다!');
-            }
-            
-            // 타이머와 데미지 초기화
-            boss.remainingDamage = 0;  // 누적 데미지 리셋
-            boss.requiredDamage += 500;  // 요구 데미지 증가
-            boss.lastHowlTime = now;  // 타이머 리셋
+    case 15:
+      playBossBGM('sounds/final_bgm.wav');
+      boss.previousHp = boss.hp; // 이전 체력값 초기화
+      boss.remainingDamage = 0; // 초기화된 누적 데미지
+      boss.requiredDamage = 1000; // 초기 요구 데미지 설정
+      boss.lastHowlTime = Date.now(); // 타이머 초기화
+
+      boss.setSkill(() => {
+        const now = Date.now();
+        const elapsedTime = (now - boss.lastHowlTime) / 1000; // 5초 경과 확인
+        boss.playSkillSound('sounds/finalboss.mp3');
+
+        if (elapsedTime >= 5) {
+          // 5초 경과 시 스킬 발동
+          if (boss.remainingDamage < boss.requiredDamage) {
+            sendEvent(PacketType.C2S_MONSTER_ATTACK_BASE, { damage: boss.Damage() });
+            chat('최종 보스에게 요구된 데미지를 입히지 못했습니다. 기지 체력이 감소합니다.');
+            console.log('보스의 스킬 발동으로 기지에 데미지가 가해졌습니다!');
           }
-          
-          // UI 업데이트
-          const updatedElapsedTime = (Date.now() - boss.lastHowlTime) / 1000;
-          updateFinalBossDamageUI(updatedElapsedTime, boss.remainingDamage, boss.requiredDamage);  // UI 업데이트
-        });
-  
-        showFinalBossDamageUI();  // 보스 등장 시 UI 표시
-        
-        const intervalId = setInterval(() => {
-          const damageDealt = boss.previousHp - boss.hp;
-          if (damageDealt > 0) {
-            boss.remainingDamage += damageDealt;  // 누적 데미지 업데이트
-            boss.previousHp = boss.hp;
-          }
-  
-          const now = Date.now();
-          const elapsedTime = (now - boss.lastHowlTime) / 1000;
-          updateFinalBossDamageUI(elapsedTime, boss.remainingDamage, boss.requiredDamage);  // UI 업데이트
-  
-          if (boss.hp <= 0) {
-            clearInterval(intervalId);  // 보스 사망 시 인터벌 제거
-          }
-        }, 100);  // 100ms마다 데미지 확인 및 UI 업데이트
-  
-        // 보스 사망 시 UI 제거 및 interval 종료
-        boss.onDie = () => {
-          hideFinalBossDamageUI();
-          clearInterval(intervalId);  // 데미지 확인 인터벌 제거
-          console.log('Final Boss가 사망했습니다. 게임에서 승리했습니다!');
-          
-          // 서버에 게임 승리 신호 전송
-          sendEvent(PacketType.C2S_GAME_OVER, { isWin: true });
-          
-          // 승리 화면으로 전환 (예: resultWindow.html로 리다이렉트)
-          window.location.href = 'resultWindow.html';
-        };
-        break;
-    }
+
+          // 타이머와 데미지 초기화
+          boss.remainingDamage = 0; // 누적 데미지 리셋
+          boss.requiredDamage += 500; // 요구 데미지 증가
+          boss.lastHowlTime = now; // 타이머 리셋
+        }
+
+        // UI 업데이트
+        const updatedElapsedTime = (Date.now() - boss.lastHowlTime) / 1000;
+        updateFinalBossDamageUI(updatedElapsedTime, boss.remainingDamage, boss.requiredDamage); // UI 업데이트
+      });
+
+      showFinalBossDamageUI(); // 보스 등장 시 UI 표시
+
+      const intervalId = setInterval(() => {
+        const damageDealt = boss.previousHp - boss.hp;
+        if (damageDealt > 0) {
+          boss.remainingDamage += damageDealt; // 누적 데미지 업데이트
+          boss.previousHp = boss.hp;
+        }
+
+        const now = Date.now();
+        const elapsedTime = (now - boss.lastHowlTime) / 1000;
+        updateFinalBossDamageUI(elapsedTime, boss.remainingDamage, boss.requiredDamage); // UI 업데이트
+
+        if (boss.hp <= 0) {
+          clearInterval(intervalId); // 보스 사망 시 인터벌 제거
+        }
+      }, 100); // 100ms마다 데미지 확인 및 UI 업데이트
+
+      // 보스 사망 시 UI 제거 및 interval 종료
+      boss.onDie = () => {
+        hideFinalBossDamageUI();
+        clearInterval(intervalId); // 데미지 확인 인터벌 제거
+        console.log('Final Boss가 사망했습니다. 게임에서 승리했습니다!');
+
+        // 서버에 게임 승리 신호 전송
+        sendEvent(PacketType.C2S_GAME_OVER, { isWin: true });
+
+        // 승리 화면으로 전환 (예: resultWindow.html로 리다이렉트)
+        window.location.href = 'resultWindow.html';
+      };
+      break;
+  }
 
   // Final 보스가 사라질 때 UI를 제거하는 함수
   function hideFinalBossDamageUI() {
@@ -846,7 +846,7 @@ Promise.all([
   new Promise((resolve) => (pathImage.onload = resolve)),
   ...monsterImages.map((img) => new Promise((resolve) => (img.onload = resolve))),
 ]).then(() => {
-  serverSocket = io('http://localhost:8080', {
+  serverSocket = io('https://towerdefence.shop', {
     auth: {
       token: localStorage.getItem('token'),
     },
@@ -1022,7 +1022,7 @@ function initializeChat() {
     }
   });
 
-  chat('System: 5초 후 게임이 시작됩니다.')
+  chat('System: 5초 후 게임이 시작됩니다.');
 
   // 입력 필드에서 Enter 키를 누르면 메시지를 서버로 전송
   chatInput.addEventListener('keydown', (event) => {
