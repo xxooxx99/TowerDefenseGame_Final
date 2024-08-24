@@ -26,8 +26,10 @@ export class Monster {
     this.skillCooldown = 5000; // 스킬 쿨다운 기본값 (필요 시 보스별로 수정)
     this.lastSkillTime = Date.now(); // 마지막 스킬 사용 시간
     this.boss4HowlCount = 0; // boss4의 howl 횟수
+    this.lastHowlTime = Date.now(); // 울부짖음 시간
     this.finalBossAccumulatedDamage = 0; // final boss의 누적 데미지
     this.remainingDamage = 0 // final boss의 표시용 누적 데미지
+    this.requiredDamage = 1000; // 요구 데미지 초기값
 
     this.init(level);
     this.setSkillCooldown(); // 각 보스마다 스킬 쿨타임 설정
@@ -47,7 +49,7 @@ export class Monster {
         this.skillCooldown = 5000;
         break;
       case 'finalboss':
-        this.skillCooldown = null;
+        this.skillCooldown = 5000;
         break;
       default:
         this.skillCooldown = 5000;
@@ -135,40 +137,28 @@ boostSpeed() {
     }
 }
 
-finalBossSkill(opponentBaseHp) {
-  // 데미지가 발생한 경우에만 처리
-  const damageDifference = this.previousHp - this.hp;
+finalBossSkill(baseHp) {
+  const now = Date.now();
+  const elapsedTime = (now - this.lastHowlTime) / 1000; // 경과 시간 계산
 
-  // 데미지가 없는 경우 함수 종료
-  if (damageDifference <= 0) {
-    return;
+  // 5초마다 울부짖음이 발생하도록 수정
+  if (elapsedTime >= 5) {
+      // 요구 데미지를 충족하지 못했으면 기지 체력에 1의 데미지 추가
+      if (this.remainingDamage < this.requiredDamage) {
+          baseHp -= 1;
+          updateBaseHpUI(baseHp); // UI 업데이트 (기지 체력)
+          console.log('보스의 울부짖음으로 기지에 데미지가 가해졌습니다!');
+      }
+
+      // 다음 울부짖음의 데미지 요구치를 증가시킴
+      this.requiredDamage += 1000;
+
+      // 타이머를 리셋
+      this.lastHowlTime = now; // 타이머 리셋
+
+      // UI 업데이트
+      updateFinalBossDamageUI(this.remainingDamage, this.requiredDamage);
   }
-
-  // 누적 데미지에 데미지를 추가
-  this.finalBossAccumulatedDamage += damageDifference;
-
-  // 남은 데미지를 관리하기 위한 변수
-  if (!this.remainingDamage) {
-    this.remainingDamage = 0;
-  }
-
-  // 남은 데미지에 데미지 차이를 추가
-  this.remainingDamage += damageDifference;
-
-  console.log(`누적 데미지: ${this.finalBossAccumulatedDamage}, 남은 데미지: ${this.remainingDamage}`);
-
-  // 트리거가 발생할 동안 남은 데미지를 처리
-  while (this.remainingDamage >= 5000) {
-    this.remainingDamage -= 5000;  // 5000 단위로 처리된 만큼 차감
-    console.log('Final Boss: 상대 기지 체력 감소!');
-    //sendEvent(PacketType.C2S_UPDATE_OPPONENT_BASE_HP, { opponentBaseHp });
-  }
-
-  // 현재 체력을 previousHp로 업데이트
-  this.previousHp = this.hp;
-
-  // UI 업데이트
-  updateFinalBossDamageUI(this.finalBossAccumulatedDamage, this.remainingDamage);
 }
 
   getMonsterTypeByLevel(level) {
@@ -246,9 +236,9 @@ finalBossSkill(opponentBaseHp) {
         this.attackPower = 1;
         break;
       case 'finalboss':
-        this.maxHp = 10000000;
+        this.maxHp = 100000;
         this.speed = 0.1;
-        this.attackPower = 3;
+        this.attackPower = 1;
         break;
       default:
         this.maxHp = 100 + 10 * level;
