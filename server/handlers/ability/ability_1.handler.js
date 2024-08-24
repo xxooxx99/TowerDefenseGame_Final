@@ -1,7 +1,7 @@
 import { PacketType } from '../../constants.js';
 import { getPlayData } from '../../models/playData.model.js';
 
-const abilityGold = 1;
+const abilityGold = 100;
 
 async function active_ability_1(socket, userId) {
   socket.emit('event', {

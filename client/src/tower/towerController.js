@@ -1,4 +1,4 @@
-import { towerImages, userGoldControl, towersData, sendEvent } from '../multi_game.js';
+import { towerImages, userGoldControl, towersData, sendEvent, chat } from '../multi_game.js';
 import { PacketType, TOWER_TYPE } from '../../constants.js';
 import {
   AttackSupportTower,
@@ -353,10 +353,3 @@ export function opponentTowerDrawAndAttack(opponentTowers, opponentMonsters, opp
       }
   }
 }
-
-export const chat = (chat) => {
-  const systemMessageElement = document.createElement('div');
-  systemMessageElement.textContent = `System: ${chat}`;
-  systemMessageElement.style.color = 'yellow';
-  chatLog.appendChild(systemMessageElement);
-};

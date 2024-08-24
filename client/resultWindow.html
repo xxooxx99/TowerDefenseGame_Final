@@ -23,11 +23,24 @@
         display: none;
         position: absolute;
         width: 1400px;
-        height: 800px;
+        height: 300px;
         text-align: center;
       }
       .result_word {
         font-size: 4.5em;
+        position: relative;
+        color: #ffffff;
+        /* 애니메이션 설정 */
+        animation-name: slide-down;
+        animation-duration: 2s;
+        animation-timing-function: ease-in-out;
+        animation-fill-mode: forwards;
+      }
+      .result_window_down {
+        position: absolute;
+        width: 1400px;
+        height: 500px;
+        text-align: center;
       }
       .win_word {
         color: green;
@@ -37,7 +50,7 @@
         width: 1400px;
         height: 100px;
         font-size: 2em;
-        color: white;
+        color: #ffd180;
       }
       .blank {
         width: 1400px;
@@ -45,11 +58,33 @@
       }
       .score_record {
         font-size: 3.5em;
+        color: #ffffff;
       }
       .main_button {
         width: 400px;
         height: 100px;
         font-size: 2em;
+      }
+
+      @keyframes slide-down {
+        0% {
+          height: 170px;
+          font-size: 0em;
+          opacity: 0;
+        }
+        50% {
+          height: 60px;
+          opacity: 1;
+          font-size: 6em;
+        }
+        75% {
+          height: 100px;
+          font-size: 4.5em;
+        }
+        100% {
+          height: 100px;
+          opacity: 1;
+        }
       }
     </style>
   </head>
@@ -58,6 +93,8 @@
       <h1 class="result_word" id="result_word">
         당신은 <span class="win_word" id="win_word">승리</span>하셨습니다.
       </h1>
+    </div>
+    <div class="result_window_down" id="result_window_down">
       <p class="high_score_record" id="high_score_record">하이스코어를 갱신하셨습니다.</p>
       <p class="blank"></p>
       <p class="score_record" id="score_record">점수 : 99999999</p>

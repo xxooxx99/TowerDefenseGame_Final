@@ -1,3 +1,7 @@
+import { updateFinalBossDamageUI } from './multi_game.js';
+import { sendEvent } from './multi_game.js';
+import { PacketType } from '../constants.js';
+
 export class Monster {
   constructor(path, monsterImages, level, monsterNumber) {
     if (!path || path.length <= 0) {
@@ -23,6 +27,7 @@ export class Monster {
     this.lastSkillTime = Date.now(); // 마지막 스킬 사용 시간
     this.boss4HowlCount = 0; // boss4의 howl 횟수
     this.finalBossAccumulatedDamage = 0; // final boss의 누적 데미지
+    this.remainingDamage = 0; // final boss의 표시용 누적 데미지
 
     this.init(level);
     this.setSkillCooldown(); // 각 보스마다 스킬 쿨타임 설정
@@ -33,13 +38,13 @@ export class Monster {
   setSkillCooldown() {
     switch (this.type) {
       case 'boss2':
-        this.skillCooldown = 10000;
+        this.skillCooldown = 5000;
         break;
       case 'boss3':
-        this.skillCooldown = 8000;
+        this.skillCooldown = 2000;
         break;
       case 'boss4':
-        this.skillCooldown = 12000;
+        this.skillCooldown = 5000;
         break;
       case 'finalboss':
         this.skillCooldown = null;
@@ -96,18 +101,13 @@ export class Monster {
       this.skillCooldown &&
       now - this.lastSkillTime < this.skillCooldown
     ) {
-      console.log(
-        `스킬 쿨타임 중입니다. 남은 시간: ${this.skillCooldown - (now - this.lastSkillTime)}ms`,
-      );
       return;
     }
 
     if (this.skill) {
-      console.log(`Boss ${this.getMonsterIndex()} 스킬 사용 중...`);
       this.skill(baseHp, opponentBaseHp); // 설정된 스킬을 실행
+      this.lastSkillTime = now;
     }
-
-    this.lastSkillTime = now;
   }
 
   heal(percentage) {
@@ -116,69 +116,74 @@ export class Monster {
     console.log(`Boss 회복: ${healAmount}. 현재 체력: ${this.hp}/${this.maxHp}`);
   }
 
-  boostSpeed(duration, increaseFactor) {
+  boostSpeed() {
     if (!this.isSpeedBoosted) {
-      this.speed *= 1 + increaseFactor;
+      this.speed *= 2;
       this.isSpeedBoosted = true;
-
+      console.log(`Speed boosted to: ${this.speed}`);
       setTimeout(() => {
-        this.speed /= 1 + increaseFactor;
+        this.speed /= 2;
         this.isSpeedBoosted = false;
-      }, duration * 5000);
+        console.log(`Speed reduced to: ${this.speed}`);
+      }, 2000); // 2초 후 속도 감소
     }
   }
+  howl() {
+    this.boss4HowlCount++; // Howl 스택 증가
+    console.log(`Howl 스택: ${this.boss4HowlCount}`);
 
-  howl(baseHp) {
-    this.boss4HowlCount++;
+    // 2스택 도달 시 기지 공격으로 처리하고 스택 초기화
     if (this.boss4HowlCount >= 2) {
-      baseHp -= 1;
-      this.boss4HowlCount = 0;
-      console.log('보스 4: Howl로 인해 base HP 1 감소');
+      this.boss4HowlCount = 0; // 스택 초기화
+      console.log('Boss 4: Howl 스택 2 도달 - 기지 공격!');
     }
   }
 
   finalBossSkill(opponentBaseHp) {
-    this.finalBossAccumulatedDamage += this.damageTaken;
-    this.damageTaken = 0;
-    if (this.finalBossAccumulatedDamage >= 5000) {
-      opponentBaseHp -= 1;
-      this.finalBossAccumulatedDamage -= 5000;
-      console.log('최종 보스: 상대 base HP 감소');
+    // 최대 체력과 현재 체력의 차이를 계산하여 누적 데미지를 업데이트
+    const damageDifference = this.maxHp - this.hp;
+
+    // 누적 데미지에 차이값을 추가
+    this.finalBossAccumulatedDamage += damageDifference;
+    // this.누적데미지 += 따로관리 // 보여주기용 누적데미지
+
+    if (!this.remainingDamage) {
+      this.remainingDamage = 0;
+    }
+
+    this.remainingDamage += damageDifference;
+
+    // console.log(`누적 : ${this.finalBossAccumulatedDamage}, 남은 데미지: ${this.remainingDamage}`);
+    // UI 업데이트
+    updateFinalBossDamageUI(this.finalBossAccumulatedDamage, this.remainingDamage);
+
+    // const finalbosstriggers = Math.floor(this.finalBossAccumulatedDamage / 5000); // 5000마다 트리거
+    if (this.remainingDamage >= 5000) {
+      const finalbosstriggers = Math.floor(this.remainingDamage / 5000); // 5000마다 트리거
+
+      this.remainingDamage -= finalbosstriggers * 5000;
+
+      // console.log('Final Boss: 상대 기지 체력 1 감소!');
+      sendEvent(PacketType.C2S_UPDATE_OPPONENT_BASE_HP, { opponentBaseHp });
     }
   }
 
   getMonsterTypeByLevel(level) {
-    if (level === 1) {
-      return 'normal';
-    } else if (level === 2) {
-      return 'fast';
-    } else if (level === 3) {
-      return 'boss1';
-    } else if (level === 4) {
-      return 'healing';
-    } else if (level === 5) {
-      return 'tank';
-    } else if (level === 6) {
-      return 'boss2';
-    } else if (level === 7) {
-      return 'fast';
-    } else if (level === 8) {
-      return 'tank';
-    } else if (level === 9) {
-      return 'boss3';
-    } else if (level === 10) {
-      return 'normal';
-    } else if (level === 11) {
-      return 'fast';
-    } else if (level === 12) {
-      return 'boss4';
-    } else if (level === 13) {
-      return 'tnak';
-    } else if (level === 14) {
-      return 'healing';
-    } else if (level === 15) {
-      return 'finalboss';
-    }
+    if (level === 1) return 'normal';
+    else if (level === 2) return 'fast';
+    else if (level === 3) return 'boss1';
+    else if (level === 4) return 'healing';
+    else if (level === 5) return 'tank';
+    else if (level === 6) return 'boss2';
+    else if (level === 7) return 'fast';
+    else if (level === 8) return 'tank';
+    else if (level === 9) return 'boss3';
+    else if (level === 10) return 'normal';
+    else if (level === 11) return 'fast';
+    else if (level === 12) return 'boss4';
+    else if (level === 13) return 'tnak';
+    else if (level === 14) return 'healing';
+    else if (level === 15) return 'finalboss';
   }
 
   init(level) {
@@ -202,28 +207,28 @@ export class Monster {
         this.startHealing();
         break;
       case 'boss1':
-        this.maxHp = 5000;
+        this.maxHp = 3000;
         this.speed = 0.5;
         this.attackPower = 2;
         break;
       case 'boss2':
-        this.maxHp = 10000;
+        this.maxHp = 3000;
         this.speed = 0.5;
         this.attackPower = 2;
         break;
       case 'boss3':
-        this.maxHp = 10000;
+        this.maxHp = 3000;
         this.speed = 0.5;
         this.attackPower = 2;
         break;
       case 'boss4':
-        this.maxHp = 10000;
+        this.maxHp = 3000;
         this.speed = 0.5;
-        this.attackPower = 2;
+        this.attackPower = 1;
         break;
       case 'finalboss':
-        this.maxHp = 100000000000;
-        this.speed = 0.5;
+        this.maxHp = 10000000;
+        this.speed = 0.1;
         this.attackPower = 3;
         break;
       default:
@@ -359,14 +364,24 @@ export class Monster {
     return this.hp;
   }
 
-  receiveDamage(damage) {
-    this.hp -= damage;
-    console.log(`Monster HP after damage: ${this.hp}`);
-    if (this.hp <= 0) {
-      console.log('Monster HP is 0 or less, calling die method');
-      this.die(); // hp가 0 이하로 떨어지면 die 메서드 호출
-    }
-  }
+  //   receiveDamage(damage) {
+  //     console.log('Damage received:', damage);
+  //     this.hp -= damage;
+
+  //     console.log(`Monster HP after damage: ${this.hp}`);
+
+  //     // 최종 보스의 경우 누적 데미지를 업데이트
+  //     if (this.type === 'finalboss') {
+  //         this.finalBossAccumulatedDamage += damage;  // 받은 데미지만큼 누적 데미지 추가
+  //         updateFinalBossDamageUI(this.finalBossAccumulatedDamage);  // UI 업데이트
+  //     }
+
+  //     // 체력이 0 이하로 떨어지면 die 메서드를 호출
+  //     if (this.hp <= 0) {
+  //         console.log('Monster HP is 0 or less, calling die method');
+  //         this.die();
+  //     }
+  // }
 
   die() {
     console.log(`Monster ${this.monsterIndex} died`);

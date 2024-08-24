@@ -16,7 +16,6 @@ import {
   myTowerDrawAndAttack,
   opponentTowerDrawAndAttack,
   towerAllow,
-  chat,
   audioOfTowerNotAllow,
 } from './tower/towerController.js';
 
@@ -242,11 +241,7 @@ let bossToSpawn = 1;
 let bossMessageNumber = 0;
 
 function spawnMonster() {
-  /* if (bossSpawned && currentBossStage === monsterLevel) {
-    console.log('Boss already spawnd for this level');
-    return;
-  } */
-
+  console.log('언제 실행?');
   if (
     (bossSpawnCount < bossToSpawn && monsterLevel === 3) ||
     (bossSpawnCount < bossToSpawn && monsterLevel === 6) ||
@@ -256,9 +251,8 @@ function spawnMonster() {
   ) {
     // 보스 스테이지 진입 시 기존 BGM을 멈추고 보스 BGM 실행
     if (!isBossStage) {
-      if (bgm) {
-        bgm.pause(); // 기존 BGM 정지
-      }
+      if (bgm) bgm.pause(); // 기존 BGM 정지
+
       isBossStage = true;
     }
     const monster = new Monster(monsterPath, monsterImages, monsterLevel);
@@ -277,17 +271,8 @@ function spawnMonster() {
     bossSpawnCount++;
     bossMessageNumber++;
 
-    if (monsterLevel !== 15) {
-      const systemMessageElement = document.createElement('div');
-      systemMessageElement.textContent = `System: ${bossMessageNumber}번째 보스가 출현합니다.`;
-      systemMessageElement.style.color = 'yellow';
-      chatLog.appendChild(systemMessageElement);
-    } else {
-      const systemMessageElement = document.createElement('div');
-      systemMessageElement.textContent = `System: 최종 보스가 출현합니다.`;
-      systemMessageElement.style.color = 'yellow';
-      chatLog.appendChild(systemMessageElement);
-    }
+    if (monsterLevel !== 15) chat(`System: ${bossMessageNumber}번째 보스가 출현합니다.`);
+    else chat(`System: 최종 보스가 출현합니다.`);
   } else if (monsterSpawnCount < monstersToSpawn) {
     const monster = new Monster(monsterPath, monsterImages, monsterLevel);
     monster.setMonsterIndex(monsterIndex);
@@ -321,22 +306,65 @@ function playBossBGM(bgmPath, loopBgmPath = null) {
     currentBossBGM.currentTime = 0;
   }
 
-  // 새로운 BGM 재생
+  // 첫 번째 BGM 파일 재생
   currentBossBGM = new Audio(bgmPath);
-  currentBossBGM.loop = loopBgmPath === null;
   currentBossBGM.volume = 0.1;
   currentBossBGM.play();
 
+  // 두 번째 BGM 파일이 있을 경우 미리 로드하고 준비
   if (loopBgmPath) {
-    currentBossBGM.addEventListener('ended', () => {
-      currentBossBGM.src = loopBgmPath;
-      currentBossBGM.loop = true;
-      currentBossBGM.play();
+    const nextBGM = new Audio(loopBgmPath);
+    nextBGM.volume = 0.1;
+    nextBGM.loop = true;
+
+    // 첫 번째 BGM이 끝나기 직전에 두 번째 BGM을 준비 상태로 만들기
+    currentBossBGM.addEventListener('timeupdate', () => {
+      // 첫 번째 BGM이 거의 끝날 때 (예: 0.6초 남았을 때)
+      if (currentBossBGM.duration - currentBossBGM.currentTime <= 0.6) {
+        currentBossBGM.pause();
+        currentBossBGM = nextBGM; // 두 번째 BGM으로 전환
+        currentBossBGM.play(); // 두 번째 BGM 재생
+      }
     });
+  } else {
+    currentBossBGM.loop = true;
   }
 }
 
+// 최종보스 UI 업데이트
+export function updateFinalBossDamageUI(accumulatedDamage, remainingDamage) {
+  const damageElement = document.getElementById('final-boss-damage');
+  // console.log(remainingDamage, typeof remainingDamage);
+  const dispalyremainingDamage = 5000 - remainingDamage; // 5000에서 현재 누적 데미지에 대한 나머지값 계산
+
+  // console.log(
+  //   `Updating UI - Accumulated Damage: ${accumulatedDamage}, Remaining Damage: ${dispalyremainingDamage}`,
+  // );
+
+  if (damageElement)
+    damageElement.innerHTML = `누적 데미지: ${accumulatedDamage} / 남은 데미지: ${dispalyremainingDamage}`;
+  // } else {
+  //   console.log('Damage element not found');
+  // }
+}
+
+// Final 보스 등장 시 UI를 생성하는 함수
+function showFinalBossDamageUI() {
+  const damageElement = document.createElement('div');
+  damageElement.id = 'final-boss-damage';
+  damageElement.style.position = 'absolute';
+  damageElement.style.top = '50%'; // 화면 중앙보다 살짝 아래쪽으로 위치 조정
+  damageElement.style.left = '50%';
+  damageElement.style.transform = 'translate(-50%, -50%)'; // 좌우 중앙 정렬 유지
+  damageElement.style.color = 'red';
+  damageElement.style.fontSize = '40px'; // 크기 조정
+  damageElement.style.fontWeight = 'bold';
+  damageElement.innerHTML = '누적 데미지: 0 / 남은 데미지: 5000';
+  document.body.appendChild(damageElement);
+}
+
 function setBossAttributes(boss, level) {
+  console.log();
   switch (level) {
     case 3:
       playBossBGM('sounds/boss01_bgm.mp3');
@@ -344,40 +372,76 @@ function setBossAttributes(boss, level) {
     case 6:
       playBossBGM('sounds/boss02_bgm.mp3');
       boss.setSkill(() => {
-        boss.heal(0.5); // 최대 체력의 50% 회복
+        boss.heal(0.3); // 최대 체력의 30% 회복
         console.log(`Boss 2 체력 회복 스킬 발동! 현재 체력: ${boss.hp}/${boss.maxHp}`);
         boss.playSkillSound('sounds/boss2.mp3');
       });
-      boss.setSkillCooldown(5000); // 10초 쿨타임
+      boss.setSkillCooldown(5000); //  쿨타임
       break;
     case 9:
       playBossBGM('sounds/boss03_bgm.mp3');
+
       boss.setSkill(() => {
-        boss.boostSpeed(2, 1);
-        console.log('Boss 3 속도 증가 스킬 발동!');
-        boss.playSkillSound('sounds/boss3.mp3');
+        // 스킬 사용 시 속도 증가만 효과음 재생
+        if (!boss.isSpeedBoosted) {
+          boss.boostSpeed(); // 이동 속도 증가/감소 반복 시작
+          boss.playSkillSound('sounds/boss3.mp3'); // 속도 증가 시 효과음 재생
+          console.log('Boss 3 광란의 보스 등장!');
+        }
       });
-      boss.setSkillCooldown(5000); // 8초 쿨타임
+
+      boss.setSkillCooldown(2000); // 2초마다 스킬 발동
       break;
     case 12:
       playBossBGM('sounds/boss4_bgm1.mp3', 'sounds/boss4_bgm2.mp3');
       boss.setSkill(() => {
-        boss.howl(baseHp);
+        boss.howl(); // Howl 스킬 호출 (baseHp 직접 수정 없음)
         console.log('Boss 4 Howl 스킬 발동!');
         boss.playSkillSound('sounds/boss4.mp3');
+
+        // 2스택 도달 시 보스가 base를 공격한 것처럼 처리
+        if (boss.boss4HowlCount === 0) {
+          // 스택 초기화가 된 시점에서 기지 공격
+          sendEvent(PacketType.C2S_MONSTER_ATTACK_BASE, { damage: boss.Damage() });
+        }
       });
-      boss.setSkillCooldown(12000); // 12초 쿨타임
+      boss.setSkillCooldown(8000); // 8초 쿨타임
       break;
     case 15:
       playBossBGM('sounds/final_bgm1.mp3', 'sounds/final_bgm2.mp3');
+
       boss.setSkill(() => {
         boss.finalBossSkill(opponentBaseHp);
+        //트리거 발동시
+        chat('당신의 공격으로 인하여 보스의 스킬이 발동됩니다!, 상대방의 체력이 감소합니다!');
         console.log('Final Boss 스킬 발동!');
         boss.playSkillSound('sounds/finalboss.mp3');
       });
+      // Final 보스가 등장하면 UI를 보여줌
+      showFinalBossDamageUI();
+
+      const intervalid = setInterval(() => {
+        boss.finalBossSkill(opponentBaseHp);
+
+        if (boss.hp < 0) {
+          clearInterval(intervalid); //보스 사망시 데미지 트랙 종료
+        }
+      }, 100); //0.1초마다 데미지 확인
+      // 보스 사망 시 UI 제거
+      boss.onDie = () => {
+        hideFinalBossDamageUI();
+      };
+
       break;
   }
 
+  // Final 보스가 사라질 때 UI를 제거하는 함수
+  function hideFinalBossDamageUI() {
+    const damageElement = document.getElementById('final-boss-damage');
+    if (damageElement) {
+      document.body.removeChild(damageElement);
+    }
+  }
   if (boss.skillCooldown) {
     // 보스의 스킬 주기 설정
     bossSkillIntervals[boss.getMonsterIndex()] = setInterval(() => {
@@ -503,7 +567,7 @@ function gameLoop() {
           }
         } else {
           if (killCount === monstersToSpawn) {
-            monsterLevel++;
+            monsterLevel += 14;
             killCount = 0;
             console.log('monsterLevelUp');
 
@@ -548,7 +612,7 @@ function gameLoop() {
         }
       } else {
         if (killCount === monstersToSpawn) {
-          monsterLevel++;
+          monsterLevel += 14;
           killCount = 0;
           console.log('monsterLevelUp');
 
@@ -590,7 +654,11 @@ function gameLoop() {
 function opponentBaseAttacked(value) {
   opponentBaseHp = value;
   opponentBase.updateHp(opponentBaseHp);
+  if (opponentBaseHp <= 0) {
+    console.log('상대방 기지가 파괴되었습니다.');
+  }
 }
+
 function initGame() {
   if (isInitGame) {
     return;
@@ -721,7 +789,6 @@ function matchStart() {
       canvas.style.display = 'block';
       opponentCanvas.style.display = 'block';
       showGameElements(); // 게임 시작 시 요소 표시
-      // TODO. 유저 및 상대방 유저 데이터 초기화
     }
   }, 500);
 }
@@ -805,15 +872,14 @@ Promise.all([
       matchStart();
     }
     if (data.PacketType === 111) {
-      console.log('능력으로 인한 돈 추가');
+      const systemMessageElement = document.createElement('div');
+      systemMessageElement.textContent = 'System: 증강체의 효과로 추가 골드를 획득합니다.';
+      systemMessageElement.style.color = 'yellow';
+      chatLog.appendChild(systemMessageElement);
     }
     if (data.PacketType === 112) {
       console.log('상대방의 능력으로 인한 몬스터 추가');
-      // spawnMonster();
     }
-    // if (!isInitGame) {
-    //   initGame(payload);
-    // }
   });
 
   serverSocket.on('towerAttack', (data) => {
@@ -851,14 +917,10 @@ Promise.all([
     });
     if (isWin) {
       winSound.play().then(() => {
-        alert('당신이 게임에서 승리했습니다!');
-        // TODO. 게임 종료 이벤트 전송
         window.location.href = 'resultWindow.html';
       });
     } else {
       loseSound.play().then(() => {
-        alert('아쉽지만 대결에서 패배하셨습니다! 다음 대결에서는 꼭 이기세요!');
-        // TODO. 게임 종료 이벤트 전송
         window.location.href = 'resultWindow.html';
       });
     }
@@ -892,16 +954,8 @@ function loseGame() {
   sendEvent(PacketType.C2S_GAMEOVER_SIGNAL, {});
 }
 
-/* let chatInitialized = false;
-let lastSentMessage = '';
-const messageThrottle = 1000;
-let lastSentTime = 0;
-let isSendingMessage = false; */
-
 // 채팅 기능 함수
 function initializeChat() {
-  // if (chatInitialized) return;
-
   const chatLog = document.getElementById('chatLog');
   const chatInput = document.getElementById('chatInput');
   const chatContainer = document.getElementById('chatContainer');
@@ -917,10 +971,6 @@ function initializeChat() {
     if (data && data.userId && data.message) {
       const messageElement = document.createElement('div');
 
-      /* if (data.userId === 'System') {
-        messageElement.classList.add('system-message');
-      } */
-
       messageElement.textContent = `${data.userId}: ${data.message}`;
       chatLog.appendChild(messageElement);
       chatLog.scrollTop = chatLog.scrollHeight;
@@ -929,11 +979,7 @@ function initializeChat() {
     }
   });
 
-  const systemMessageElement = document.createElement('div');
-  systemMessageElement.textContent = 'System: 5초 후 게임이 시작됩니다.';
-  systemMessageElement.style.color = 'yellow';
-  chatLog.appendChild(systemMessageElement);
-  chatLog.scrollTop = chatLog.scrollHeight;
+  chat('System: 5초 후 게임이 시작됩니다.');
 
   // 입력 필드에서 Enter 키를 누르면 메시지를 서버로 전송
   chatInput.addEventListener('keydown', (event) => {
@@ -941,20 +987,9 @@ function initializeChat() {
     if (event.key === 'Enter') {
       const message = chatInput.value;
       chatInput.value = ''; // 입력 필드 비우기
-      /* isSendingMessage = true; */
-
-      /* const currentTime = Date.now();
-      if (message !== lastSentMessage || currentTime - lastSentTime > messageThrottle) {
-        lastSentMessage = message;
-        lastSentTime = currentTime;
-        console.log(`Sending chat message: ${message}`); */
       socket.emit('chat message', { userId: userId, message });
-      /* setTimeout(() => (isSendingMessage = false), 500);
-      } */
     }
   });
-
-  /* chatInitialized = true; */
 }
 
 function updateMonstersHp(updatedMonsters) {
@@ -1155,3 +1190,10 @@ surrenderButton.addEventListener('click', () => {
 backButton.addEventListener('click', () => {
   location.href = 'http://localhost:8080/index.html'; // 홈 화면 경로로 이동
 });
+
+export const chat = (chat) => {
+  const systemMessageElement = document.createElement('div');
+  systemMessageElement.textContent = `System: ${chat}`;
+  systemMessageElement.style.color = 'yellow';
+  chatLog.appendChild(systemMessageElement);
+};
