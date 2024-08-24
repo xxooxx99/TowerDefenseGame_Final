@@ -1231,7 +1231,7 @@ surrenderButton.addEventListener('click', () => {
 
 // 돌아가기 버튼 클릭 시 홈 화면으로 이동
 backButton.addEventListener('click', () => {
-  location.href = 'http://localhost:8080/index.html'; // 홈 화면 경로로 이동
+  location.href = 'https://towerdefence.shop/index.html'; // 홈 화면 경로로 이동
 });
 
 export const chat = (chat) => {
