@@ -90,7 +90,7 @@ export class Monster {
   }
 
   // 스킬 사용 메서드
-  useSkill(baseHp, opponentBaseHp) {
+  useSkill(baseHp) {
     const now = Date.now();
 
     if (this.hp <= 0) {
@@ -103,7 +103,7 @@ export class Monster {
   }
 
   if (this.skill) {
-    this.skill(baseHp, opponentBaseHp); // 설정된 스킬을 실행
+    this.skill(baseHp); // 설정된 스킬을 실행
     this.lastSkillTime = now;
   }
 }
@@ -137,29 +137,29 @@ boostSpeed() {
     }
 }
 
-finalBossSkill(baseHp) {
-  const now = Date.now();
-  const elapsedTime = (now - this.lastHowlTime) / 1000; // 경과 시간 계산
+// finalBossSkill(baseHp) {
+//   const now = Date.now();
+//   const elapsedTime = (now - this.lastHowlTime) / 1000; // 경과 시간 계산
 
-  // 5초마다 울부짖음이 발생하도록 수정
-  if (elapsedTime >= 5) {
-      // 요구 데미지를 충족하지 못했으면 기지 체력에 1의 데미지 추가
-      if (this.remainingDamage < this.requiredDamage) {
-          baseHp -= 1;
-          updateBaseHpUI(baseHp); // UI 업데이트 (기지 체력)
-          console.log('보스의 울부짖음으로 기지에 데미지가 가해졌습니다!');
-      }
+//   // 5초마다 울부짖음이 발생하도록 수정
+//   if (elapsedTime >= 5) {
+//       // 요구 데미지를 충족하지 못했으면 기지 체력에 1의 데미지 추가
+//       if (this.remainingDamage < this.requiredDamage) {
+//           baseHp -= 1;
+//           updateBaseHpUI(baseHp); // UI 업데이트 (기지 체력)
+//           console.log('보스의 울부짖음으로 기지에 데미지가 가해졌습니다!');
+//       }
 
-      // 다음 울부짖음의 데미지 요구치를 증가시킴
-      this.requiredDamage += 1000;
+//       // 다음 울부짖음의 데미지 요구치를 증가시킴
+//       this.requiredDamage += 1000;
 
-      // 타이머를 리셋
-      this.lastHowlTime = now; // 타이머 리셋
+//       // 타이머를 리셋
+//       this.lastHowlTime = now; // 타이머 리셋
 
-      // UI 업데이트
-      updateFinalBossDamageUI(this.remainingDamage, this.requiredDamage);
-  }
-}
+//       // UI 업데이트
+//       updateFinalBossDamageUI(this.remainingDamage, this.requiredDamage);
+//   }
+// }
 
   getMonsterTypeByLevel(level) {
     if (level === 1) {
