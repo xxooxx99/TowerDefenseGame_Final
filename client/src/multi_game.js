@@ -467,9 +467,11 @@ function setBossAttributes(boss, level) {
           updateFinalBossDamageUI(elapsedTime, boss.remainingDamage, boss.requiredDamage);
 
           if (boss.hp <= 0) {
+            hideFinalBossDamageUI();
             clearInterval(intervalId);
             clearInterval(skillIntervalId);
             isSkillActive = false;
+            sendEvent(PacketType.C2S_GAMEWIN_SIGNAL, {});
           }
         }, 100); // 100ms마다 데미지 확인 및 UI 업데이트
 
