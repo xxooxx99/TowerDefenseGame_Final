@@ -25,8 +25,6 @@ if (!localStorage.getItem('token')) {
   location.href = '/login';
 }
 
-console.log('성공적');
-
 const userId = localStorage.getItem('userId');
 if (!userId) {
   alert('유저 아이디가 필요합니다.');
@@ -472,18 +470,15 @@ function setBossAttributes(boss, level) {
             clearInterval(intervalId);
             clearInterval(skillIntervalId);
             isSkillActive = false;
-            sendEvent(PacketType.C2S_GAMEWIN_SIGNAL, {});
           }
         }, 100); // 100ms마다 데미지 확인 및 UI 업데이트
 
         // 보스 사망 시 UI 제거 및 interval 종료
         boss.onDie = () => {
-          console.log('마지막 보스가 죽었다');
           hideFinalBossDamageUI();
           clearInterval(intervalId);
           clearInterval(skillIntervalId);
           isSkillActive = false;
-          sendEvent(PacketType.C2S_GAMEWIN_SIGNAL, {});
         };
       }
       break;
@@ -630,6 +625,9 @@ function gameLoop() {
             }, 3000);
           }
         } else {
+          if (monsterLevel >= 16) {
+            sendEvent(PacketType.C2S_GAMEWIN_SIGNAL, {});
+          }
           if (killCount === monstersToSpawn) {
             monsterLevel++;
             killCount = 0;
@@ -675,6 +673,9 @@ function gameLoop() {
           }, 3000);
         }
       } else {
+        if (monsterLevel >= 16) {
+          sendEvent(PacketType.C2S_GAMEWIN_SIGNAL, {});
+        }
         if (killCount === monstersToSpawn) {
           monsterLevel++;
           killCount = 0;
