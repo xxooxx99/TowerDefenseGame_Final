@@ -6,7 +6,7 @@ const win_word = document.getElementById('win_word');
 const high_score_record = document.getElementById('high_score_record');
 const score_record = document.getElementById('score_record');
 
-const serverSocket = io('https://towerdefence.shop', {
+const serverSocket = io('https://towerdefence.shop/', {
   auth: {
     token: localStorage.getItem('token'),
   },

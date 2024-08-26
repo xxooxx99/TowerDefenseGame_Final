@@ -25,7 +25,7 @@ let userData;
 
 let selected_ability_user_data;
 
-const serverSocket = io('https://towerdefence.shop', {
+const serverSocket = io('https://towerdefence.shop/', {
   auth: {
     token: localStorage.getItem('token'),
   },
