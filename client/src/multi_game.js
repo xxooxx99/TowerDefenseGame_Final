@@ -402,11 +402,11 @@ function setBossAttributes(boss, level) {
       boss.setSkillCooldown(2000); // 2초마다 스킬 발동
       break;
     case 12:
-      playBossBGM('sounds/boss4_bgm.mp3');
+      playBossBGM('sounds/boss4.wav');
       boss.setSkill(() => {
         boss.howl(); // Howl 스킬 호출 (baseHp 직접 수정 없음)
         console.log('Boss 4 Howl 스킬 발동!');
-        boss.playSkillSound('sounds/boss4.wav');
+        boss.playSkillSound('sounds/boss4.mp3');
 
         // 2스택 도달 시 보스가 base를 공격한 것처럼 처리
         if (boss.boss4HowlCount === 0) {
@@ -475,6 +475,7 @@ function setBossAttributes(boss, level) {
 
         // 보스 사망 시 UI 제거 및 interval 종료
         boss.onDie = () => {
+          console.log('마지막 보스가 죽었다');
           hideFinalBossDamageUI();
           clearInterval(intervalId);
           clearInterval(skillIntervalId);
