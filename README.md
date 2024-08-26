@@ -29,12 +29,28 @@
 
 ## 📄 프로젝트 소개
 
-- 저희 프로젝트는 **WebSocket을 이용한 2D 타워 디펜스 게임** 입니다.
+- 저희 프로젝트는 **WebSocket을 이용한 웹 기반 2D 타워 디펜스 게임** 입니다.
 
 ## 🔲서비스 아키텍쳐
 
 ![서비스 아키텍쳐](https://github.com/user-attachments/assets/7fc75a4c-f9ce-43d3-9714-8ef118f97f98)
 
+## ⚙️ 기술 스택
+
+
+### Backend
+
+<img src="https://img.shields.io/badge/node.js-339933?style=for-the-badge&logo=Node.js&logoColor=white">
+<img src="https://img.shields.io/badge/mysql-4479A1?style=for-the-badge&logo=mysql&logoColor=white">
+<img src="https://img.shields.io/badge/amazonec2-FF9900?style=for-the-badge&logo=amazonec2&logoColor=white">
+<img src="https://img.shields.io/badge/express.js-%23404d59.svg?style=for-the-badge&logo=express&logoColor=%2361DAFB">
+<img src="https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens">
+<img src="https://img.shields.io/badge/Socket.io-black?style=for-the-badge&logo=socket.io&badgeColor=010101">
+
+### Database
+
+<img src="https://img.shields.io/badge/mysql-4479A1.svg?style=for-the-badge&logo=mysql&logoColor=white">
+<img src="https://img.shields.io/badge/Prisma-3982CE?style=for-the-badge&logo=Prisma&logoColor=white">
 
 ## 🎰프로젝트 주요 기능
 
@@ -81,7 +97,7 @@
 7. 😈**보스**
 
    - 3 스테이지마다 각기 다른 보스가 소환됩니다.
-   - 보스의 정보는 server에서 가지고 있습니다.
+   - 보스의 정보는 client에서 가지고 있습니다.
    - 보스 사망 시 다음 스테이지로 넘어갑니다.
    - 각기 다른 보스들은 각기 다른 스텟 및 스킬을 가지고 있습니다. (이는 플레이 하시면서 알아보시는 재미가 있습니다)
 
