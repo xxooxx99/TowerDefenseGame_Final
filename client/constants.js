@@ -42,6 +42,7 @@ export const PacketType = {
   S2C_BOSS_SPAWN: 201, // 서버가 보스 스폰을 클라이언트에 알릴 때 사용
   S2C_BOSS_SKILL: 202, // 서버가 보스의 스킬 사용을 클라이언트에 알릴 때 사용
   C2S_GAMEOVER_SIGNAL: 300, // 본인이 게임을 졌다고 신호를 보냄
+  C2S_GAMEWIN_SIGNAL: 301, // 본인이 게임을 이겼다고 신호를 보냄
   S2C_GAME_LOSE_SIGNAL: 310, //  너는 게임을 졌다고 신호를 보냄
   S2C_GAME_WIN_SIGNAL: 311, // 너는 게임을 이겼다고 신호를 보냄
   C2S_ABILITY_EQUIP_REQUEST: 500,

@@ -52,7 +52,7 @@ const opponentUser_winRate = document.getElementById('opponentUser-winRate');
 const ownUser_winRate = document.getElementById('ownUser-winRate');
 
 // 설정 데이터
-let acceptTime = 1000000; // 수락 대기 시간
+let acceptTime = 20000; // 수락 대기 시간
 let matchAcceptInterval; // 인터벌 데이터
 
 // 몬스터 데이터
@@ -242,7 +242,11 @@ let bossToSpawn = 1;
 let bossMessageNumber = 0;
 
 function spawnMonster() {
-  console.log('언제 실행?');
+  /* if (bossSpawned && currentBossStage === monsterLevel) {
+    console.log('Boss already spawnd for this level');
+    return;
+  } */
+
   if (
     (bossSpawnCount < bossToSpawn && monsterLevel === 3) ||
     (bossSpawnCount < bossToSpawn && monsterLevel === 6) ||
@@ -346,7 +350,7 @@ export function updateFinalBossDamageUI(elapsedTime, remainingDamage, requiredDa
   const damageElement = document.getElementById('final-boss-damage');
 
   if (damageElement) {
-    damageElement.innerHTML = `남은 시간: ${Math.max(5 - elapsedTime, 0).toFixed(1)}초 / 가한 데미지: ${remainingDamage} / 요구 데미지: ${requiredDamage}`;
+    damageElement.innerHTML = `가한 데미지: ${remainingDamage} / 요구 데미지: ${requiredDamage}`;
   } else {
     console.log('Damage element not found');
   }
@@ -363,9 +367,11 @@ function showFinalBossDamageUI() {
   damageElement.style.color = 'red';
   damageElement.style.fontSize = '40px'; // 크기 조정
   damageElement.style.fontWeight = 'bold';
-  damageElement.innerHTML = '남은 시간: 5초 / 요구 데미지: 1000'; // 초기 값 설정
+  damageElement.innerHTML = '가한 데미지: 0 / 요구 데미지: 1000'; // 초기 값 설정
   document.body.appendChild(damageElement);
 }
+
+let isSkillActive = false; // 스킬이 이미 활성화된 상태를 추적
 
 function setBossAttributes(boss, level) {
   console.log();
@@ -397,7 +403,7 @@ function setBossAttributes(boss, level) {
       boss.setSkillCooldown(2000); // 2초마다 스킬 발동
       break;
     case 12:
-      playBossBGM('sounds/boss4_bgm.mp3');
+      playBossBGM('sounds/boss4.wav');
       boss.setSkill(() => {
         boss.howl(); // Howl 스킬 호출 (baseHp 직접 수정 없음)
         console.log('Boss 4 Howl 스킬 발동!');
@@ -413,66 +419,80 @@ function setBossAttributes(boss, level) {
       break;
     case 15:
       playBossBGM('sounds/final_bgm.wav');
-      boss.previousHp = boss.hp; // 이전 체력값 초기화
-      boss.remainingDamage = 0; // 초기화된 누적 데미지
-      boss.requiredDamage = 1000; // 초기 요구 데미지 설정
-      boss.lastHowlTime = Date.now(); // 타이머 초기화
+      boss.previousHp = boss.hp;
+      boss.remainingDamage = 0;
+      boss.requiredDamage = 1000;
+      boss.lastHowlTime = Date.now();
 
-      boss.setSkill(() => {
-        const now = Date.now();
-        const elapsedTime = (now - boss.lastHowlTime) / 1000; // 5초 경과 확인
-        boss.playSkillSound('sounds/finalboss.mp3');
+      if (!isSkillActive) {
+        isSkillActive = true;
 
-        if (elapsedTime >= 5) {
-          // 5초 경과 시 스킬 발동
-          if (boss.remainingDamage < boss.requiredDamage) {
-            sendEvent(PacketType.C2S_MONSTER_ATTACK_BASE, { damage: boss.Damage() });
-            chat('최종 보스에게 요구된 데미지를 입히지 못했습니다. 기지 체력이 감소합니다.');
-            console.log('보스의 스킬 발동으로 기지에 데미지가 가해졌습니다!');
+        const skillIntervalId = setInterval(() => {
+          const now = Date.now();
+          const elapsedTime = (now - boss.lastHowlTime) / 1000;
+
+          if (elapsedTime >= 5) {
+            // 5초 경과 시 스킬 발동
+            if (boss.remainingDamage < boss.requiredDamage) {
+              // 요구 데미지를 충족하지 못했으므로 기지 체력 감소
+              sendEvent(PacketType.C2S_MONSTER_ATTACK_BASE, { damage: boss.Damage() });
+              chat('최종 보스에게 요구된 데미지를 입히지 못했습니다. 기지 체력이 감소합니다.');
+            }
+
+            // 타이머와 데미지 초기화
+            boss.remainingDamage = 0; // 누적 데미지 리셋
+            boss.requiredDamage += 500; // 요구 데미지 증가
+            boss.lastHowlTime = now; // 타이머 리셋
+
+            // UI 업데이트
+            updateFinalBossDamageUI(0, boss.remainingDamage, boss.requiredDamage);
+
+            // 사운드는 타이머와 무관하게 비동기적으로 재생
+            playFinalBossSkillSound(); // 사운드 재생
+          }
+        }, 5000); // 정확히 5초마다 스킬 체크
+
+        showFinalBossDamageUI();
+
+        const intervalId = setInterval(() => {
+          const damageDealt = boss.previousHp - boss.hp;
+          if (damageDealt > 0) {
+            boss.remainingDamage += damageDealt;
+            boss.previousHp = boss.hp;
           }
 
-          // 타이머와 데미지 초기화
-          boss.remainingDamage = 0; // 누적 데미지 리셋
-          boss.requiredDamage += 500; // 요구 데미지 증가
-          boss.lastHowlTime = now; // 타이머 리셋
-        }
+          const now = Date.now();
+          const elapsedTime = (now - boss.lastHowlTime) / 1000;
 
-        // UI 업데이트
-        const updatedElapsedTime = (Date.now() - boss.lastHowlTime) / 1000;
-        updateFinalBossDamageUI(updatedElapsedTime, boss.remainingDamage, boss.requiredDamage); // UI 업데이트
-      });
+          // UI 업데이트: 남은 시간과 요구 데미지 업데이트
+          updateFinalBossDamageUI(elapsedTime, boss.remainingDamage, boss.requiredDamage);
 
-      showFinalBossDamageUI(); // 보스 등장 시 UI 표시
+          if (boss.hp <= 0) {
+            clearInterval(intervalId);
+            clearInterval(skillIntervalId);
+            isSkillActive = false;
+          }
+        }, 100); // 100ms마다 데미지 확인 및 UI 업데이트
 
-      const intervalId = setInterval(() => {
-        const damageDealt = boss.previousHp - boss.hp;
-        if (damageDealt > 0) {
-          boss.remainingDamage += damageDealt; // 누적 데미지 업데이트
-          boss.previousHp = boss.hp;
-        }
-
-        const now = Date.now();
-        const elapsedTime = (now - boss.lastHowlTime) / 1000;
-        updateFinalBossDamageUI(elapsedTime, boss.remainingDamage, boss.requiredDamage); // UI 업데이트
-
-        if (boss.hp <= 0) {
-          clearInterval(intervalId); // 보스 사망 시 인터벌 제거
-        }
-      }, 100); // 100ms마다 데미지 확인 및 UI 업데이트
-
-      // 보스 사망 시 UI 제거 및 interval 종료
-      boss.onDie = () => {
-        hideFinalBossDamageUI();
-        clearInterval(intervalId); // 데미지 확인 인터벌 제거
-        console.log('Final Boss가 사망했습니다. 게임에서 승리했습니다!');
-
-        // 서버에 게임 승리 신호 전송
-        sendEvent(PacketType.C2S_GAME_OVER, { isWin: true });
-
-        // 승리 화면으로 전환 (예: resultWindow.html로 리다이렉트)
-        window.location.href = 'resultWindow.html';
-      };
+        // 보스 사망 시 UI 제거 및 interval 종료
+        boss.onDie = () => {
+          hideFinalBossDamageUI();
+          clearInterval(intervalId);
+          clearInterval(skillIntervalId);
+          isSkillActive = false;
+        };
+      }
       break;
+  }
+
+  // Final Boss 스킬 사운드를 비동기적으로 재생
+  function playFinalBossSkillSound() {
+    // 사운드를 비동기적으로 재생
+    const skillSound = new Audio('sounds/finalboss.mp3');
+    skillSound.volume = 0.1;
+    skillSound.play().catch((error) => {
+      console.error('Error playing skill sound:', error);
+    });
   }
 
   // Final 보스가 사라질 때 UI를 제거하는 함수
@@ -606,8 +626,11 @@ function gameLoop() {
             }, 3000);
           }
         } else {
+          if (monsterLevel >= 16) {
+            sendEvent(PacketType.C2S_GAMEWIN_SIGNAL, {});
+          }
           if (killCount === monstersToSpawn) {
-            monsterLevel += 1;
+            monsterLevel++;
             killCount = 0;
             console.log('monsterLevelUp');
 
@@ -651,6 +674,9 @@ function gameLoop() {
           }, 3000);
         }
       } else {
+        if (monsterLevel >= 16) {
+          sendEvent(PacketType.C2S_GAMEWIN_SIGNAL, {});
+        }
         if (killCount === monstersToSpawn) {
           monsterLevel++;
           killCount = 0;
@@ -820,6 +846,9 @@ function matchStart() {
     loader.style.display = 'none';
     if (progressValue >= 100) {
       clearInterval(progressInterval);
+      serverSocket.on('disconnect', () => {
+        loseGame();
+      });
       progressBarContainer.style.display = 'none';
       progressBar.style.display = 'none';
       towersBox.style.display = 'block';
@@ -829,6 +858,7 @@ function matchStart() {
       canvas.style.display = 'block';
       opponentCanvas.style.display = 'block';
       showGameElements(); // 게임 시작 시 요소 표시
+      logoutButton.style.visibility = 'hidden'; // 로그아웃 버튼 보이지 않게 설정
     }
   }, 500);
 }
@@ -843,7 +873,7 @@ Promise.all([
   new Promise((resolve) => (pathImage.onload = resolve)),
   ...monsterImages.map((img) => new Promise((resolve) => (img.onload = resolve))),
 ]).then(() => {
-  serverSocket = io('http://localhost:8080', {
+  serverSocket = io('https://towerdefence.shop', {
     auth: {
       token: localStorage.getItem('token'),
     },
@@ -1091,10 +1121,10 @@ function showGameElements() {
     attackMonstersButton.style.display = 'block';
   }
   if (backButton) {
-    backButton.style.display = 'block';
+    backButton.style.display = 'none';
   }
   if (surrenderButton) {
-    surrenderButton.style.display = 'block';
+    surrenderButton.style.visibility = 'visible';
   }
   isGameStarted = true;
 }
@@ -1199,6 +1229,10 @@ export function sendEvent(handlerId, payload) {
     payload,
   });
 }
+
+// 로그아웃 버튼 변수 초기화
+const logoutButton = document.getElementById('logout');
+
 // 돌아가기 버튼 생성 및 설정
 const backButton = document.createElement('button');
 backButton.textContent = '돌아가기';
@@ -1219,6 +1253,7 @@ surrenderButton.style.right = '10px';
 surrenderButton.style.padding = '10px 20px';
 surrenderButton.style.fontSize = '16px';
 surrenderButton.style.cursor = 'pointer';
+surrenderButton.style.visibility = 'hidden';
 document.body.appendChild(surrenderButton);
 
 // 항복하기 버튼 클릭 시 게임 종료 및 패배 처리
@@ -1228,7 +1263,7 @@ surrenderButton.addEventListener('click', () => {
 
 // 돌아가기 버튼 클릭 시 홈 화면으로 이동
 backButton.addEventListener('click', () => {
-  location.href = 'http://localhost:8080/index.html'; // 홈 화면 경로로 이동
+  location.href = 'https://towerdefence.shop/index.html'; // 홈 화면 경로로 이동
 });
 
 export const chat = (chat) => {

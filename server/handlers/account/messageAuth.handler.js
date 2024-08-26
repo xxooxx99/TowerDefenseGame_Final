@@ -31,19 +31,19 @@ export const messageSendHandler = router.post('/messageAuth', async (req, res) =
     const randomInt = Math.trunc(Math.random() * 1000000);
     console.log(`메세지로 보낼 랜덤 수:${randomInt}`);
 
-    // messageService
-    //   .sendOne({
-    //     to: userPhoneNumber,
-    //     from: Caller,
-    //     text: `해당 번호로 인증해주세요: ${randomInt}`,
-    //   })
-    //   .then((res) => {
-    //     console.log(res);
-    //     messageSet(userPhoneNumber, randomInt.toString());
-    //     setTimeout(() => {
-    //       messageDelete(userPhoneNumber);
-    //     }, 180000);
-    //   });
+    messageService
+      .sendOne({
+        to: userPhoneNumber,
+        from: Caller,
+        text: `해당 번호로 인증해주세요: ${randomInt}`,
+      })
+      .then((res) => {
+        console.log(res);
+        messageSet(userPhoneNumber, randomInt.toString());
+        setTimeout(() => {
+          messageDelete(userPhoneNumber);
+        }, 180000);
+      });
 
     messageSet(userPhoneNumber, randomInt.toString()); //테스트시 해당 코드 활성화하고 위의 messageService 부분은 주석처리!!
 

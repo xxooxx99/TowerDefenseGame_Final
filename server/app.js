@@ -47,6 +47,15 @@ app.get('/api', (req, res) => {
   res.sendFile('index.html', { root: path.join(__dirname, '../client') });
 });
 
+app.get('/healthCheck', (req, res) => {
+  try {
+    res.status(200).json({ status: 'success' });
+  } catch (err) {
+    console.error(e);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 io.on('connection', (socket) => {
   socket.on('chat message', (data) => {
     io.emit('chat message', data);
