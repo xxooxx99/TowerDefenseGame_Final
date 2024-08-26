@@ -56,6 +56,7 @@ export const PacketType = {
   C2S_BOSS_SKILL: 204, //클라이언트 서버한테 보스가 성공적으로 스킬을 사용했다고 알림
   C2S_BOSS_DEAD: 205, //클라이언트가 서버한테 보스가 죽었다고 알림
   C2S_GAMEOVER_SIGNAL: 300, // 본인이 게임을 졌다고 신호를 보냄
+  C2S_GAMEWIN_SIGNAL: 301, // 본인이 게임을 이겼다고 신호를 보냄
   S2C_GAME_LOSE_SIGNAL: 310, //  너는 게임을 졌다고 신호를 보냄
   S2C_GAME_WIN_SIGNAL: 311, // 너는 게임을 이겼다고 신호를 보냄
   C2S_ABILITY_EQUIP_REQUEST: 500,

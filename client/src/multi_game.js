@@ -406,7 +406,7 @@ function setBossAttributes(boss, level) {
       boss.setSkill(() => {
         boss.howl(); // Howl 스킬 호출 (baseHp 직접 수정 없음)
         console.log('Boss 4 Howl 스킬 발동!');
-        boss.playSkillSound('sounds/boss4.mp3');
+        boss.playSkillSound('sounds/boss4.wav');
 
         // 2스택 도달 시 보스가 base를 공격한 것처럼 처리
         if (boss.boss4HowlCount === 0) {
@@ -479,8 +479,7 @@ function setBossAttributes(boss, level) {
           clearInterval(intervalId);
           clearInterval(skillIntervalId);
           isSkillActive = false;
-          sendEvent(PacketType.C2S_GAME_OVER, { isWin: true });
-          window.location.href = 'resultWindow.html';
+          sendEvent(PacketType.C2S_GAMEWIN_SIGNAL, {});
         };
       }
       break;

@@ -22,6 +22,23 @@ async function gameoverSignalReceive(socket, data) {
   }
 }
 
+async function gameWinSignalReceive(socket, data) {
+  const { userId } = data;
+  let matchingInfo = getMatchingList(userId);
+
+  if (matchingInfo.user1_id === userId) {
+    gameSignalSend(matchingInfo.user1_socket, true);
+    gameSignalSend(matchingInfo.user2_socket, false);
+    addRecord(matchingInfo.user1_id, true);
+    addRecord(matchingInfo.user2_id, false);
+  } else if (matchingInfo.user2_id === userId) {
+    gameSignalSend(matchingInfo.user1_socket, false);
+    gameSignalSend(matchingInfo.user2_socket, true);
+    addRecord(matchingInfo.user1_id, false);
+    addRecord(matchingInfo.user2_id, true);
+  }
+}
+
 async function gameSignalSend(socket, isWin) {
   socket.emit('gameOver', {
     isWin: isWin,

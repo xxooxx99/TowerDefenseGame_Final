@@ -132,6 +132,9 @@ const initSocket = (server) => {
         case PacketType.C2S_GAMEOVER_SIGNAL:
           gameoverSignalReceive(socket, packet);
           break;
+        case PacketType.C2S_GAMEWIN_SIGNAL:
+          gameWinSignalReceive(socket, packet);
+          break;
         case PacketType.C2S_RECORD_RECENT_GAME:
           recordRecentGame(socket, packet);
           break;
