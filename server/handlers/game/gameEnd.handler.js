@@ -79,4 +79,4 @@ async function addRecord(userId, isWin) {
   }
 }
 
-export { gameoverSignalReceive };
+export { gameoverSignalReceive, gameWinSignalReceive };

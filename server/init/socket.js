@@ -24,7 +24,7 @@ import { baseAttackMonster } from '../models/baseUpgrade.js';
 import { add_count } from '../handlers/ability/gameAbilityActive.handler.js';
 // 보스 핸들러 가져오기
 import { handleSpawnBoss } from '../handlers/boss/bosshandlers.js';
-import { gameoverSignalReceive } from '../handlers/game/gameEnd.handler.js';
+import { gameoverSignalReceive, gameWinSignalReceive } from '../handlers/game/gameEnd.handler.js';
 import { recordRecentGame, sendRecentGameInfo } from '../handlers/user/userGameRecord.handler.js';
 import { getRankList } from '../handlers/rank/rank.handler.js';
 
