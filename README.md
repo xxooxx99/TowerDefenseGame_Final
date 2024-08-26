@@ -33,7 +33,7 @@
 
 ## 🔲서비스 아키텍쳐
 
-![서비스 아키텍쳐](https://github.com/user-attachments/assets/7fc75a4c-f9ce-43d3-9714-8ef118f97f98)
+![서비스 아키텍쳐](https://github.com/user-attachments/assets/3d18aa18-5b27-4e9e-8dbb-1080a2845060)
 
 ## ⚙️ 기술 스택
 
