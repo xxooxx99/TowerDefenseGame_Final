@@ -38,7 +38,7 @@ export const towerAddHandler = (socket, data) => {
     min = Math.min(min, distance);
   }
 
-  if (min < 100) return { status: 'fail', message: '타워와 도로 간 거리가 너무 가깝습니다!' };
+  if (min < 80) return { status: 'fail', message: '타워와 도로 간 거리가 너무 가깝습니다!' };
 
   const index = (towerId * 1) % 100;
   if (!towerAsset[towerType][index]) return { status: 'fail', message: '잘못된 접근입니다!' };

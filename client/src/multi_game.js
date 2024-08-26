@@ -17,6 +17,7 @@ import {
   opponentTowerDrawAndAttack,
   towerAllow,
   audioOfTowerNotAllow,
+  calculateDistance,
   //chat,
 } from './tower/towerController.js';
 
@@ -873,7 +874,7 @@ Promise.all([
   new Promise((resolve) => (pathImage.onload = resolve)),
   ...monsterImages.map((img) => new Promise((resolve) => (img.onload = resolve))),
 ]).then(() => {
-  serverSocket = io('https://towerdefence.shop', {
+  serverSocket = io('https://towerdefence.shop/', {
     auth: {
       token: localStorage.getItem('token'),
     },
@@ -1195,6 +1196,34 @@ gameCanvas.addEventListener('click', mousePos);
 gameCanvas.addEventListener('mousemove', (e) => {
   let mouseX = e.clientX;
   let mouseY = e.clientY;
+  let posX = e.offsetX;
+  let posY = e.offsetY;
+
+  if (towerBuilderId && towerBuilderType) {
+    let min = Infinity;
+    for (let towerType in towers) {
+      const towerData = towers[towerType];
+      for (let towerId in towerData) {
+        for (let i = 0; i < towerData[towerId].length; i++) {
+          const tower = towerData[towerId][i];
+          const distance = calculateDistance(posX, posY, tower.x, tower.y);
+          min = Math.min(distance, min);
+        }
+      }
+      if (min < 80) break;
+    }
+
+    if (min > 80) {
+      for (let road of monsterPath) {
+        const distance = calculateDistance(posX, posY, road.x, road.y);
+        min = Math.min(distance, min);
+        if (min < 80) break;
+      }
+    }
+
+    if (min < 80) cursor.style.filter = 'hue-rotate(0deg) saturate(100%) brightness(50%)';
+    else cursor.style.filter = '';
+  }
 
   cursor.style.left = mouseX + 'px';
   cursor.style.top = mouseY + 'px';
@@ -1263,7 +1292,7 @@ surrenderButton.addEventListener('click', () => {
 
 // 돌아가기 버튼 클릭 시 홈 화면으로 이동
 backButton.addEventListener('click', () => {
-  location.href = 'https://towerdefence.shop/index.html'; // 홈 화면 경로로 이동
+  location.href = 'https://towerdefence.shop//index.html'; // 홈 화면 경로로 이동
 });
 
 export const chat = (chat) => {
