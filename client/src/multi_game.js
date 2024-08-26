@@ -469,8 +469,6 @@ function setBossAttributes(boss, level) {
           updateFinalBossDamageUI(elapsedTime, boss.remainingDamage, boss.requiredDamage);
 
           if (boss.hp <= 0) {
-            console.log('마지막 보스가 죽었다');
-            hideFinalBossDamageUI();
             clearInterval(intervalId);
             clearInterval(skillIntervalId);
             isSkillActive = false;
