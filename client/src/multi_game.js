@@ -371,6 +371,8 @@ function showFinalBossDamageUI() {
   document.body.appendChild(damageElement);
 }
 
+let isSkillActive = false;  // 스킬이 이미 활성화된 상태를 추적
+
 function setBossAttributes(boss, level) {
   switch (level) {
     case 3:
@@ -416,66 +418,81 @@ function setBossAttributes(boss, level) {
       break;
     case 15:
       playBossBGM('sounds/final_bgm.wav');
-      boss.previousHp = boss.hp; // 이전 체력값 초기화
-      boss.remainingDamage = 0; // 초기화된 누적 데미지
-      boss.requiredDamage = 1000; // 초기 요구 데미지 설정
-      boss.lastHowlTime = Date.now(); // 타이머 초기화
-
-      boss.setSkill(() => {
-        const now = Date.now();
-        const elapsedTime = (now - boss.lastHowlTime) / 1000; // 5초 경과 확인
-        boss.playSkillSound('sounds/finalboss.mp3');
-
-        if (elapsedTime >= 5) {
-          // 5초 경과 시 스킬 발동
-          if (boss.remainingDamage < boss.requiredDamage) {
-            sendEvent(PacketType.C2S_MONSTER_ATTACK_BASE, { damage: boss.Damage() });
-            chat('최종 보스에게 요구된 데미지를 입히지 못했습니다. 기지 체력이 감소합니다.');
-            console.log('보스의 스킬 발동으로 기지에 데미지가 가해졌습니다!');
-          }
-
-          // 타이머와 데미지 초기화
-          boss.remainingDamage = 0; // 누적 데미지 리셋
-          boss.requiredDamage += 500; // 요구 데미지 증가
-          boss.lastHowlTime = now; // 타이머 리셋
-        }
-
-        // UI 업데이트
-        const updatedElapsedTime = (Date.now() - boss.lastHowlTime) / 1000;
-        updateFinalBossDamageUI(updatedElapsedTime, boss.remainingDamage, boss.requiredDamage); // UI 업데이트
-      });
-
-      showFinalBossDamageUI(); // 보스 등장 시 UI 표시
-
-      const intervalId = setInterval(() => {
-        const damageDealt = boss.previousHp - boss.hp;
-        if (damageDealt > 0) {
-          boss.remainingDamage += damageDealt; // 누적 데미지 업데이트
-          boss.previousHp = boss.hp;
-        }
-
-        const now = Date.now();
-        const elapsedTime = (now - boss.lastHowlTime) / 1000;
-        updateFinalBossDamageUI(elapsedTime, boss.remainingDamage, boss.requiredDamage); // UI 업데이트
-
-        if (boss.hp <= 0) {
-          clearInterval(intervalId); // 보스 사망 시 인터벌 제거
-        }
-      }, 100); // 100ms마다 데미지 확인 및 UI 업데이트
-
-      // 보스 사망 시 UI 제거 및 interval 종료
-      boss.onDie = () => {
-        hideFinalBossDamageUI();
-        clearInterval(intervalId); // 데미지 확인 인터벌 제거
-        console.log('Final Boss가 사망했습니다. 게임에서 승리했습니다!');
-
-        // 서버에 게임 승리 신호 전송
-        sendEvent(PacketType.C2S_GAME_OVER, { isWin: true });
-
-        // 승리 화면으로 전환 (예: resultWindow.html로 리다이렉트)
-        window.location.href = 'resultWindow.html';
-      };
+      boss.previousHp = boss.hp;
+      boss.remainingDamage = 0;
+      boss.requiredDamage = 1000;
+      boss.lastHowlTime = Date.now();
+      
+      if (!isSkillActive) {
+          isSkillActive = true;
+  
+          const skillIntervalId = setInterval(() => {
+              const now = Date.now();
+              const elapsedTime = (now - boss.lastHowlTime) / 1000;
+  
+              if (elapsedTime >= 5) {  // 5초 경과 시 스킬 발동
+                  if (boss.remainingDamage < boss.requiredDamage) {
+                      // 요구 데미지를 충족하지 못했으므로 기지 체력 감소
+                      sendEvent(PacketType.C2S_MONSTER_ATTACK_BASE, { damage: boss.Damage() });
+                      chat('최종 보스에게 요구된 데미지를 입히지 못했습니다. 기지 체력이 감소합니다.');
+                  }
+  
+                  // 타이머와 데미지 초기화
+                  boss.remainingDamage = 0;  // 누적 데미지 리셋
+                  boss.requiredDamage += 500;  // 요구 데미지 증가
+                  boss.lastHowlTime = now;  // 타이머 리셋
+  
+                  // UI 업데이트
+                  updateFinalBossDamageUI(0, boss.remainingDamage, boss.requiredDamage);
+  
+                  // 사운드는 타이머와 무관하게 비동기적으로 재생
+                  playFinalBossSkillSound();  // 사운드 재생
+              }
+          }, 5000);  // 정확히 5초마다 스킬 체크
+  
+          showFinalBossDamageUI();
+  
+          const intervalId = setInterval(() => {
+              const damageDealt = boss.previousHp - boss.hp;
+              if (damageDealt > 0) {
+                  boss.remainingDamage += damageDealt;
+                  boss.previousHp = boss.hp;
+              }
+  
+              const now = Date.now();
+              const elapsedTime = (now - boss.lastHowlTime) / 1000;
+  
+              // UI 업데이트: 남은 시간과 요구 데미지 업데이트
+              updateFinalBossDamageUI(elapsedTime, boss.remainingDamage, boss.requiredDamage);
+  
+              if (boss.hp <= 0) {
+                  clearInterval(intervalId);
+                  clearInterval(skillIntervalId);
+                  isSkillActive = false;
+              }
+          }, 100);  // 100ms마다 데미지 확인 및 UI 업데이트
+  
+          // 보스 사망 시 UI 제거 및 interval 종료
+          boss.onDie = () => {
+              hideFinalBossDamageUI();
+              clearInterval(intervalId);
+              clearInterval(skillIntervalId);
+              isSkillActive = false;
+              sendEvent(PacketType.C2S_GAME_OVER, { isWin: true });
+              window.location.href = 'resultWindow.html';
+          };
+      }
       break;
+  }
+  
+  // Final Boss 스킬 사운드를 비동기적으로 재생
+  function playFinalBossSkillSound() {
+      // 사운드를 비동기적으로 재생
+      const skillSound = new Audio('sounds/finalboss.mp3');
+      skillSound.volume = 0.1;
+      skillSound.play().catch((error) => {
+          console.error('Error playing skill sound:', error);
+      });
   }
 
   // Final 보스가 사라질 때 UI를 제거하는 함수
