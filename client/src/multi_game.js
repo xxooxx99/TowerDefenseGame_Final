@@ -25,6 +25,8 @@ if (!localStorage.getItem('token')) {
   location.href = '/login';
 }
 
+console.log('성공적');
+
 const userId = localStorage.getItem('userId');
 if (!userId) {
   alert('유저 아이디가 필요합니다.');
@@ -467,6 +469,7 @@ function setBossAttributes(boss, level) {
           updateFinalBossDamageUI(elapsedTime, boss.remainingDamage, boss.requiredDamage);
 
           if (boss.hp <= 0) {
+            console.log('마지막 보스가 죽었다');
             hideFinalBossDamageUI();
             clearInterval(intervalId);
             clearInterval(skillIntervalId);
