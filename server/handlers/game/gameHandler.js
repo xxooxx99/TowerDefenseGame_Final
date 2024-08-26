@@ -35,14 +35,11 @@ function handleMonsterBaseAttack(socket, uuid, payload) {
 }
 
 function handleBaseAttackMonster(req, res) {
-  console.log('Received Base Attack Request:', req.body);
-
   // 유효성 검사
   if (!req.body || !req.body.baseUuid || !req.body.monsterIndices) {
     console.error('Invalid payload:', req.body);
     return res.status(400).json({ success: false, error: 'Invalid payload' });
   }
-
   const { baseUuid, monsterIndices } = req.body; // req.body에서 직접 데이터 추출
 }
 

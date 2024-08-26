@@ -374,6 +374,7 @@ function showFinalBossDamageUI() {
 let isSkillActive = false; // 스킬이 이미 활성화된 상태를 추적
 
 function setBossAttributes(boss, level) {
+  console.log();
   switch (level) {
     case 3:
       playBossBGM('sounds/boss01_bgm.mp3');
