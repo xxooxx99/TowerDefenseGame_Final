@@ -52,7 +52,7 @@ const opponentUser_winRate = document.getElementById('opponentUser-winRate');
 const ownUser_winRate = document.getElementById('ownUser-winRate');
 
 // 설정 데이터
-let acceptTime = 1000000; // 수락 대기 시간
+let acceptTime = 20000; // 수락 대기 시간
 let matchAcceptInterval; // 인터벌 데이터
 
 // 몬스터 데이터
@@ -823,6 +823,9 @@ function matchStart() {
     loader.style.display = 'none';
     if (progressValue >= 100) {
       clearInterval(progressInterval);
+      serverSocket.on('disconnect', () => {
+        loseGame();
+      });
       progressBarContainer.style.display = 'none';
       progressBar.style.display = 'none';
       towersBox.style.display = 'block';
@@ -832,6 +835,7 @@ function matchStart() {
       canvas.style.display = 'block';
       opponentCanvas.style.display = 'block';
       showGameElements(); // 게임 시작 시 요소 표시
+      logoutButton.style.visibility = 'hidden'; // 로그아웃 버튼 보이지 않게 설정
     }
   }, 500);
 }
@@ -1094,10 +1098,10 @@ function showGameElements() {
     attackMonstersButton.style.display = 'block';
   }
   if (backButton) {
-    backButton.style.display = 'block';
+    backButton.style.display = 'none';
   }
   if (surrenderButton) {
-    surrenderButton.style.display = 'block';
+    surrenderButton.style.visibility = 'visible';
   }
   isGameStarted = true;
 }
@@ -1202,6 +1206,10 @@ export function sendEvent(handlerId, payload) {
     payload,
   });
 }
+
+// 로그아웃 버튼 변수 초기화
+const logoutButton = document.getElementById('logout');
+
 // 돌아가기 버튼 생성 및 설정
 const backButton = document.createElement('button');
 backButton.textContent = '돌아가기';
@@ -1222,6 +1230,7 @@ surrenderButton.style.right = '10px';
 surrenderButton.style.padding = '10px 20px';
 surrenderButton.style.fontSize = '16px';
 surrenderButton.style.cursor = 'pointer';
+surrenderButton.style.visibility = 'hidden';
 document.body.appendChild(surrenderButton);
 
 // 항복하기 버튼 클릭 시 게임 종료 및 패배 처리
