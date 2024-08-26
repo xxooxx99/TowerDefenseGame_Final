@@ -351,7 +351,7 @@ export function updateFinalBossDamageUI(elapsedTime, remainingDamage, requiredDa
   const damageElement = document.getElementById('final-boss-damage');
 
   if (damageElement) {
-    damageElement.innerHTML = `${Math.max(5 - elapsedTime, 0).toFixed(1)}초 / 가한 데미지: ${remainingDamage} / 요구 데미지: ${requiredDamage}`;
+    damageElement.innerHTML = `가한 데미지: ${remainingDamage} / 요구 데미지: ${requiredDamage}`;
   } else {
     console.log("Damage element not found");
   }
@@ -368,7 +368,7 @@ function showFinalBossDamageUI() {
   damageElement.style.color = 'red';
   damageElement.style.fontSize = '40px'; // 크기 조정
   damageElement.style.fontWeight = 'bold';
-  damageElement.innerHTML = '5초 / 요구 데미지: 1000'; // 초기 값 설정
+  damageElement.innerHTML = '남은데미지: / 요구 데미지: 1000'; // 초기 값 설정
   document.body.appendChild(damageElement);
 }
 let isSkillActive = false;  // 스킬이 이미 활성화된 상태를 추적
@@ -624,7 +624,7 @@ function gameLoop() {
           }
         } else {
           if (killCount === monstersToSpawn) {
-            monsterLevel += 14;
+            monsterLevel += 1;
             killCount = 0;
             console.log('monsterLevelUp');
 
@@ -669,7 +669,7 @@ function gameLoop() {
         }
       } else {
         if (killCount === monstersToSpawn) {
-          monsterLevel += 14;
+          monsterLevel += 1;
           killCount = 0;
           console.log('monsterLevelUp');
 
