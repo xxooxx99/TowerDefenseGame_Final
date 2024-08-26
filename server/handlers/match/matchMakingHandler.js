@@ -5,6 +5,7 @@ import {
   RESOLUTION_WIDTH,
 } from '../../constants.js';
 import { addAccept_queue } from './matchAcceptHandler.js';
+import { prisma } from '../../utils/prisma/index.js';
 
 // 매칭 대기열
 let matching_queue = [];
@@ -69,8 +70,21 @@ async function handleMatchRequest(socket, data) {
     return;
   }
 
-  // const winRate = await getUserWinRate(userId);
-  matching_queue.push({ socket, userId, startTime: Date.now() });
+  // 사용자의 승률 가져오기
+  const userInfo = await prisma.userInfo.findFirst({
+    where: { userId: userId },
+  });
+
+  if (!userInfo) {
+    console.log(`유저 ID ${userId}의 정보를 찾을 수 없습니다.`);
+    socket.emit('error', { message: '유저 정보를 찾을 수 없습니다.' });
+    return;
+  }
+
+  const winRate =
+    userInfo.win + userInfo.lose > 0 ? userInfo.win / (userInfo.win + userInfo.lose) : 0;
+
+  matching_queue.push({ socket, userId, winRate, startTime: Date.now() });
   console.log(`현재 대기열 상태: ${matching_queue.map((user) => user.userId).join(`, `)}`);
 
   socket.on('disconnect', () => {
@@ -83,7 +97,7 @@ async function handleMatchRequest(socket, data) {
   tryMatch();
 }
 
-function tryMatch() {
+async function tryMatch() {
   const now = Date.now();
 
   if (matching_queue.length < 2) {
@@ -96,12 +110,16 @@ function tryMatch() {
       const player1 = matching_queue[i];
       const player2 = matching_queue[j];
 
-      const elapsedSeconds = (now - player1.startTime) / 1000;
-      const winRateThreshold = 0.1 + Math.floor(elapsedSeconds / 10) * 0.1;
+      const elapsedSecondsPlayer1 = Math.floor((now - player1.startTime) / 1000);
+      const elapsedSecondsPlayer2 = Math.floor((now - player1.startTime) / 1000);
+
+      const winRateThreshold = Math.min(
+        1.0, // 최대 매칭되는 승률 차이 0.8 = 80%
+        0.1 + Math.floor(Math.max(elapsedSecondsPlayer1, elapsedSecondsPlayer2) / 5) * 0.1,
+      );
 
       // 매칭 성공 시
-      if (true) {
-        //if (Math.abs(player1.winRate - player2.winRate) <= winRateThreshold) {
+      if (Math.abs(player1.winRate - player2.winRate) <= winRateThreshold) {
         matching_queue.splice(j, 1);
         matching_queue.splice(i, 1);
 
@@ -110,14 +128,32 @@ function tryMatch() {
 
         console.log(`매칭 성공: ${player1.userId} vs ${player2.userId}`);
 
+        const User1Data = await prisma.userInfo.findFirst({
+          where: { userId: player1.userId },
+        });
+
+        const User2Data = await prisma.userInfo.findFirst({
+          where: { userId: player2.userId },
+        });
+
         const packet = {
           PacketType: PacketType.S2C_MATCH_FOUND_NOTIFICATION,
           opponentId: player2.userId,
+          ownUserData: User1Data,
+          opponentUserData: User2Data,
           index: index,
+          elapsedTimePlayer1: elapsedSecondsPlayer1,
+          elapsedTimePlayer2: elapsedSecondsPlayer2,
         };
 
         player1.socket.emit('event', packet);
-        player2.socket.emit('event', { ...packet, opponentId: player1.userId });
+        player2.socket.emit('event', {
+          ...packet,
+          opponentId: player1.userId,
+          ownUserData: User2Data,
+          opponentUserData: User1Data,
+        });
+
         addAccept_queue(index, player1, player2);
         index++;
         return;

@@ -4,9 +4,45 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="author" content="Changmin Kang" />
-    <title>내일배움캠프 Node.js 트랙 타워 디펜스 게임 온라인</title>
+    <title>타워 디펜스 게임 온라인 Remaster</title>
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
     <style>
+      #chatContainer {
+        position: fixed;
+        bottom: 10px; /* 화면의 아래에서 10px 위에 위치 */
+        left: 50%; /* 화면의 가로 중앙에 위치 */
+        transform: translateX(-50%); /* 가로 중앙으로 정렬 */
+        width: 500px; /* 원하는 너비 설정 */
+        max-height: 550px; /* 원하는 최대 높이 설정 */
+        overflow-y: auto; /* 내용이 넘칠 경우 스크롤바 표시 */
+        background-color: rgba(0, 0, 0, 0.7); /* 반투명 배경 */
+        color: white; /* 텍스트 색상 */
+        padding: 10px;
+        border-radius: 10px;
+        font-size: 30px;
+        display: none; /* 게임 시작 전에는 숨겨져 있음 */
+      }
+      #cursor {
+        position: absolute;
+        z-index: 2;
+        display: none;
+        opacity: 0;
+        pointer-events: none;
+      }
+      #chatLog {
+        border: 1px solid #ddd;
+        height: 300px;
+        overflow-y: auto;
+        margin-bottom: 10px;
+      }
+      #chatInput {
+        width: 100%;
+        padding: 10px;
+        box-sizing: border-box;
+      }
+      .system-message {
+        color: yellow;
+      }
       body {
         display: flex;
         justify-content: center;
@@ -16,7 +52,28 @@
         background-color: #2d2d2d;
         flex-direction: column;
       }
+      #towers {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: row;
+        height: 100px;
+        width: 1500px;
+        background-color: lightgray;
+        display: none;
+      }
+      #buttons-tower {
+        cursor: pointer;
+        width: 100px;
+        height: 100px;
+      }
+      .buttons-tower img {
+        width: 80px;
+        height: 80px;
+        object-fit: cover; /* 이미지가 버튼에 맞게 조정됨 */
+      }
       #gameCanvas {
+        cursor: none;
         border: 2px solid #000;
         display: none;
       }
@@ -79,6 +136,57 @@
         font-size: 16px;
         cursor: pointer;
       }
+      .matchAcceptButton {
+        position: relative;
+        width: 200px;
+        height: 30px;
+        left: 37.8px;
+      }
+      .user-info {
+        position: relative;
+        text-align: center;
+        width: 600px;
+        height: 400px;
+        top: 200px;
+      }
+      .user-name {
+        position: absolute;
+        width: 600px;
+        bottom: 200px;
+        margin: auto;
+        text-align: center;
+      }
+      .user-winRate {
+        position: absolute;
+        width: 600px;
+        bottom: 120px;
+        margin: auto;
+        text-align: center;
+      }
+      .ownUser-name {
+        float: left;
+        width: 200px;
+      }
+      .versus {
+        float: left;
+        width: 200px;
+      }
+      .opponentUser-name {
+        float: left;
+        width: 200px;
+      }
+      .ownUser-winRate {
+        float: left;
+        width: 200px;
+      }
+      .winRatemargin {
+        float: left;
+        width: 200px;
+      }
+      .opponentUser-winRate {
+        float: left;
+        width: 200px;
+      }
     </style>
   </head>
   <body>
@@ -86,9 +194,9 @@
       <img src="/images/logo.png" alt="logo" />
       <button id="registerButton">회원가입</button>
       <button id="loginButton">로그인</button>
-      <button id="loginButton2">로그인2 (로컬에서 2인 테스트 할 때 사용)</button>
-      <button id="matchButton">다른 유저와 대결하기</button>
-      <button id="matchButton2">다른 유저와 대결하기2 (로컬에서 2인 테스트 할 때 사용)</button>
+      <button id="abilityButton" style="display: none">능력</button>
+      <button id="matchButton" style="display: none">다른 유저와 대결하기</button>
+      <button id="rankButton" style="display: none">랭킹</button>
     </div>
 
     <div class="logout-container" id="logout-container" style="display: none">
@@ -96,15 +204,113 @@
       <button id="logout">로그아웃</button>
     </div>
 
+    <div class="user-info" id="user-info" style="display: none">
+      <div class="user-name" id="user-name" style="display: block">
+        <h3 class="ownUser-name" id="ownUser-name" style="color: white">
+          나
+          <!-- 자신을 띄우는 글귀 -->
+        </h3>
+        <h3 class="versus" id="versus">VS</h3>
+        <h3 class="opponentUser-name" id="opponentUser-name" style="color: white">
+          상대방의 아이디를 띄우는 글귀
+        </h3>
+      </div>
+      <div class="user-winRate" id="user-winRate" style="display: block">
+        <h3 class="ownUser-winRate" id="ownUser-winRate" style="color: white">
+          자신의 승률을 띄우는 글귀
+        </h3>
+        <h3 class="winRatemargin" id="winRatemargin"></h3>
+        <h3 class="opponentUser-winRate" id="opponentUser-winRate" style="color: white">
+          상대방의 승률을 띄우는 글귀
+        </h3>
+      </div>
+    </div>
+
     <div id="progressBarContainer">
       <h1 id="progressBarMessage" style="color: white">대결 상대를 탐색중입니다!</h1>
       <div class="loader"></div>
       <progress id="progressBar" max="100" value="0" style="display: none"></progress>
-      <button id="matchAcceptButton" display="none">대결 수락하기</button>
+      <button class="matchAcceptButton" id="matchAcceptButton" display="none">대결 수락하기</button>
     </div>
 
-    <canvas id="gameCanvas" width="1500" height="680"></canvas>
+    <div id="chatContainer">
+      <div id="chatLog"></div>
+      <input id="chatInput" type="text" placeholder="Type a message..." />
+    </div>
+    <!-- <script type="module" src="src/multi_game.js"></script> -->
+
+    <div id="towers">
+      <button id="baseTower" class="buttons-tower">
+        <img id="baseTowerImage" title="기본 타워" src="./images/tower100.png" />
+      </button>
+      <button id="speedTower" class="buttons-tower">
+        <img
+          id="speedTowerImage"
+          title="가속 타워 - 해금 조건: 기본타워 10개 설치"
+          src="./images/tower200.png"
+        />
+      </button>
+      <button id="speedSupportTower" class="buttons-tower">
+        <img
+          id="speedSupportTowerImage"
+          title="공격속도 지원타워 - 해금 조건: 가속 타워 10개 설치"
+          src="./images/tower300.png"
+        />
+      </button>
+      <button id="attackSupportTower" class="buttons-tower">
+        <img
+          id="attackSupportTowerImage"
+          title="공격력 지원타워 - 해금 조건: 치명타 타워 10개 설치"
+          src="./images/tower400.png"
+        />
+      </button>
+      <button id="strongTower" class="buttons-tower">
+        <img
+          id="strongTowerImage"
+          title="치명타 타워 - 해금 조건: 기본 타워 15개 설치"
+          src="./images/tower500.png"
+        />
+      </button>
+      <button id="splashTower" class="buttons-tower">
+        <img
+          id="splashTowerImage"
+          title="스플래쉬 타워 - 해금 조건: 골드 15000원 이상 보유"
+          src="./images/tower600.png"
+        />
+      </button>
+      <button id="multiShotTower" class="buttons-tower">
+        <img
+          id="multiShotTowerImage"
+          title="멀티샷 타워 - 해금 조건: 타워 50개 이상 설치 이력"
+          src="./images/tower700.png"
+        />
+      </button>
+      <button id="poisonTower" class="buttons-tower">
+        <img
+          id="poisonTowerImage"
+          title="맹독 타워 - 해금 조건: 타워 70개 이상 설치 이력"
+          src="./images/tower800.png"
+        />
+      </button>
+      <button id="growthTower" class="buttons-tower">
+        <img
+          id="growthTowerImage"
+          title="성장형 타워 - 해금 조건: 타워 90개 이상 설치 이력"
+          src="./images/tower900.png"
+        />
+      </button>
+      <button id="towerUpgrade" class="buttons-tower">
+        <img title="타워 강화 - 최대 3강" src="./images/towerUpgrade.png" />
+      </button>
+      <button id="towerSale" class="buttons-tower">
+        <img title="타워 판매 - 50%의 가치로 판매합니다." src="./images/towerSale.png" />
+      </button>
+    </div>
+    <canvas id="gameCanvas" width="1500" height="680"> </canvas>
     <canvas id="opponentCanvas" width="1500" height="680"></canvas>
+    <div id="cursor">
+      <img id="cursorImage" height="75px" width="40px" src="./images/cursor.png" />
+    </div>
 
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
     <script type="module">
@@ -114,7 +320,9 @@
         if (token && userId) {
           document.getElementById('registerButton').style.display = 'none';
           document.getElementById('loginButton').style.display = 'none';
-          document.getElementById('loginButton2').style.display = 'none';
+          document.getElementById('abilityButton').style.display = 'block';
+          document.getElementById('matchButton').style.display = 'block';
+          document.getElementById('rankButton').style.display = 'block';
           document.getElementById('current-user').innerText = `현재 접속된 아이디: ${userId}`;
           document.getElementById('logout-container').style.display = 'block';
         }
@@ -128,8 +336,8 @@
         window.location.href = 'login.html';
       });
 
-      document.getElementById('loginButton2').addEventListener('click', () => {
-        window.location.href = 'login2.html';
+      document.getElementById('abilityButton').addEventListener('click', () => {
+        window.location.href = 'ability.html';
       });
 
       document.getElementById('matchButton').addEventListener('click', () => {
@@ -139,10 +347,8 @@
         import('./src/multi_game.js');
       });
 
-      document.getElementById('matchButton2').addEventListener('click', () => {
-        document.querySelector('.button-container').style.display = 'none';
-        document.getElementById('progressBarContainer').style.display = 'block';
-        import('./src/multi_game2.js');
+      document.getElementById('rankButton').addEventListener('click', () => {
+        window.location.href = 'rank.html';
       });
 
       document.getElementById('logout').addEventListener('click', async () => {
@@ -164,7 +370,8 @@
             document.getElementById('logout-container').style.display = 'none';
             document.getElementById('registerButton').style.display = 'block';
             document.getElementById('loginButton').style.display = 'block';
-            document.getElementById('loginButton2').style.display = 'block';
+            document.getElementById('matchButton').style.display = 'none';
+            location.reload();
           } else {
             alert('로그아웃 실패');
           }

@@ -9,16 +9,12 @@ import {
   INITIAL_TOWER_NUMBER,
   PacketType,
 } from '../constants.js';
-import { setOpponentData } from '../models/playData.model.js';
 
 export const initData = (user1, user2) => {
   const userId1 = user1.id;
   const userId2 = user2.id;
   const userSocket1 = user1.socket;
   const userSocket2 = user2.socket;
-
-  setOpponentData(userId1, userSocket2);
-  setOpponentData(userId2, userSocket1);
 
   //몬스터 이동위치 초기화
   const myMonsterPath = generateRandomMonsterPath();
@@ -33,18 +29,20 @@ export const initData = (user1, user2) => {
 
   //유저 초기 타워 3개 배치
   for (let i = 0; i < INITIAL_TOWER_NUMBER; i++) {
-    const towerCoords1 = getRandomPositionNearPath(100, myMonsterPath, i + 1);
-    const towerCoords2 = getRandomPositionNearPath(100, opponentMonsterPath, i + 1);
+    const towerCoords1 = getRandomPositionNearPath(100, myMonsterPath);
+    const towerCoords2 = getRandomPositionNearPath(100, opponentMonsterPath);
 
     towerSet(myTowerInit, 'baseTower', 100, {
       posX: towerCoords1.x,
       posY: towerCoords1.y,
       number: i + 1,
+      attackTime: new Date().getTime(),
     });
     towerSet(opponentTowerInit, 'baseTower', 100, {
       posX: towerCoords2.x,
       posY: towerCoords2.y,
       number: i + 1,
+      attackTime: new Date().getTime(),
     });
   }
 
@@ -114,7 +112,7 @@ const generateRandomMonsterPath = () => {
 };
 
 //초기 타워 건설에만 사용
-const getRandomPositionNearPath = (maxDistance, monsterPath, number) => {
+const getRandomPositionNearPath = (maxDistance, monsterPath) => {
   const segmentIndex = Math.floor(Math.random() * (monsterPath.length - 1));
   const startX = monsterPath[segmentIndex].x;
   const startY = monsterPath[segmentIndex].y;

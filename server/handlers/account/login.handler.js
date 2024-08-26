@@ -9,27 +9,11 @@ const router = express.Router();
 const sessionTimeout = 60 * 60 * 1000; // 1시간
 
 router.post('/login', async (req, res) => {
-  const { userId, password, recaptchaToken } = req.body;
+  const { userId, password } = req.body;
 
-  console.log('Received login request:', { userId, password, recaptchaToken });
+  console.log('Received login request:', { userId, password });
 
   try {
-    if (!recaptchaToken) {
-      return res.status(400).json({ status: 'fail', message: 'reCAPTCHA token is missing' });
-    }
-
-    // reCAPTCHA 토큰 검증
-    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-    const verificationUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${recaptchaToken}`;
-    const response = await fetch(verificationUrl, { method: 'POST' });
-    const data = await response.json();
-
-    console.log('CAPTCHA verification response:', data);
-
-    if (!data.success) {
-      return res.status(400).json({ status: 'fail', message: 'Invalid CAPTCHA' });
-    }
-
     // 사용자 인증
     const user = await prisma.user.findUnique({
       where: { userId: userId },

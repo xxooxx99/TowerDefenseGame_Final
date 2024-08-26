@@ -1,13 +1,3 @@
-const opponentData = {};
-
-export const setOpponentData = (userId, opponentSocket) => {
-  opponentData[userId] = opponentSocket;
-};
-
-export const getOpponentInfo = (userId) => {
-  return opponentData[userId];
-};
-
 const playData = {};
 
 export const createPlayData = (uuid, initData) => {
@@ -45,7 +35,7 @@ export const getGameByUserId = (userId) => {
       const player1 = uuid === userId ? uuid : game.opponentUserInfo;
       const player2 = uuid === userId ? game.opponentUserInfo : uuid;
 
-      console.log(`Found game for user: ${userId}, player1: ${player1}, player2: ${player2}`);
+      //console.log(`Found game for user: ${userId}, player1: ${player1}, player2: ${player2}`);
 
       return {
         player1: { userId: player1, data: game },
@@ -69,7 +59,7 @@ export class GameData {
     this.score = 0;
     this.nextMilestone = 1000;
     this.userGold = 1000;
-    this.baseHp = 100;
+    this.baseHp = 3;
     this.monsterPath = monsterPath;
     this.towerInit = initialTowerCoords;
     this.basePos = basePosition;
@@ -77,7 +67,8 @@ export class GameData {
     this.opponentTowerInit = opponentInitialTowerCoords;
     this.opponentBasePos = opponentBasePosition;
     this.opponentUserInfo = opponentUserInfo;
-    this.opponentBaseHp = 100;
+    this.opponentBaseHp = 3;
+    this.towerLock = [true, false, false, false, false, false, false, false, false];
   }
 
   getOpponentInfo() {
@@ -111,5 +102,9 @@ export class GameData {
       this.nextMilestone += 1000;
       this.userGold += 500;
     }
+  }
+
+  addGold(value) {
+    this.userGold += value;
   }
 }

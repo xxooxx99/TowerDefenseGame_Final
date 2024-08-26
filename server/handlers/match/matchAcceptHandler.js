@@ -3,6 +3,7 @@ import { prisma } from '../../utils/prisma/index.js';
 import { getPlayData } from '../../models/playData.model.js';
 import { createPlayData } from '../../models/playData.model.js';
 import { initData } from '../../init/init.js';
+import { add_matching } from '../ability/gameAbilityActive.handler.js';
 
 // 수락 대기열
 let accept_queue = [];
@@ -25,8 +26,8 @@ async function handlerMatchDeniedRequest(socket, data) {
   let denied_index = -1;
   for (let count = 0; count < accept_queue.length; count++) {
     if (
-      accept_queue[count].user1.userId === data.userId ||
-      accept_queue[count].user2.userId === data.userId
+      accept_queue[count].user1.id === data.userId ||
+      accept_queue[count].user2.id === data.userId
     ) {
       denied_index = count;
     }
@@ -47,6 +48,12 @@ async function checkAcceptStatus() {
       accept_queue[count].user2.socket.emit('event', {
         PacketType: 18,
       });
+      add_matching(
+        accept_queue[count].user1.id,
+        accept_queue[count].user1.socket,
+        accept_queue[count].user2.id,
+        accept_queue[count].user2.socket,
+      );
       initData(accept_queue[count].user1, accept_queue[count].user2);
       start_index = count;
     }

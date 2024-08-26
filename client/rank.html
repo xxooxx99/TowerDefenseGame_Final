@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <style>
+    table {
+      width: 100%;
+    }
+    td {
+      padding: 20px;
+      border: 1px solid #444444;
+    }
+    #backButton {
+      margin-top: 10px;
+      height: 50px;
+      width: 100px;
+    }
+    .center {
+      text-align: center;
+    }
+  </style>
+  <body>
+    <div class="center">
+      실시간 랭킹표
+      <table>
+        <tr>
+          <td>1등</td>
+          <td id="oneName">유저 정보가 없습니다.</td>
+          <td id="oneScore">유저 정보가 없습니다.</td>
+        </tr>
+        <tr>
+          <td>2등</td>
+          <td id="twoName">유저 정보가 없습니다.</td>
+          <td id="twoScore">유저 정보가 없습니다.</td>
+        </tr>
+        <tr>
+          <td>3등</td>
+          <td id="threeName">유저 정보가 없습니다.</td>
+          <td id="threeScore">유저 정보가 없습니다.</td>
+        </tr>
+        <tr>
+          <td>4등</td>
+          <td id="fourName">유저 정보가 없습니다.</td>
+          <td id="fourScore">유저 정보가 없습니다.</td>
+        </tr>
+        <tr>
+          <td>5등</td>
+          <td id="fiveName">유저 정보가 없습니다.</td>
+          <td id="fiveScore">유저 정보가 없습니다.</td>
+        </tr>
+        <tr>
+          <td>6등</td>
+          <td id="sixName">유저 정보가 없습니다.</td>
+          <td id="sixScore">유저 정보가 없습니다.</td>
+        </tr>
+        <tr>
+          <td>7등</td>
+          <td id="sevenName">유저 정보가 없습니다.</td>
+          <td id="sevenScore">유저 정보가 없습니다.</td>
+        </tr>
+        <tr>
+          <td>8등</td>
+          <td id="eightName">유저 정보가 없습니다.</td>
+          <td id="eightScore">유저 정보가 없습니다.</td>
+        </tr>
+        <tr>
+          <td>9등</td>
+          <td id="nineName">유저 정보가 없습니다.</td>
+          <td id="nineScore">유저 정보가 없습니다.</td>
+        </tr>
+        <tr>
+          <td>10등</td>
+          <td id="tenName">유저 정보가 없습니다.</td>
+          <td id="tenScore">유저 정보가 없습니다.</td>
+        </tr>
+      </table>
+      <button id="backButton">뒤로가기</button>
+    </div>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script type="module">
+      const userNames = [
+        'oneName',
+        'twoName',
+        'threeName',
+        'fourName',
+        'fiveName',
+        'sixName',
+        'sevenName',
+        'eightName',
+        'nineName',
+        'tenName',
+      ];
+      const userScores = [
+        'oneScore',
+        'twoScore',
+        'threeScore',
+        'fourScore',
+        'fiveScore',
+        'sixScore',
+        'sevenScore',
+        'eightScore',
+        'nineScore',
+        'tenScore',
+      ];
+
+      try {
+        fetch('api/rank', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+          .then((response) => {
+            if (response.status === 200) {
+              return response.json();
+            }
+          })
+          .then((response) => {
+            const rankData = response.data;
+            for (let i = 0; i < rankData.length; i++) {
+              const { userId, highScore } = rankData[i];
+              const userName = document.getElementById(userNames[i]);
+              const userScore = document.getElementById(userScores[i]);
+
+              userName.textContent = userId;
+              userScore.textContent = highScore;
+            }
+          });
+      } catch (err) {
+        console.log(err);
+      }
+      document.getElementById('backButton').addEventListener('click', () => {
+        window.location.href = 'index.html';
+      });
+    </script>
+  </body>
+</html>
