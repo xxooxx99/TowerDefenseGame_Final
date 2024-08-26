@@ -26,8 +26,10 @@ export class Monster {
     this.skillCooldown = 5000; // 스킬 쿨다운 기본값 (필요 시 보스별로 수정)
     this.lastSkillTime = Date.now(); // 마지막 스킬 사용 시간
     this.boss4HowlCount = 0; // boss4의 howl 횟수
+    this.lastHowlTime = Date.now(); // 울부짖음 시간
     this.finalBossAccumulatedDamage = 0; // final boss의 누적 데미지
     this.remainingDamage = 0; // final boss의 표시용 누적 데미지
+    this.requiredDamage = 1000; // 요구 데미지 초기값
 
     this.init(level);
     this.setSkillCooldown(); // 각 보스마다 스킬 쿨타임 설정
@@ -139,32 +141,27 @@ export class Monster {
     }
   }
 
-  finalBossSkill(opponentBaseHp) {
-    // 최대 체력과 현재 체력의 차이를 계산하여 누적 데미지를 업데이트
-    const damageDifference = this.maxHp - this.hp;
+  finalBossSkill(baseHp) {
+    const now = Date.now();
+    const elapsedTime = (now - this.lastHowlTime) / 1000; // 경과 시간 계산
 
-    // 누적 데미지에 차이값을 추가
-    this.finalBossAccumulatedDamage += damageDifference;
-    // this.누적데미지 += 따로관리 // 보여주기용 누적데미지
+    // 5초마다 울부짖음이 발생하도록 수정
+    if (elapsedTime >= 5) {
+      // 요구 데미지를 충족하지 못했으면 기지 체력에 1의 데미지 추가
+      if (this.remainingDamage < this.requiredDamage) {
+        baseHp -= 1;
+        updateBaseHpUI(baseHp); // UI 업데이트 (기지 체력)
+        console.log('보스의 울부짖음으로 기지에 데미지가 가해졌습니다!');
+      }
 
-    if (!this.remainingDamage) {
-      this.remainingDamage = 0;
-    }
+      // 다음 울부짖음의 데미지 요구치를 증가시킴
+      this.requiredDamage += 1000;
 
-    this.remainingDamage += damageDifference;
+      // 타이머를 리셋
+      this.lastHowlTime = now; // 타이머 리셋
 
-    // console.log(`누적 : ${this.finalBossAccumulatedDamage}, 남은 데미지: ${this.remainingDamage}`);
-    // UI 업데이트
-    updateFinalBossDamageUI(this.finalBossAccumulatedDamage, this.remainingDamage);
-
-    // const finalbosstriggers = Math.floor(this.finalBossAccumulatedDamage / 5000); // 5000마다 트리거
-    if (this.remainingDamage >= 5000) {
-      const finalbosstriggers = Math.floor(this.remainingDamage / 5000); // 5000마다 트리거
-
-      this.remainingDamage -= finalbosstriggers * 5000;
-
-      // console.log('Final Boss: 상대 기지 체력 1 감소!');
-      sendEvent(PacketType.C2S_UPDATE_OPPONENT_BASE_HP, { opponentBaseHp });
+      // UI 업데이트
+      updateFinalBossDamageUI(this.remainingDamage, this.requiredDamage);
     }
   }
 
@@ -227,9 +224,9 @@ export class Monster {
         this.attackPower = 1;
         break;
       case 'finalboss':
-        this.maxHp = 10000000;
+        this.maxHp = 100000;
         this.speed = 0.1;
-        this.attackPower = 3;
+        this.attackPower = 1;
         break;
       default:
         this.maxHp = 100 + 10 * level;
@@ -364,24 +361,25 @@ export class Monster {
     return this.hp;
   }
 
-  //   receiveDamage(damage) {
-  //     console.log('Damage received:', damage);
-  //     this.hp -= damage;
+  //궁극기 때매 있어야 함
+  receiveDamage(damage) {
+    console.log('Damage received:', damage);
+    this.hp -= damage;
 
-  //     console.log(`Monster HP after damage: ${this.hp}`);
+    console.log(`Monster HP after damage: ${this.hp}`);
 
-  //     // 최종 보스의 경우 누적 데미지를 업데이트
-  //     if (this.type === 'finalboss') {
-  //         this.finalBossAccumulatedDamage += damage;  // 받은 데미지만큼 누적 데미지 추가
-  //         updateFinalBossDamageUI(this.finalBossAccumulatedDamage);  // UI 업데이트
-  //     }
+    // 최종 보스의 경우 누적 데미지를 업데이트
+    if (this.type === 'finalboss') {
+      this.finalBossAccumulatedDamage += damage; // 받은 데미지만큼 누적 데미지 추가
+      updateFinalBossDamageUI(this.finalBossAccumulatedDamage); // UI 업데이트
+    }
 
-  //     // 체력이 0 이하로 떨어지면 die 메서드를 호출
-  //     if (this.hp <= 0) {
-  //         console.log('Monster HP is 0 or less, calling die method');
-  //         this.die();
-  //     }
-  // }
+    // 체력이 0 이하로 떨어지면 die 메서드를 호출
+    if (this.hp <= 0) {
+      console.log('Monster HP is 0 or less, calling die method');
+      this.die();
+    }
+  }
 
   die() {
     console.log(`Monster ${this.monsterIndex} died`);
