@@ -673,7 +673,7 @@ function gameLoop() {
         }
       } else {
         if (killCount === monstersToSpawn) {
-          monsterLevel += 14;
+          monsterLevel++;
           killCount = 0;
           console.log('monsterLevelUp');
 
