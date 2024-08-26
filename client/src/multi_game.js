@@ -350,7 +350,7 @@ export function updateFinalBossDamageUI(elapsedTime, remainingDamage, requiredDa
   const damageElement = document.getElementById('final-boss-damage');
 
   if (damageElement) {
-    damageElement.innerHTML = `남은 시간: ${Math.max(5 - elapsedTime, 0).toFixed(1)}초 / 가한 데미지: ${remainingDamage} / 요구 데미지: ${requiredDamage}`;
+    damageElement.innerHTML = `가한 데미지: ${remainingDamage} / 요구 데미지: ${requiredDamage}`;
   } else {
     console.log('Damage element not found');
   }
@@ -367,7 +367,7 @@ function showFinalBossDamageUI() {
   damageElement.style.color = 'red';
   damageElement.style.fontSize = '40px'; // 크기 조정
   damageElement.style.fontWeight = 'bold';
-  damageElement.innerHTML = '남은 시간: 5초 / 요구 데미지: 1000'; // 초기 값 설정
+  damageElement.innerHTML = '가한 데미지: 0 / 요구 데미지: 1000'; // 초기 값 설정
   document.body.appendChild(damageElement);
 }
 
