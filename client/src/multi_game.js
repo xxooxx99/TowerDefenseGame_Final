@@ -238,7 +238,7 @@ let monsterSpawnCount = 0;
 let bossSpawnCount = 0;
 let monsterintervalId = null;
 const monsterSpawnInterval = 1000;
-let monstersToSpawn = 5; // 라운드당 몬스터 소환 수
+let monstersToSpawn = 10; // 라운드당 몬스터 소환 수
 let bossToSpawn = 1;
 let bossMessageNumber = 0;
 
