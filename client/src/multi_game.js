@@ -105,6 +105,7 @@ let towers = {};
 let towerLock;
 towerImageInit();
 towerImageAllowInit();
+let cursorImageTemp = null;
 //#endregion
 
 //게임 데이터
@@ -208,11 +209,13 @@ function towerBuilderCheck(towerType, button) {
     towerBuilderType = TOWER_TYPE[towerBuilderId / 100];
     button.style.backgroundColor = 'red';
     cursorImage.src = `./images/tower${towerType}.png`;
+    cursorImageTemp = `./images/tower${towerType}.png`;
   } else if (towerBuilderId === towerType) {
     button.style.backgroundColor = 'white';
     towerBuilderId = null;
     towerBuilderType = null;
     cursorImage.src = `./images/cursor.png`;
+    cursorImageTemp = null;
   } else console.log('build를 취소해주세요!');
 }
 
@@ -1221,8 +1224,8 @@ gameCanvas.addEventListener('mousemove', (e) => {
       }
     }
 
-    if (min < 80) cursor.style.filter = 'hue-rotate(0deg) saturate(100%) brightness(50%)';
-    else cursor.style.filter = '';
+    if (min < 80) cursorImage.src = './images/TowerNone.png';
+    else cursorImage.src = cursorImageTemp;
   }
 
   cursor.style.left = mouseX + 'px';
